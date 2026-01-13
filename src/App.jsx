@@ -764,13 +764,11 @@ function TeacherPinModal({ onValidate, onClose }) {
           value={pin}
           onChange={(e) => { setPin(e.target.value); setError(false); }}
           placeholder="Enter PIN"
-          maxLength={4}
           className={`w-full px-4 py-3 bg-slate-700 border-2 rounded-lg text-white text-center text-2xl tracking-widest font-bold placeholder-slate-500 focus:outline-none ${error ? 'border-red-500' : 'border-slate-600 focus:border-green-500'}`}
           onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
           autoFocus
         />
         {error && <p className="text-red-400 text-sm text-center mt-2">Incorrect PIN</p>}
-        <p className="text-slate-500 text-xs text-center mt-2">Default: teach</p>
 
         <div className="flex gap-3 mt-6">
           <button onClick={() => onClose(false)} className="flex-1 py-3 bg-slate-700 text-slate-300 font-bold rounded-xl">

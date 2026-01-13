@@ -3,7 +3,7 @@ import { LEVELS, ACHIEVEMENTS, DAILY_QUESTS, MYSTERY_REWARDS } from '../data/gam
 
 const STORAGE_KEY = 'choiceboard_game_state';
 const SUBMISSIONS_KEY = 'choiceboard_submissions';
-const TEACHER_PIN = '1234'; // Simple PIN for teacher access
+const TEACHER_PIN = 'teach'; // Simple PIN for teacher access
 
 const getDefaultState = () => ({
   // Player info

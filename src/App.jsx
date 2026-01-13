@@ -311,13 +311,35 @@ function SubmissionForm({ activityTitle, onSubmit, onCancel }) {
   const [submissionType, setSubmissionType] = useState('link');
   const [linkValue, setLinkValue] = useState('');
   const [fileName, setFileName] = useState('');
+  const [fileData, setFileData] = useState(null);
+  const [fileType, setFileType] = useState('');
   const [note, setNote] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Check file size (limit to 5MB for localStorage)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File is too large. Please upload a file smaller than 5MB, or use a link instead.');
+        return;
+      }
+
+      setIsProcessing(true);
       setFileName(file.name);
+      setFileType(file.type);
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setFileData(event.target.result);
+        setIsProcessing(false);
+      };
+      reader.onerror = () => {
+        alert('Error reading file. Please try again.');
+        setIsProcessing(false);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -326,14 +348,16 @@ function SubmissionForm({ activityTitle, onSubmit, onCancel }) {
       alert('Please enter a link to your work');
       return;
     }
-    if (submissionType === 'file' && !fileName) {
+    if (submissionType === 'file' && !fileData) {
       alert('Please select a file');
       return;
     }
 
     onSubmit({
       type: submissionType,
-      content: submissionType === 'link' ? linkValue.trim() : fileName,
+      content: submissionType === 'link' ? linkValue.trim() : fileData,
+      fileName: submissionType === 'file' ? fileName : null,
+      fileType: submissionType === 'file' ? fileType : null,
       note: note.trim()
     });
   };
@@ -418,11 +442,80 @@ function SubmissionForm({ activityTitle, onSubmit, onCancel }) {
         </button>
         <button
           onClick={handleSubmit}
-          className="flex-1 py-3 bg-yellow-500 text-slate-900 font-black uppercase rounded-xl hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2"
+          disabled={isProcessing}
+          className="flex-1 py-3 bg-yellow-500 text-slate-900 font-black uppercase rounded-xl hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
         >
-          <Rocket className="w-5 h-5" /> Submit
+          {isProcessing ? (
+            <>Processing...</>
+          ) : (
+            <><Rocket className="w-5 h-5" /> Submit</>
+          )}
         </button>
       </div>
+    </div>
+  );
+}
+
+// ============== FILE VIEWER COMPONENT ==============
+function FileViewer({ content, fileName, fileType }) {
+  if (!content) return null;
+
+  // Check if it's an image
+  if (fileType?.startsWith('image/')) {
+    return (
+      <div className="mt-2">
+        <img src={content} alt={fileName} className="max-w-full max-h-64 rounded-lg border border-slate-600" />
+      </div>
+    );
+  }
+
+  // Check if it's a PDF
+  if (fileType === 'application/pdf') {
+    return (
+      <div className="mt-2">
+        <a
+          href={content}
+          download={fileName}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white font-bold"
+        >
+          <FileText className="w-5 h-5" /> Download PDF: {fileName}
+        </a>
+      </div>
+    );
+  }
+
+  // Check if it's audio
+  if (fileType?.startsWith('audio/')) {
+    return (
+      <div className="mt-2">
+        <audio controls src={content} className="w-full">
+          Your browser does not support audio playback.
+        </audio>
+      </div>
+    );
+  }
+
+  // Check if it's video
+  if (fileType?.startsWith('video/')) {
+    return (
+      <div className="mt-2">
+        <video controls src={content} className="max-w-full max-h-64 rounded-lg">
+          Your browser does not support video playback.
+        </video>
+      </div>
+    );
+  }
+
+  // Default: download link for other file types
+  return (
+    <div className="mt-2">
+      <a
+        href={content}
+        download={fileName}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-slate-600 hover:bg-slate-500 rounded-lg text-white font-bold"
+      >
+        <FileText className="w-5 h-5" /> Download: {fileName}
+      </a>
     </div>
   );
 }
@@ -532,7 +625,14 @@ function TeacherDashboard({ submissions, onApprove, onReject, onClear, onClose }
                     {selectedSubmission.submissionContent}
                   </a>
                 ) : (
-                  <p className="text-white">{selectedSubmission.submissionContent}</p>
+                  <div>
+                    <p className="text-white text-sm mb-2">{selectedSubmission.fileName || 'Uploaded file'}</p>
+                    <FileViewer
+                      content={selectedSubmission.submissionContent}
+                      fileName={selectedSubmission.fileName}
+                      fileType={selectedSubmission.fileType}
+                    />
+                  </div>
                 )}
               </div>
 
@@ -670,7 +770,7 @@ function TeacherPinModal({ onValidate, onClose }) {
           autoFocus
         />
         {error && <p className="text-red-400 text-sm text-center mt-2">Incorrect PIN</p>}
-        <p className="text-slate-500 text-xs text-center mt-2">Default: 1234</p>
+        <p className="text-slate-500 text-xs text-center mt-2">Default: teach</p>
 
         <div className="flex gap-3 mt-6">
           <button onClick={() => onClose(false)} className="flex-1 py-3 bg-slate-700 text-slate-300 font-bold rounded-xl">

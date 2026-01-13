@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { LEVELS, ACHIEVEMENTS, DAILY_QUESTS, MYSTERY_REWARDS } from '../data/gameData';
 
 const STORAGE_KEY = 'choiceboard_game_state';
+const SUBMISSIONS_KEY = 'choiceboard_submissions';
+const TEACHER_PIN = '1234'; // Simple PIN for teacher access
 
 const getDefaultState = () => ({
   // Player info
@@ -53,6 +55,8 @@ const getDefaultState = () => ({
   pathCompletions: { path1: 0, path2: 0, path3: 0 },
 });
 
+const getDefaultSubmissions = () => ([]);
+
 export function useGameState() {
   const [gameState, setGameState] = useState(() => {
     if (typeof window === 'undefined') return getDefaultState();
@@ -67,6 +71,19 @@ export function useGameState() {
     return getDefaultState();
   });
 
+  const [submissions, setSubmissions] = useState(() => {
+    if (typeof window === 'undefined') return getDefaultSubmissions();
+    const saved = localStorage.getItem(SUBMISSIONS_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return getDefaultSubmissions();
+      }
+    }
+    return getDefaultSubmissions();
+  });
+
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [newLevel, setNewLevel] = useState(null);
   const [showAchievement, setShowAchievement] = useState(null);
@@ -76,6 +93,11 @@ export function useGameState() {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
   }, [gameState]);
+
+  // Save submissions to localStorage
+  useEffect(() => {
+    localStorage.setItem(SUBMISSIONS_KEY, JSON.stringify(submissions));
+  }, [submissions]);
 
   // Calculate current level
   const getCurrentLevel = useCallback(() => {
@@ -112,57 +134,55 @@ export function useGameState() {
     return false;
   }, [getDailyQuest]);
 
-  // Add XP with level-up check
-  const addXp = useCallback((amount, source = 'activity') => {
-    setGameState(prev => {
-      const oldLevel = getCurrentLevel();
-      let finalAmount = amount;
-
-      // Apply double XP if active
-      if (prev.doubleXpActive && source === 'activity') {
-        finalAmount = amount * 2;
-      }
-
-      const newXp = prev.xp + finalAmount;
-
-      // Check for level up
-      const newLevelData = LEVELS.reduce((acc, level) => {
-        if (newXp >= level.xpRequired) return level;
-        return acc;
-      }, LEVELS[0]);
-
-      if (newLevelData.level > oldLevel.level) {
-        setNewLevel(newLevelData);
-        setShowLevelUp(true);
-      }
-
-      return {
-        ...prev,
-        xp: newXp,
-        doubleXpActive: source === 'activity' ? false : prev.doubleXpActive,
-      };
-    });
-  }, [getCurrentLevel]);
-
-  // Add coins
-  const addCoins = useCallback((amount) => {
-    setGameState(prev => ({
-      ...prev,
-      coins: prev.coins + amount,
-    }));
+  // Validate teacher PIN
+  const validateTeacherPin = useCallback((pin) => {
+    return pin === TEACHER_PIN;
   }, []);
 
-  // Spend coins
-  const spendCoins = useCallback((amount) => {
-    if (gameState.coins >= amount) {
-      setGameState(prev => ({
-        ...prev,
-        coins: prev.coins - amount,
-      }));
-      return true;
-    }
-    return false;
-  }, [gameState.coins]);
+  // Submit activity for approval
+  const submitActivity = useCallback((activity, pathId, submissionData) => {
+    const submission = {
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      activityId: activity.id,
+      activityTitle: activity.title,
+      activityType: activity.type,
+      pathId,
+      xp: activity.xp,
+      playerName: gameState.playerName || 'Anonymous',
+      submissionType: submissionData.type, // 'link' or 'file'
+      submissionContent: submissionData.content, // URL or file data
+      submissionNote: submissionData.note || '',
+      submittedAt: new Date().toISOString(),
+      status: 'pending', // 'pending', 'approved', 'rejected'
+      teacherFeedback: '',
+    };
+
+    setSubmissions(prev => [...prev, submission]);
+    return submission;
+  }, [gameState.playerName]);
+
+  // Submit boss challenge for approval
+  const submitBossChallenge = useCallback((boss, submissionData) => {
+    const submission = {
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      activityId: boss.id,
+      activityTitle: boss.name,
+      activityType: 'Boss Challenge',
+      pathId: 'boss',
+      xp: boss.reward,
+      playerName: gameState.playerName || 'Anonymous',
+      submissionType: submissionData.type,
+      submissionContent: submissionData.content,
+      submissionNote: submissionData.note || '',
+      submittedAt: new Date().toISOString(),
+      status: 'pending',
+      teacherFeedback: '',
+      isBoss: true,
+    };
+
+    setSubmissions(prev => [...prev, submission]);
+    return submission;
+  }, [gameState.playerName]);
 
   // Check and unlock achievements
   const checkAchievements = useCallback((updatedState) => {
@@ -231,108 +251,190 @@ export function useGameState() {
     return newAchievements;
   }, []);
 
-  // Complete an activity
-  const completeActivity = useCallback((activity, pathId) => {
+  // Approve a submission (teacher action)
+  const approveSubmission = useCallback((submissionId, feedback = '') => {
+    const submission = submissions.find(s => s.id === submissionId);
+    if (!submission || submission.status !== 'pending') return;
+
+    // Update submission status
+    setSubmissions(prev => prev.map(s =>
+      s.id === submissionId
+        ? { ...s, status: 'approved', teacherFeedback: feedback, reviewedAt: new Date().toISOString() }
+        : s
+    ));
+
+    // Now complete the activity and award XP
     const today = new Date().toDateString();
+    const activity = { id: submission.activityId, type: submission.activityType, xp: submission.xp };
+    const pathId = submission.pathId;
     const isDailyQuestMatch = checkDailyQuestMatch(activity, pathId);
 
-    setGameState(prev => {
-      // Calculate streak
-      let newStreak = prev.currentStreak;
-      const lastDate = prev.lastActivityDate;
+    if (submission.isBoss) {
+      // Complete boss challenge
+      setGameState(prev => {
+        const updatedState = {
+          ...prev,
+          xp: prev.xp + submission.xp,
+          completedBossChallenges: [...prev.completedBossChallenges, submission.activityId],
+          guildXpContributed: prev.guild ? prev.guildXpContributed + submission.xp : prev.guildXpContributed,
+          pendingMysteryBoxes: prev.pendingMysteryBoxes + 1,
+        };
 
-      if (lastDate) {
-        const lastDateObj = new Date(lastDate);
-        const todayObj = new Date(today);
-        const diffDays = Math.floor((todayObj - lastDateObj) / 86400000);
-
-        if (diffDays === 1) {
-          newStreak = prev.currentStreak + 1;
-        } else if (diffDays > 1) {
-          newStreak = prev.streakShieldActive ? prev.currentStreak : 1;
+        const newAchievements = checkAchievements(updatedState);
+        if (newAchievements.length > 0) {
+          updatedState.unlockedAchievements = [...updatedState.unlockedAchievements, ...newAchievements.map(a => a.id)];
+          updatedState.xp += newAchievements.reduce((sum, a) => sum + a.xpReward, 0);
+          setTimeout(() => setShowAchievement(newAchievements[0]), 500);
         }
-      } else {
-        newStreak = 1;
-      }
 
-      // Calculate XP
-      let xpEarned = activity.xp || 100;
-      if (isDailyQuestMatch && !prev.dailyQuestCompleted) {
-        const quest = getDailyQuest();
-        xpEarned = Math.floor(xpEarned * quest.multiplier);
-      }
-      if (prev.doubleXpActive) {
-        xpEarned *= 2;
-      }
+        return updatedState;
+      });
+    } else {
+      // Complete regular activity
+      setGameState(prev => {
+        // Calculate streak
+        let newStreak = prev.currentStreak;
+        const lastDate = prev.lastActivityDate;
 
-      // Check if earned mystery box (every 3 activities)
-      const newTotal = prev.totalActivitiesCompleted + 1;
-      const earnedMysteryBox = newTotal % 3 === 0;
+        if (lastDate) {
+          const lastDateObj = new Date(lastDate);
+          const todayObj = new Date(today);
+          const diffDays = Math.floor((todayObj - lastDateObj) / 86400000);
 
-      const updatedState = {
-        ...prev,
-        xp: prev.xp + xpEarned,
-        completedActivities: [...new Set([...prev.completedActivities, activity.id])],
-        totalActivitiesCompleted: newTotal,
-        currentStreak: newStreak,
-        lastActivityDate: today,
-        streakShieldActive: false,
-        dailyQuestCompleted: isDailyQuestMatch ? true : prev.dailyQuestCompleted,
-        lastDailyQuestDate: isDailyQuestMatch ? today : prev.lastDailyQuestDate,
-        doubleXpActive: false,
-        collaborationCount: activity.type === 'Collaboration' ? prev.collaborationCount + 1 : prev.collaborationCount,
-        pathCompletions: {
-          ...prev.pathCompletions,
-          [pathId]: prev.pathCompletions[pathId] + 1,
-        },
-        guildXpContributed: prev.guild ? prev.guildXpContributed + xpEarned : prev.guildXpContributed,
-        pendingMysteryBoxes: earnedMysteryBox ? prev.pendingMysteryBoxes + 1 : prev.pendingMysteryBoxes,
-      };
+          if (diffDays === 1) {
+            newStreak = prev.currentStreak + 1;
+          } else if (diffDays > 1) {
+            newStreak = prev.streakShieldActive ? prev.currentStreak : 1;
+          }
+        } else {
+          newStreak = 1;
+        }
 
-      // Check for new achievements
-      const newAchievements = checkAchievements(updatedState);
-      if (newAchievements.length > 0) {
-        const firstNew = newAchievements[0];
-        updatedState.unlockedAchievements = [...updatedState.unlockedAchievements, ...newAchievements.map(a => a.id)];
-        updatedState.xp += newAchievements.reduce((sum, a) => sum + a.xpReward, 0);
-        setTimeout(() => setShowAchievement(firstNew), 500);
-      }
+        // Calculate XP
+        let xpEarned = submission.xp || 100;
+        if (isDailyQuestMatch && !prev.dailyQuestCompleted) {
+          const quest = getDailyQuest();
+          xpEarned = Math.floor(xpEarned * quest.multiplier);
+        }
+        if (prev.doubleXpActive) {
+          xpEarned *= 2;
+        }
 
-      // Check for level up
-      const oldLevel = LEVELS.reduce((acc, l) => prev.xp >= l.xpRequired ? l : acc, LEVELS[0]);
-      const newLevelData = LEVELS.reduce((acc, l) => updatedState.xp >= l.xpRequired ? l : acc, LEVELS[0]);
-      if (newLevelData.level > oldLevel.level) {
-        setTimeout(() => {
-          setNewLevel(newLevelData);
-          setShowLevelUp(true);
-        }, showAchievement ? 2000 : 500);
-      }
+        // Check if earned mystery box (every 3 activities)
+        const newTotal = prev.totalActivitiesCompleted + 1;
+        const earnedMysteryBox = newTotal % 3 === 0;
 
-      return updatedState;
-    });
-  }, [checkDailyQuestMatch, checkAchievements, getDailyQuest, showAchievement]);
+        const updatedState = {
+          ...prev,
+          xp: prev.xp + xpEarned,
+          completedActivities: [...new Set([...prev.completedActivities, submission.activityId])],
+          totalActivitiesCompleted: newTotal,
+          currentStreak: newStreak,
+          lastActivityDate: today,
+          streakShieldActive: false,
+          dailyQuestCompleted: isDailyQuestMatch ? true : prev.dailyQuestCompleted,
+          lastDailyQuestDate: isDailyQuestMatch ? today : prev.lastDailyQuestDate,
+          doubleXpActive: false,
+          collaborationCount: submission.activityType === 'Collaboration' ? prev.collaborationCount + 1 : prev.collaborationCount,
+          pathCompletions: {
+            ...prev.pathCompletions,
+            [pathId]: (prev.pathCompletions[pathId] || 0) + 1,
+          },
+          guildXpContributed: prev.guild ? prev.guildXpContributed + xpEarned : prev.guildXpContributed,
+          pendingMysteryBoxes: earnedMysteryBox ? prev.pendingMysteryBoxes + 1 : prev.pendingMysteryBoxes,
+        };
 
-  // Complete boss challenge
-  const completeBossChallenge = useCallback((bossId, reward) => {
+        // Check for new achievements
+        const newAchievements = checkAchievements(updatedState);
+        if (newAchievements.length > 0) {
+          updatedState.unlockedAchievements = [...updatedState.unlockedAchievements, ...newAchievements.map(a => a.id)];
+          updatedState.xp += newAchievements.reduce((sum, a) => sum + a.xpReward, 0);
+          setTimeout(() => setShowAchievement(newAchievements[0]), 500);
+        }
+
+        // Check for level up
+        const oldLevel = LEVELS.reduce((acc, l) => prev.xp >= l.xpRequired ? l : acc, LEVELS[0]);
+        const newLevelData = LEVELS.reduce((acc, l) => updatedState.xp >= l.xpRequired ? l : acc, LEVELS[0]);
+        if (newLevelData.level > oldLevel.level) {
+          setTimeout(() => {
+            setNewLevel(newLevelData);
+            setShowLevelUp(true);
+          }, 500);
+        }
+
+        return updatedState;
+      });
+    }
+  }, [submissions, checkDailyQuestMatch, checkAchievements, getDailyQuest]);
+
+  // Reject a submission (teacher action)
+  const rejectSubmission = useCallback((submissionId, feedback = '') => {
+    setSubmissions(prev => prev.map(s =>
+      s.id === submissionId
+        ? { ...s, status: 'rejected', teacherFeedback: feedback, reviewedAt: new Date().toISOString() }
+        : s
+    ));
+  }, []);
+
+  // Clear reviewed submissions
+  const clearReviewedSubmissions = useCallback(() => {
+    setSubmissions(prev => prev.filter(s => s.status === 'pending'));
+  }, []);
+
+  // Get pending submissions count
+  const getPendingCount = useCallback(() => {
+    return submissions.filter(s => s.status === 'pending').length;
+  }, [submissions]);
+
+  // Add XP with level-up check (keeping for compatibility)
+  const addXp = useCallback((amount, source = 'activity') => {
     setGameState(prev => {
-      const updatedState = {
-        ...prev,
-        xp: prev.xp + reward,
-        completedBossChallenges: [...prev.completedBossChallenges, bossId],
-        guildXpContributed: prev.guild ? prev.guildXpContributed + reward : prev.guildXpContributed,
-        pendingMysteryBoxes: prev.pendingMysteryBoxes + 1,
-      };
+      const oldLevel = getCurrentLevel();
+      let finalAmount = amount;
 
-      const newAchievements = checkAchievements(updatedState);
-      if (newAchievements.length > 0) {
-        updatedState.unlockedAchievements = [...updatedState.unlockedAchievements, ...newAchievements.map(a => a.id)];
-        updatedState.xp += newAchievements.reduce((sum, a) => sum + a.xpReward, 0);
-        setTimeout(() => setShowAchievement(newAchievements[0]), 500);
+      if (prev.doubleXpActive && source === 'activity') {
+        finalAmount = amount * 2;
       }
 
-      return updatedState;
+      const newXp = prev.xp + finalAmount;
+
+      const newLevelData = LEVELS.reduce((acc, level) => {
+        if (newXp >= level.xpRequired) return level;
+        return acc;
+      }, LEVELS[0]);
+
+      if (newLevelData.level > oldLevel.level) {
+        setNewLevel(newLevelData);
+        setShowLevelUp(true);
+      }
+
+      return {
+        ...prev,
+        xp: newXp,
+        doubleXpActive: source === 'activity' ? false : prev.doubleXpActive,
+      };
     });
-  }, [checkAchievements]);
+  }, [getCurrentLevel]);
+
+  // Add coins
+  const addCoins = useCallback((amount) => {
+    setGameState(prev => ({
+      ...prev,
+      coins: prev.coins + amount,
+    }));
+  }, []);
+
+  // Spend coins
+  const spendCoins = useCallback((amount) => {
+    if (gameState.coins >= amount) {
+      setGameState(prev => ({
+        ...prev,
+        coins: prev.coins - amount,
+      }));
+      return true;
+    }
+    return false;
+  }, [gameState.coins]);
 
   // Join guild
   const joinGuild = useCallback((guildId) => {
@@ -347,7 +449,6 @@ export function useGameState() {
   const openMysteryBox = useCallback(() => {
     if (gameState.pendingMysteryBoxes <= 0) return null;
 
-    // Weighted random selection
     const weights = { common: 50, uncommon: 30, rare: 15, epic: 5 };
     const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
     let random = Math.random() * totalWeight;
@@ -430,18 +531,25 @@ export function useGameState() {
   // Reset game (for testing)
   const resetGame = useCallback(() => {
     setGameState(getDefaultState());
+    setSubmissions(getDefaultSubmissions());
   }, []);
 
   return {
     gameState,
+    submissions,
     getCurrentLevel,
     getNextLevelXp,
     getDailyQuest,
     addXp,
     addCoins,
     spendCoins,
-    completeActivity,
-    completeBossChallenge,
+    submitActivity,
+    submitBossChallenge,
+    approveSubmission,
+    rejectSubmission,
+    clearReviewedSubmissions,
+    getPendingCount,
+    validateTeacherPin,
     joinGuild,
     openMysteryBox,
     buyAvatarItem,

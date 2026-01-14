@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { mockBackend } from '../services/mockBackend';
+import { realBackend as backend } from '../services/realBackend';
 
 const AuthContext = createContext(null);
 
@@ -18,7 +18,7 @@ export function AuthProvider({ children }) {
 
   const loginTeacher = async (email, password) => {
     try {
-      const teacher = await mockBackend.loginTeacher(email, password);
+      const teacher = await backend.loginTeacher(email, password);
       setUser(teacher);
       sessionStorage.setItem('lvlup_user', JSON.stringify(teacher));
       return { success: true };
@@ -29,7 +29,7 @@ export function AuthProvider({ children }) {
 
   const registerTeacher = async (name, email, password) => {
     try {
-      const teacher = await mockBackend.registerTeacher(name, email, password);
+      const teacher = await backend.registerTeacher(name, email, password);
       setUser(teacher);
       sessionStorage.setItem('lvlup_user', JSON.stringify(teacher));
       return { success: true };
@@ -40,7 +40,7 @@ export function AuthProvider({ children }) {
 
   const joinClassAsStudent = async (classCode, username) => {
     try {
-      const student = await mockBackend.joinClass(classCode, username);
+      const student = await backend.joinClass(classCode, username);
       setUser(student);
       sessionStorage.setItem('lvlup_user', JSON.stringify(student));
       return { success: true };

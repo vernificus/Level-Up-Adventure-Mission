@@ -1,46 +1,16 @@
 # Multi-User System Implementation
 
-This project has been updated to support multiple teachers and multiple classes.
+This project is configured to support multiple teachers and multiple classes using **Firebase**.
 
 ## Architecture
 
-The application is structured to support a transition from a local "Mock Backend" to a real Firebase implementation.
+- **Backend:** Firebase (Authentication & Cloud Firestore)
+- **Frontend:** React (Vite)
+- **State Management:** React Context + Hooks
 
-### Current Implementation: Mock Backend
-Currently, the application runs in a **Demo Mode** using `localStorage` to simulate a database. This allows for:
-- Creating Teacher Accounts
-- Creating Classes
-- Student Joining via Class Code
-- Submitting Work
-- Teacher Reviewing Work
+## Configuration
 
-All data is stored in the browser's `localStorage` under the key `lvlup_v2_db`.
-
-### How to Switch to Firebase
-
-To make this a production-ready multi-device application, follow these steps:
-
-1.  **Create a Firebase Project** at [firebase.google.com](https://firebase.google.com).
-2.  **Enable Authentication** (Email/Password).
-3.  **Enable Cloud Firestore**.
-4.  **Create `src/services/firebase.js`**:
-    ```javascript
-    import { initializeApp } from "firebase/app";
-    import { getFirestore } from "firebase/firestore";
-    import { getAuth } from "firebase/auth";
-
-    const firebaseConfig = {
-      // Your config from Firebase Console
-    };
-
-    const app = initializeApp(firebaseConfig);
-    export const db = getFirestore(app);
-    export const auth = getAuth(app);
-    ```
-5.  **Create `src/services/firebaseBackend.js`**:
-    - Implement the same methods as `src/services/mockBackend.js` (e.g., `loginTeacher`, `createClass`) but using Firebase SDK calls.
-6.  **Update `src/context/AuthContext.jsx`**:
-    - Import `backend` from the new firebase backend file instead of `mockBackend`.
+The Firebase configuration is located in `src/services/firebase.js`. It is currently set up with the provided project credentials.
 
 ## User Guide
 
@@ -56,3 +26,10 @@ To make this a production-ready multi-device application, follow these steps:
 2. Enter the **Class Code** provided by your teacher.
 3. Enter your name.
 4. Complete activities and submit them!
+
+## Development
+
+If you wish to switch back to a local-only mock backend for development purposes:
+1. Open `src/context/AuthContext.jsx`.
+2. Change the import `import { realBackend as backend } from '../services/realBackend';` to `import { mockBackend as backend } from '../services/mockBackend';`.
+3. Do the same for `src/hooks/useGameState.js` and `src/components/TeacherPortal.jsx`.

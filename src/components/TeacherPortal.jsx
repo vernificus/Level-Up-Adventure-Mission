@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { mockBackend } from '../services/mockBackend';
+import { realBackend as backend } from '../services/realBackend';
 import {
   Users, Plus, LogOut, BookOpen, ClipboardList, CheckCircle2,
   XCircle, Clock, ChevronRight, GraduationCap, Copy
@@ -27,13 +27,13 @@ export default function TeacherPortal() {
   }, [selectedClass]);
 
   const loadClasses = async () => {
-    const data = await mockBackend.getClasses(user.id);
+    const data = await backend.getClasses(user.id);
     setClasses(data);
   };
 
   const loadSubmissions = async (classId) => {
     setLoading(true);
-    const data = await mockBackend.getSubmissions(classId);
+    const data = await backend.getSubmissions(classId);
     setSubmissions(data);
     setLoading(false);
   };
@@ -41,14 +41,14 @@ export default function TeacherPortal() {
   const handleCreateClass = async (e) => {
     e.preventDefault();
     if (!newClassName.trim()) return;
-    await mockBackend.createClass(user.id, newClassName);
+    await backend.createClass(user.id, newClassName);
     setNewClassName('');
     setCreatingClass(false);
     loadClasses();
   };
 
   const handleReview = async (submissionId, status, feedback) => {
-    await mockBackend.reviewSubmission(submissionId, status, feedback);
+    await backend.reviewSubmission(submissionId, status, feedback);
     loadSubmissions(selectedClass.id); // Refresh
   };
 

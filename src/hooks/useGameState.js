@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { LEVELS, ACHIEVEMENTS, DAILY_QUESTS, MYSTERY_REWARDS } from '../data/gameData';
-import { mockBackend } from '../services/mockBackend';
+import { realBackend as backend } from '../services/realBackend';
 import { useAuth } from '../context/AuthContext';
 
 const getDefaultState = () => ({
@@ -54,15 +54,19 @@ export function useGameState() {
 
   const loadUserData = async () => {
     // In a real app with Firebase, this would be a real-time listener (onSnapshot)
-    const studentData = await mockBackend.getStudent(user.id);
+    const studentData = await backend.getStudent(user.id);
     if (studentData) {
       // Filter out non-game keys if necessary, but spreading is fine for now
       // exclude ID, classId, etc if they conflict, but here we just want game state
-      const { id, classId, ...gameData } = studentData;
-      setGameState(prev => ({ ...prev, ...gameData }));
+      const { id, classId, name, ...gameData } = studentData;
+      setGameState(prev => ({
+        ...prev,
+        ...gameData,
+        playerName: name || prev.playerName
+      }));
     }
 
-    const subs = await mockBackend.getStudentSubmissions(user.id);
+    const subs = await backend.getStudentSubmissions(user.id);
     setSubmissions(subs);
   };
 
@@ -71,7 +75,7 @@ export function useGameState() {
   useEffect(() => {
     if (user && user.role === 'student') {
       // We only save specific game fields, not the whole user object structure
-      mockBackend.updateStudent(user.id, gameState);
+      backend.updateStudent(user.id, gameState);
     }
   }, [gameState, user]);
 
@@ -202,7 +206,7 @@ export function useGameState() {
     if (!user || user.role !== 'student') return;
 
     // Create submission in backend
-    const newSubmission = await mockBackend.createSubmission(user.id, user.classId, {
+    const newSubmission = await backend.createSubmission(user.id, user.classId, {
       activityId: activity.id,
       activityTitle: activity.title,
       activityType: activity.type,
@@ -223,7 +227,7 @@ export function useGameState() {
   const submitBossChallenge = useCallback(async (boss, submissionData) => {
     if (!user || user.role !== 'student') return;
 
-    const newSubmission = await mockBackend.createSubmission(user.id, user.classId, {
+    const newSubmission = await backend.createSubmission(user.id, user.classId, {
       activityId: boss.id,
       activityTitle: boss.name,
       activityType: 'Boss Challenge',
@@ -245,7 +249,7 @@ export function useGameState() {
   useEffect(() => {
     if (user && user.role === 'student') {
       const interval = setInterval(async () => {
-        const subs = await mockBackend.getStudentSubmissions(user.id);
+        const subs = await backend.getStudentSubmissions(user.id);
 
         // Check if any submission just got approved compared to local state
         // and trigger XP update

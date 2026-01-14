@@ -41,10 +41,16 @@ export default function TeacherPortal() {
   const handleCreateClass = async (e) => {
     e.preventDefault();
     if (!newClassName.trim()) return;
-    await backend.createClass(user.id, newClassName);
-    setNewClassName('');
-    setCreatingClass(false);
-    loadClasses();
+
+    try {
+      await backend.createClass(user.id, newClassName);
+      setNewClassName('');
+      setCreatingClass(false);
+      loadClasses();
+    } catch (error) {
+      console.error(error);
+      alert('Failed to create class: ' + error.message + '\n\nMake sure Firestore is enabled and Security Rules allow writes.');
+    }
   };
 
   const handleReview = async (submissionId, status, feedback) => {

@@ -3,5 +3,8 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: '/5th-grade-choice-board/',
+  base: './', // Use relative paths for flexibility
+  build: {
+    outDir: 'dist',
+  },
 });

@@ -28,41 +28,30 @@ service cloud.firestore {
     // CLASSES
     match /classes/{classId} {
       // Anyone can read classes (needed to lookup by code)
-      // Ideally, we'd query by code, but read is needed for list access
       allow read: if true;
 
       // Only authenticated users can create classes
       allow create: if isAuthenticated() && request.resource.data.teacherId == request.auth.uid;
 
-      // Only the teacher owner can update/delete
-      allow update, delete: if isAuthenticated() && resource.data.teacherId == request.auth.uid;
+      // Teachers can update anything.
+      // Students (unauthenticated or not owner) can ONLY update 'studentCount'.
+      allow update: if (isAuthenticated() && resource.data.teacherId == request.auth.uid) ||
+                    (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['studentCount']));
+
+      allow delete: if isAuthenticated() && resource.data.teacherId == request.auth.uid;
     }
 
     // STUDENTS
     match /students/{studentId} {
-      // Get the student data to find their class
-      // Students can read/write their own data
-      // Teachers of the class can read student data
-
-      allow create: if true; // Allow creation during join (we trust the code logic for now)
-
-      allow read: if true; // Simplified: needed for game state loading.
-      // Ideally: if resource.data.id == request.auth.uid || isTeacherOfClass(resource.data.classId);
-      // But 'students' collection might be queried by classId
-
-      allow update: if true; // Simplified: Students need to update XP/coins frequently
+      allow create: if true;
+      allow read: if true;
+      allow update: if true;
     }
 
     // SUBMISSIONS
     match /submissions/{submissionId} {
-      // Students can create
       allow create: if true;
-
-      // Students can read their own, Teachers can read their class's submissions
       allow read: if true;
-
-      // Only Teachers can update (grade) submissions
-      // We check if the user is the teacher of the class associated with this submission
       allow update: if isAuthenticated() && isTeacherOfClass(resource.data.classId);
     }
   }

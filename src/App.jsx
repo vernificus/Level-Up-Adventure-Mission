@@ -2,12 +2,16 @@ import React, { useState, useRef } from 'react';
 import {
   Gamepad2, Mic, BarChart3, Palette, CheckCircle2, Trophy, Rocket, Info, X, PlayCircle,
   Star, Gift, Swords, Users, User, Sparkles, Zap, Shield, Crown, Target,
-  Upload, Link, Clock, CheckCheck, XCircle, ClipboardList, Lock, Eye, FileText
+  Upload, Link, Clock, CheckCheck, XCircle, ClipboardList, Lock, Eye, FileText, LogOut
 } from 'lucide-react';
 import { useGameState } from './hooks/useGameState';
 import {
   LEVELS, ACHIEVEMENTS, GUILDS, AVATAR_ITEMS, BOSS_CHALLENGES, LEARNING_PATHS
 } from './data/gameData';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import LoginScreen from './components/LoginScreen';
+import TeacherPortal from './components/TeacherPortal';
+import { FileViewer } from './components/FileViewer'; // Import shared component
 
 const IconMap = { Mic, BarChart3, Palette };
 
@@ -16,6 +20,7 @@ function PlayerStats({ gameState, getCurrentLevel, getNextLevelXp, onOpenProfile
   const currentLevel = getCurrentLevel();
   const nextLevelXp = getNextLevelXp();
   const progress = ((gameState.xp - currentLevel.xpRequired) / (nextLevelXp - currentLevel.xpRequired)) * 100;
+  const { logout } = useAuth();
 
   return (
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 mb-6">
@@ -75,6 +80,13 @@ function PlayerStats({ gameState, getCurrentLevel, getNextLevelXp, onOpenProfile
               <span className="font-bold">{gameState.pendingMysteryBoxes}</span>
             </button>
           )}
+          <button
+             onClick={logout}
+             className="ml-2 text-slate-500 hover:text-white"
+             title="Logout"
+           >
+             <LogOut className="w-5 h-5" />
+           </button>
         </div>
       </div>
 
@@ -456,70 +468,6 @@ function SubmissionForm({ activityTitle, onSubmit, onCancel }) {
   );
 }
 
-// ============== FILE VIEWER COMPONENT ==============
-function FileViewer({ content, fileName, fileType }) {
-  if (!content) return null;
-
-  // Check if it's an image
-  if (fileType?.startsWith('image/')) {
-    return (
-      <div className="mt-2">
-        <img src={content} alt={fileName} className="max-w-full max-h-64 rounded-lg border border-slate-600" />
-      </div>
-    );
-  }
-
-  // Check if it's a PDF
-  if (fileType === 'application/pdf') {
-    return (
-      <div className="mt-2">
-        <a
-          href={content}
-          download={fileName}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white font-bold"
-        >
-          <FileText className="w-5 h-5" /> Download PDF: {fileName}
-        </a>
-      </div>
-    );
-  }
-
-  // Check if it's audio
-  if (fileType?.startsWith('audio/')) {
-    return (
-      <div className="mt-2">
-        <audio controls src={content} className="w-full">
-          Your browser does not support audio playback.
-        </audio>
-      </div>
-    );
-  }
-
-  // Check if it's video
-  if (fileType?.startsWith('video/')) {
-    return (
-      <div className="mt-2">
-        <video controls src={content} className="max-w-full max-h-64 rounded-lg">
-          Your browser does not support video playback.
-        </video>
-      </div>
-    );
-  }
-
-  // Default: download link for other file types
-  return (
-    <div className="mt-2">
-      <a
-        href={content}
-        download={fileName}
-        className="inline-flex items-center gap-2 px-4 py-2 bg-slate-600 hover:bg-slate-500 rounded-lg text-white font-bold"
-      >
-        <FileText className="w-5 h-5" /> Download: {fileName}
-      </a>
-    </div>
-  );
-}
-
 // ============== MY SUBMISSIONS ==============
 function MySubmissions({ submissions, onClose }) {
   const mySubmissions = submissions.filter(s => s.status !== 'approved' || new Date(s.reviewedAt) > new Date(Date.now() - 86400000));
@@ -563,221 +511,6 @@ function MySubmissions({ submissions, onClose }) {
             ))}
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-// ============== TEACHER DASHBOARD ==============
-function TeacherDashboard({ submissions, onApprove, onReject, onClear, onClose }) {
-  const [selectedSubmission, setSelectedSubmission] = useState(null);
-  const [feedback, setFeedback] = useState('');
-
-  const pendingSubmissions = submissions.filter(s => s.status === 'pending');
-  const reviewedSubmissions = submissions.filter(s => s.status !== 'pending');
-
-  const handleApprove = (id) => {
-    onApprove(id, feedback);
-    setSelectedSubmission(null);
-    setFeedback('');
-  };
-
-  const handleReject = (id) => {
-    onReject(id, feedback);
-    setSelectedSubmission(null);
-    setFeedback('');
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
-      <div className="bg-slate-800 border-2 border-green-500 rounded-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-2xl font-black uppercase italic flex items-center gap-2">
-            <ClipboardList className="w-8 h-8 text-green-500" /> Teacher Dashboard
-          </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        {selectedSubmission ? (
-          <div>
-            <button onClick={() => setSelectedSubmission(null)} className="text-sm text-slate-400 hover:text-white mb-4">
-              ← Back to list
-            </button>
-
-            <div className="bg-slate-700 rounded-xl p-4 mb-4">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <p className="font-black text-xl text-white">{selectedSubmission.activityTitle}</p>
-                  <p className="text-sm text-slate-400">by {selectedSubmission.playerName}</p>
-                  <p className="text-xs text-slate-500">{new Date(selectedSubmission.submittedAt).toLocaleString()}</p>
-                </div>
-                <span className="bg-yellow-500 text-slate-900 px-3 py-1 rounded-full font-bold text-sm">
-                  +{selectedSubmission.xp} XP
-                </span>
-              </div>
-
-              <div className="bg-slate-800 p-3 rounded-lg mb-4">
-                <p className="text-xs text-slate-400 mb-1">Submission ({selectedSubmission.submissionType}):</p>
-                {selectedSubmission.submissionType === 'link' ? (
-                  <a href={selectedSubmission.submissionContent} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline break-all">
-                    {selectedSubmission.submissionContent}
-                  </a>
-                ) : (
-                  <div>
-                    <p className="text-white text-sm mb-2">{selectedSubmission.fileName || 'Uploaded file'}</p>
-                    <FileViewer
-                      content={selectedSubmission.submissionContent}
-                      fileName={selectedSubmission.fileName}
-                      fileType={selectedSubmission.fileType}
-                    />
-                  </div>
-                )}
-              </div>
-
-              {selectedSubmission.submissionNote && (
-                <div className="bg-slate-800 p-3 rounded-lg mb-4">
-                  <p className="text-xs text-slate-400 mb-1">Student note:</p>
-                  <p className="text-white text-sm">{selectedSubmission.submissionNote}</p>
-                </div>
-              )}
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-bold text-slate-300 mb-2">Feedback (optional)</label>
-              <textarea
-                value={feedback}
-                onChange={(e) => setFeedback(e.target.value)}
-                placeholder="Great job! / Try adding more detail..."
-                rows={2}
-                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-green-500 focus:outline-none resize-none"
-              />
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => handleReject(selectedSubmission.id)}
-                className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
-              >
-                <XCircle className="w-5 h-5" /> Needs Revision
-              </button>
-              <button
-                onClick={() => handleApprove(selectedSubmission.id)}
-                className="flex-1 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
-              >
-                <CheckCheck className="w-5 h-5" /> Approve
-              </button>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="mb-6">
-              <h4 className="font-bold text-slate-300 uppercase text-xs tracking-widest mb-3">
-                Pending Review ({pendingSubmissions.length})
-              </h4>
-              {pendingSubmissions.length === 0 ? (
-                <p className="text-slate-500 text-sm py-4 text-center">No pending submissions</p>
-              ) : (
-                <div className="space-y-2">
-                  {pendingSubmissions.map(sub => (
-                    <button
-                      key={sub.id}
-                      onClick={() => setSelectedSubmission(sub)}
-                      className="w-full p-4 bg-slate-700 hover:bg-slate-600 rounded-xl text-left transition-colors flex items-center justify-between"
-                    >
-                      <div>
-                        <p className="font-bold text-white">{sub.activityTitle}</p>
-                        <p className="text-sm text-slate-400">{sub.playerName} • {new Date(sub.submittedAt).toLocaleDateString()}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-yellow-400 font-bold text-sm">+{sub.xp} XP</span>
-                        <Eye className="w-5 h-5 text-slate-400" />
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {reviewedSubmissions.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-bold text-slate-300 uppercase text-xs tracking-widest">
-                    Recently Reviewed ({reviewedSubmissions.length})
-                  </h4>
-                  <button onClick={onClear} className="text-xs text-slate-500 hover:text-slate-300">
-                    Clear history
-                  </button>
-                </div>
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {reviewedSubmissions.slice(0, 10).map(sub => (
-                    <div key={sub.id} className={`p-3 rounded-lg ${sub.status === 'approved' ? 'bg-green-900/20' : 'bg-red-900/20'}`}>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-bold text-white text-sm">{sub.activityTitle}</p>
-                          <p className="text-xs text-slate-400">{sub.playerName}</p>
-                        </div>
-                        <span className={`text-xs font-bold ${sub.status === 'approved' ? 'text-green-400' : 'text-red-400'}`}>
-                          {sub.status === 'approved' ? 'Approved' : 'Rejected'}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ============== TEACHER PIN MODAL ==============
-function TeacherPinModal({ onValidate, onClose }) {
-  const [pin, setPin] = useState('');
-  const [error, setError] = useState(false);
-
-  const handleSubmit = () => {
-    if (onValidate(pin)) {
-      onClose(true);
-    } else {
-      setError(true);
-      setPin('');
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
-      <div className="bg-slate-800 border-2 border-green-500 rounded-2xl max-w-sm w-full p-6">
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center p-3 bg-green-600 rounded-full mb-4">
-            <Lock className="w-8 h-8 text-white" />
-          </div>
-          <h3 className="text-xl font-black uppercase italic">Teacher Access</h3>
-          <p className="text-slate-400 text-sm mt-2">Enter PIN to view submissions</p>
-        </div>
-
-        <input
-          type="password"
-          value={pin}
-          onChange={(e) => { setPin(e.target.value); setError(false); }}
-          placeholder="Enter PIN"
-          className={`w-full px-4 py-3 bg-slate-700 border-2 rounded-lg text-white text-center text-2xl tracking-widest font-bold placeholder-slate-500 focus:outline-none ${error ? 'border-red-500' : 'border-slate-600 focus:border-green-500'}`}
-          onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-          autoFocus
-        />
-        {error && <p className="text-red-400 text-sm text-center mt-2">Incorrect PIN</p>}
-
-        <div className="flex gap-3 mt-6">
-          <button onClick={() => onClose(false)} className="flex-1 py-3 bg-slate-700 text-slate-300 font-bold rounded-xl">
-            Cancel
-          </button>
-          <button onClick={handleSubmit} className="flex-1 py-3 bg-green-600 text-white font-bold rounded-xl">
-            Enter
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -1128,8 +861,8 @@ function InstructionModal({ activity, path, onSubmit, onClose, dailyQuest, daily
   );
 }
 
-// ============== MAIN APP ==============
-export default function App() {
+// ============== GAME CONTENT ==============
+function GameContent() {
   const {
     gameState,
     submissions,
@@ -1138,10 +871,6 @@ export default function App() {
     getDailyQuest,
     submitActivity,
     submitBossChallenge,
-    approveSubmission,
-    rejectSubmission,
-    clearReviewedSubmissions,
-    validateTeacherPin,
     joinGuild,
     openMysteryBox,
     buyAvatarItem,
@@ -1163,14 +892,13 @@ export default function App() {
   const [showAvatarBuilder, setShowAvatarBuilder] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [showMySubmissions, setShowMySubmissions] = useState(false);
-  const [showTeacherPin, setShowTeacherPin] = useState(false);
-  const [showTeacherDashboard, setShowTeacherDashboard] = useState(false);
 
   const dailyQuest = getDailyQuest();
 
-  const pendingActivities = submissions.filter(s => s.status === 'pending' && !s.isBoss).map(s => s.activityId);
-  const pendingBossIds = submissions.filter(s => s.status === 'pending' && s.isBoss).map(s => s.activityId);
-  const myPendingCount = submissions.filter(s => s.status === 'pending').length;
+  // Helper to extract pending status safely
+  const pendingActivities = submissions ? submissions.filter(s => s.status === 'pending' && !s.isBoss).map(s => s.activityId) : [];
+  const pendingBossIds = submissions ? submissions.filter(s => s.status === 'pending' && s.isBoss).map(s => s.activityId) : [];
+  const myPendingCount = submissions ? submissions.filter(s => s.status === 'pending').length : 0;
 
   const handleSelect = (pathId, activity) => {
     setSelectedPath(prev => ({ ...prev, [pathId]: activity.id }));
@@ -1184,13 +912,6 @@ export default function App() {
 
   const handleSubmitBoss = (boss, submissionData) => {
     submitBossChallenge(boss, submissionData);
-  };
-
-  const handleTeacherPinResult = (success) => {
-    setShowTeacherPin(false);
-    if (success) {
-      setShowTeacherDashboard(true);
-    }
   };
 
   // Check for current boss pending status
@@ -1232,13 +953,6 @@ export default function App() {
             <span className="text-xs bg-yellow-500 text-slate-900 px-2 py-0.5 rounded-full">
               {gameState.unlockedAchievements.length}/{ACHIEVEMENTS.length}
             </span>
-          </button>
-          <button
-            onClick={() => setShowTeacherPin(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg hover:border-green-500 transition-colors ml-auto"
-          >
-            <Lock className="w-5 h-5 text-green-500" />
-            <span className="font-bold">Teacher</span>
           </button>
         </div>
 
@@ -1306,11 +1020,34 @@ export default function App() {
       {showTrophyCase && <TrophyCase achievements={gameState.unlockedAchievements} onClose={() => setShowTrophyCase(false)} />}
       {showAvatarBuilder && <AvatarBuilder gameState={gameState} onBuy={buyAvatarItem} onEquip={equipAvatarItem} onClose={() => setShowAvatarBuilder(false)} onSetName={setPlayerName} />}
       {showMySubmissions && <MySubmissions submissions={submissions} onClose={() => setShowMySubmissions(false)} />}
-      {showTeacherPin && <TeacherPinModal onValidate={validateTeacherPin} onClose={handleTeacherPinResult} />}
-      {showTeacherDashboard && <TeacherDashboard submissions={submissions} onApprove={approveSubmission} onReject={rejectSubmission} onClear={clearReviewedSubmissions} onClose={() => setShowTeacherDashboard(false)} />}
       {showMysteryReward && <MysteryBoxModal reward={showMysteryReward} onClose={() => setShowMysteryReward(null)} />}
       {showLevelUp && newLevel && <LevelUpModal level={newLevel} onClose={() => setShowLevelUp(false)} />}
       {showAchievement && <AchievementModal achievement={showAchievement} onClose={() => setShowAchievement(null)} />}
     </div>
+  );
+}
+
+// ============== MAIN APP ROUTER ==============
+function AppContent() {
+  const { user, loading } = useAuth();
+
+  if (loading) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Loading...</div>;
+
+  if (!user) {
+    return <LoginScreen />;
+  }
+
+  if (user.role === 'teacher') {
+    return <TeacherPortal />;
+  }
+
+  return <GameContent />;
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }

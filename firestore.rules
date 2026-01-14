@@ -1,0 +1,58 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isTeacherOfClass(classId) {
+      // Get the class document to check the teacherId
+      let classData = get(/databases/$(database)/documents/classes/$(classId)).data;
+      return classData.teacherId == request.auth.uid;
+    }
+
+    // =========================================================
+
+    // TEACHERS
+    // Only the teacher can read/write their own profile
+    match /teachers/{teacherId} {
+      allow read, write: if isOwner(teacherId);
+    }
+
+    // CLASSES
+    match /classes/{classId} {
+      // Anyone can read classes (needed to lookup by code)
+      allow read: if true;
+
+      // Only authenticated users can create classes
+      allow create: if isAuthenticated() && request.resource.data.teacherId == request.auth.uid;
+
+      // Teachers can update anything.
+      // Students (unauthenticated or not owner) can ONLY update 'studentCount'.
+      allow update: if (isAuthenticated() && resource.data.teacherId == request.auth.uid) ||
+                    (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['studentCount']));
+
+      allow delete: if isAuthenticated() && resource.data.teacherId == request.auth.uid;
+    }
+
+    // STUDENTS
+    match /students/{studentId} {
+      allow create: if true;
+      allow read: if true;
+      allow update: if true;
+    }
+
+    // SUBMISSIONS
+    match /submissions/{submissionId} {
+      allow create: if true;
+      allow read: if true;
+      allow update: if isAuthenticated() && isTeacherOfClass(resource.data.classId);
+    }
+  }
+}

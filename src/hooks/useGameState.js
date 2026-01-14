@@ -205,6 +205,15 @@ export function useGameState() {
   const submitActivity = useCallback(async (activity, pathId, submissionData) => {
     if (!user || user.role !== 'student') return;
 
+    // Check if already has pending submission for this activity
+    const existingPending = submissions.find(
+      s => s.activityId === activity.id && s.status === 'pending'
+    );
+    if (existingPending) {
+      console.log('Already has pending submission for this activity');
+      return existingPending;
+    }
+
     // Create submission in backend
     const newSubmission = await backend.createSubmission(user.id, user.classId, {
       activityId: activity.id,
@@ -216,16 +225,27 @@ export function useGameState() {
       submissionType: submissionData.type,
       submissionContent: submissionData.content,
       submissionNote: submissionData.note,
+      fileName: submissionData.fileName,
+      fileType: submissionData.fileType,
       isBoss: false
     });
 
     setSubmissions(prev => [...prev, newSubmission]);
     return newSubmission;
-  }, [user, gameState.playerName]);
+  }, [user, gameState.playerName, submissions]);
 
   // Submit boss challenge
   const submitBossChallenge = useCallback(async (boss, submissionData) => {
     if (!user || user.role !== 'student') return;
+
+    // Check if already has pending submission for this boss
+    const existingPending = submissions.find(
+      s => s.activityId === boss.id && s.status === 'pending' && s.isBoss
+    );
+    if (existingPending) {
+      console.log('Already has pending submission for this boss');
+      return existingPending;
+    }
 
     const newSubmission = await backend.createSubmission(user.id, user.classId, {
       activityId: boss.id,
@@ -237,34 +257,54 @@ export function useGameState() {
       submissionType: submissionData.type,
       submissionContent: submissionData.content,
       submissionNote: submissionData.note,
+      fileName: submissionData.fileName,
+      fileType: submissionData.fileType,
       isBoss: true
     });
 
     setSubmissions(prev => [...prev, newSubmission]);
     return newSubmission;
-  }, [user, gameState.playerName]);
+  }, [user, gameState.playerName, submissions]);
 
   // Since approval happens in TeacherPortal now, the student just needs to poll or listen for updates.
   // We'll add a poller for simplicity in this demo.
   useEffect(() => {
     if (user && user.role === 'student') {
       const interval = setInterval(async () => {
-        const subs = await backend.getStudentSubmissions(user.id);
+        try {
+          const subs = await backend.getStudentSubmissions(user.id);
 
-        // Check if any submission just got approved compared to local state
-        // and trigger XP update
+          // Only update if we got valid data
+          if (!Array.isArray(subs)) {
+            console.warn('Invalid submissions data received');
+            return;
+          }
 
-        setSubmissions(currentSubs => {
-           subs.forEach(serverSub => {
-             const localSub = currentSubs.find(s => s.id === serverSub.id);
-             if (serverSub.status === 'approved' && (!localSub || localSub.status !== 'approved')) {
-               processReward(serverSub);
-             }
-           });
-           return subs;
-        });
+          // Check if any submission just got approved compared to local state
+          // and trigger XP update
+          setSubmissions(currentSubs => {
+            // Process rewards for newly approved submissions
+            subs.forEach(serverSub => {
+              const localSub = currentSubs.find(s => s.id === serverSub.id);
+              if (serverSub.status === 'approved' && (!localSub || localSub.status !== 'approved')) {
+                processReward(serverSub);
+              }
+            });
 
-      }, 2000); // Poll every 2 seconds
+            // Merge: keep local pending submissions that might not be on server yet
+            const serverIds = new Set(subs.map(s => s.id));
+            const localOnlyPending = currentSubs.filter(
+              s => s.status === 'pending' && !serverIds.has(s.id)
+            );
+
+            // Return server data plus any local-only pending submissions
+            return [...subs, ...localOnlyPending];
+          });
+        } catch (error) {
+          console.error('Error polling submissions:', error);
+          // Don't reset state on error - keep existing submissions
+        }
+      }, 3000); // Poll every 3 seconds (slightly longer to reduce load)
       return () => clearInterval(interval);
     }
   }, [user]);

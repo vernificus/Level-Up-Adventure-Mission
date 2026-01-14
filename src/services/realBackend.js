@@ -154,8 +154,6 @@ export const realBackend = {
   // ================= ACTIVITIES =================
   async saveClassActivities(classId, activities) {
     try {
-      // Store activities in a subcollection or separate collection?
-      // Since it's infrequent, let's store it on the class document itself for simplicity and speed
       await updateDoc(doc(db, "classes", classId), { activities });
       return true;
     } catch (error) {

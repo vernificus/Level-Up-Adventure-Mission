@@ -81,29 +81,24 @@ export default function TeacherPortal() {
     // No need to reload, subscription handles it
   };
 
-  const handleRefresh = () => {
+ const handleRefresh = async () => {
+  if (!selectedClass) {
     loadClasses();
-    if (selectedClass) {
-        // Trigger reload by resetting selectedClass briefly or just calling fetch
-        // Since we have realtime subscriptions for submissions, we mostly need to refresh students/metadata
-        backend.getStudents(selectedClass.id).then(setStudents);
-    }
-  };
+    return;
+  }
+  setLoading(true);
+  await loadClasses();
+  const data = await backend.getStudents(selectedClass.id);
+  setStudents(data);
+  setLoading(false);
+};
 
   const copyCode = (code) => {
     navigator.clipboard.writeText(code);
     alert('Class code copied!');
   };
 
-  const handleRefresh = async () => {
-    if (!selectedClass) return;
-    setLoading(true);
-    const data = await backend.getStudents(selectedClass.id);
-    setStudents(data);
-    setLoading(false);
-  };
-
-  // Filter submissions
+   // Filter submissions
   const pending = submissions.filter(s => s.status === 'pending');
   const reviewed = submissions.filter(s => s.status !== 'pending');
 

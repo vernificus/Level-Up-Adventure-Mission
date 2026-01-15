@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { realBackend as backend } from '../services/realBackend';
 import {
   Users, Plus, LogOut, BookOpen, ClipboardList, CheckCircle2,
-  XCircle, Clock, ChevronRight, GraduationCap, Copy, Trash2, Edit, RefreshCw
+  XCircle, Clock, ChevronRight, GraduationCap, Copy, Trash2, Edit, RefreshCw // <-- Add RefreshCw here
 } from 'lucide-react';
 import { FileViewer } from './FileViewer';
 
@@ -93,6 +93,14 @@ export default function TeacherPortal() {
   const copyCode = (code) => {
     navigator.clipboard.writeText(code);
     alert('Class code copied!');
+  };
+
+  const handleRefresh = async () => {
+    if (!selectedClass) return;
+    setLoading(true);
+    const data = await backend.getStudents(selectedClass.id);
+    setStudents(data);
+    setLoading(false);
   };
 
   // Filter submissions

@@ -11,10 +11,12 @@ import {
   getDocs,
   addDoc,
   updateDoc,
+  deleteDoc,
   query,
   where,
   setDoc,
-  serverTimestamp
+  serverTimestamp,
+  onSnapshot
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
 
@@ -24,12 +26,6 @@ export const realBackend = {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-
-      // Fetch extra teacher details if needed (like name)
-      // We assume teacher data is stored in a 'teachers' collection
-      // However, for simplicity, we can just return the auth user with a role
-      // But let's try to get the name from the profile or a doc
-
       return {
         id: user.uid,
         email: user.email,
@@ -48,7 +44,6 @@ export const realBackend = {
 
       await updateProfile(user, { displayName: name });
 
-      // Create a teacher document (optional, but good for data relationships)
       await setDoc(doc(db, "teachers", user.uid), {
         name,
         email,
@@ -84,12 +79,9 @@ export const realBackend = {
 
   async createClass(teacherId, className) {
     try {
-      // Generate a simple 6-char code
       let code;
       let isUnique = false;
 
-      // Simple loop to ensure uniqueness (collision rare but possible)
-      // In production, maybe use a Cloud Function or better ID gen
       while (!isUnique) {
         code = Math.random().toString(36).substring(2, 8).toUpperCase();
         const q = query(collection(db, "classes"), where("code", "==", code));
@@ -112,6 +104,16 @@ export const realBackend = {
     }
   },
 
+  async deleteClass(classId) {
+    try {
+      await deleteDoc(doc(db, "classes", classId));
+      return true;
+    } catch (error) {
+      console.error("Error deleting class:", error);
+      throw error;
+    }
+  },
+
   async getClassByCode(code) {
     const q = query(collection(db, "classes"), where("code", "==", code));
     const snapshot = await getDocs(q);
@@ -121,10 +123,6 @@ export const realBackend = {
     const classDoc = snapshot.docs[0];
     const classData = classDoc.data();
 
-    // Fetch teacher name
-    // Optimization: Store teacherName on class doc, but for now fetch it
-    // Actually, we can just return 'Teacher' if we don't want extra reads
-    // Or fetch the teacher doc
     let teacherName = "Unknown";
     try {
       const teacherDoc = await getDoc(doc(db, "teachers", classData.teacherId));
@@ -138,52 +136,48 @@ export const realBackend = {
     return { id: classDoc.id, ...classData, teacherName };
   },
 
-  async deleteClass(classId) {
-    try {
-      const { deleteDoc } = await import("firebase/firestore");
-
-      // Delete all students in the class
-      const studentsQuery = query(collection(db, "students"), where("classId", "==", classId));
-      const studentsSnapshot = await getDocs(studentsQuery);
-      const studentDeletes = studentsSnapshot.docs.map(studentDoc =>
-        deleteDoc(doc(db, "students", studentDoc.id))
-      );
-
-      // Delete all submissions for this class
-      const submissionsQuery = query(collection(db, "submissions"), where("classId", "==", classId));
-      const submissionsSnapshot = await getDocs(submissionsQuery);
-      const submissionDeletes = submissionsSnapshot.docs.map(subDoc =>
-        deleteDoc(doc(db, "submissions", subDoc.id))
-      );
-
-      // Wait for all deletes
-      await Promise.all([...studentDeletes, ...submissionDeletes]);
-
-      // Delete the class itself
-      await deleteDoc(doc(db, "classes", classId));
-
-      return { success: true };
-    } catch (error) {
-      console.error("Error deleting class:", error);
-      throw new Error(error.message);
-    }
-  },
-
-  async getStudentsInClass(classId) {
+  async getStudents(classId) {
     try {
       const q = query(collection(db, "students"), where("classId", "==", classId));
       const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const students = [];
+      querySnapshot.forEach((doc) => {
+        students.push({ id: doc.id, ...doc.data() });
+      });
+      return students;
     } catch (error) {
       console.error("Error getting students:", error);
       return [];
     }
   },
 
+  // ================= ACTIVITIES =================
+  async saveClassActivities(classId, activities) {
+    try {
+      await updateDoc(doc(db, "classes", classId), { activities });
+      return true;
+    } catch (error) {
+      console.error("Error saving activities:", error);
+      throw error;
+    }
+  },
+
+  async getClassActivities(classId) {
+    try {
+      const docSnap = await getDoc(doc(db, "classes", classId));
+      if (docSnap.exists() && docSnap.data().activities) {
+        return docSnap.data().activities;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+      return null;
+    }
+  },
+
   // ================= STUDENT AUTH =================
   async joinClass(classCode, username) {
     try {
-      // 1. Find the class
       const qClass = query(collection(db, "classes"), where("code", "==", classCode));
       const classSnapshot = await getDocs(qClass);
 
@@ -196,11 +190,10 @@ export const realBackend = {
       const classId = classDoc.id;
       const classData = classDoc.data();
 
-      // 2. Check if student exists in this class
       const qStudent = query(
         collection(db, "students"),
         where("classId", "==", classId),
-        where("name", "==", username) // Case sensitive usually, ideally normalize
+        where("name", "==", username)
       );
 
       const studentSnapshot = await getDocs(qStudent);
@@ -208,11 +201,9 @@ export const realBackend = {
       let student;
 
       if (!studentSnapshot.empty) {
-        // Existing student
         const studentDoc = studentSnapshot.docs[0];
         student = { id: studentDoc.id, ...studentDoc.data() };
       } else {
-        // Create new student
         const newStudent = {
           classId,
           name: username,
@@ -242,8 +233,7 @@ export const realBackend = {
         const docRef = await addDoc(collection(db, "students"), newStudent);
         student = { id: docRef.id, ...newStudent };
 
-        // Increment student count
-        // Note: This is unsafe without transactions if high concurrency, but fine for this scale
+        // Optimistic update for student count
         const currentCount = classData.studentCount || 0;
         await updateDoc(doc(db, "classes", classId), { studentCount: currentCount + 1 });
       }
@@ -290,6 +280,17 @@ export const realBackend = {
       console.error("Error getting submissions:", error);
       return [];
     }
+  },
+
+  subscribeToSubmissions(classId, callback) {
+    const q = query(collection(db, "submissions"), where("classId", "==", classId));
+    return onSnapshot(q, (querySnapshot) => {
+      const submissions = [];
+      querySnapshot.forEach((doc) => {
+        submissions.push({ id: doc.id, ...doc.data() });
+      });
+      callback(submissions);
+    });
   },
 
   async getStudentSubmissions(studentId) {

@@ -11,7 +11,7 @@ import {
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginScreen from './components/LoginScreen';
 import TeacherPortal from './components/TeacherPortal';
-import { FileViewer } from './components/FileViewer'; // Import shared component
+import { FileViewer } from './components/FileViewer';
 
 const IconMap = { Mic, BarChart3, Palette };
 
@@ -467,6 +467,9 @@ function SubmissionForm({ activityTitle, onSubmit, onCancel }) {
     </div>
   );
 }
+
+// ============== FILE VIEWER COMPONENT ==============
+// Shared component from FileViewer.jsx is used now
 
 // ============== MY SUBMISSIONS ==============
 function MySubmissions({ submissions, onClose }) {

@@ -3,9 +3,9 @@ import { useAuth } from '../context/AuthContext';
 import { realBackend as backend } from '../services/realBackend';
 import {
   Users, Plus, LogOut, BookOpen, ClipboardList, CheckCircle2,
-  XCircle, Clock, ChevronRight, GraduationCap, Copy, Trash2, RefreshCw, User
+  XCircle, Clock, ChevronRight, GraduationCap, Copy, Trash2, Edit
 } from 'lucide-react';
-import { FileViewer } from './FileViewer'; // Updated import
+import { FileViewer } from './FileViewer';
 
 export default function TeacherPortal() {
   const { user, logout } = useAuth();
@@ -17,57 +17,35 @@ export default function TeacherPortal() {
   const [creatingClass, setCreatingClass] = useState(false);
   const [newClassName, setNewClassName] = useState('');
   const [activeTab, setActiveTab] = useState('submissions'); // 'submissions' or 'students'
-  const [deletingClass, setDeletingClass] = useState(null);
 
   useEffect(() => {
     loadClasses();
   }, [user.id]);
 
   useEffect(() => {
+    let unsubscribe;
     if (selectedClass) {
-      loadClassData(selectedClass.id);
+      setLoading(true);
+
+      // Load Students
+      backend.getStudents(selectedClass.id).then(data => {
+        setStudents(data);
+      });
+
+      // Subscribe to Submissions (Real-time)
+      unsubscribe = backend.subscribeToSubmissions(selectedClass.id, (data) => {
+        setSubmissions(data);
+        setLoading(false);
+      });
     }
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, [selectedClass]);
 
   const loadClasses = async () => {
     const data = await backend.getClasses(user.id);
     setClasses(data);
-  };
-
-  const loadClassData = async (classId) => {
-    setLoading(true);
-    const [subsData, studentsData] = await Promise.all([
-      backend.getSubmissions(classId),
-      backend.getStudentsInClass(classId)
-    ]);
-    setSubmissions(subsData);
-    setStudents(studentsData);
-    setLoading(false);
-  };
-
-  const handleRefresh = () => {
-    if (selectedClass) {
-      loadClassData(selectedClass.id);
-    }
-  };
-
-  const handleDeleteClass = async (classId) => {
-    if (!window.confirm('Are you sure you want to delete this class? This will remove all students and submissions.')) {
-      return;
-    }
-    setDeletingClass(classId);
-    try {
-      await backend.deleteClass(classId);
-      if (selectedClass?.id === classId) {
-        setSelectedClass(null);
-        setSubmissions([]);
-        setStudents([]);
-      }
-      loadClasses();
-    } catch (error) {
-      alert('Failed to delete class: ' + error.message);
-    }
-    setDeletingClass(null);
   };
 
   const handleCreateClass = async (e) => {
@@ -85,9 +63,22 @@ export default function TeacherPortal() {
     }
   };
 
+  const handleDeleteClass = async (classId, e) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this class? This cannot be undone.')) {
+      try {
+        await backend.deleteClass(classId);
+        if (selectedClass?.id === classId) setSelectedClass(null);
+        loadClasses();
+      } catch (error) {
+        alert('Error deleting class: ' + error.message);
+      }
+    }
+  };
+
   const handleReview = async (submissionId, status, feedback) => {
     await backend.reviewSubmission(submissionId, status, feedback);
-    loadClassData(selectedClass.id); // Refresh
+    // No need to reload, subscription handles it
   };
 
   const copyCode = (code) => {
@@ -155,28 +146,23 @@ export default function TeacherPortal() {
 
             <div className="space-y-2">
               {classes.map(cls => (
-                <div key={cls.id} className="relative group">
+                <div
+                  key={cls.id}
+                  onClick={() => setSelectedClass(cls)}
+                  className={`w-full p-4 rounded-xl text-left transition-all cursor-pointer relative group ${selectedClass?.id === cls.id ? 'bg-green-600 text-white shadow-lg shadow-green-900/50' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+                >
+                  <div className="font-bold text-lg pr-6">{cls.name}</div>
+                  <div className="flex justify-between items-center mt-2 text-sm opacity-80">
+                    <span className="flex items-center gap-1"><Users className="w-4 h-4" /> {cls.studentCount || 0} Students</span>
+                    <span className="font-mono bg-black/20 px-2 rounded text-xs">Code: {cls.code}</span>
+                  </div>
+
                   <button
-                    onClick={() => setSelectedClass(cls)}
-                    className={`w-full p-4 rounded-xl text-left transition-all ${selectedClass?.id === cls.id ? 'bg-green-600 text-white shadow-lg shadow-green-900/50' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+                    onClick={(e) => handleDeleteClass(cls.id, e)}
+                    className="absolute top-2 right-2 p-2 text-red-300 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Delete Class"
                   >
-                    <div className="font-bold text-lg pr-8">{cls.name}</div>
-                    <div className="flex justify-between items-center mt-2 text-sm opacity-80">
-                      <span className="flex items-center gap-1"><Users className="w-4 h-4" /> {cls.studentCount || 0} Students</span>
-                      <span className="font-mono bg-black/20 px-2 rounded text-xs">Code: {cls.code}</span>
-                    </div>
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleDeleteClass(cls.id); }}
-                    disabled={deletingClass === cls.id}
-                    className="absolute top-2 right-2 p-2 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Delete class"
-                  >
-                    {deletingClass === cls.id ? (
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-4 h-4" />
-                    )}
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               ))}
@@ -219,67 +205,100 @@ export default function TeacherPortal() {
                       </div>
                     </div>
                   </div>
-
-                  {/* Tabs */}
-                  <div className="flex gap-2 mt-4 pt-4 border-t border-slate-700">
-                    <button
-                      onClick={() => setActiveTab('submissions')}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-colors ${activeTab === 'submissions' ? 'bg-green-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
-                    >
-                      <ClipboardList className="w-4 h-4" /> Submissions
-                      {pending.length > 0 && (
-                        <span className="bg-yellow-500 text-slate-900 px-2 py-0.5 rounded-full text-xs">{pending.length}</span>
-                      )}
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('students')}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-colors ${activeTab === 'students' ? 'bg-green-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
-                    >
-                      <Users className="w-4 h-4" /> Students
-                      <span className="bg-slate-600 text-slate-300 px-2 py-0.5 rounded-full text-xs">{students.length}</span>
-                    </button>
+                  <div className="flex gap-4">
+                    <div className="text-right">
+                      <p className="text-3xl font-black text-white">{students.length}</p>
+                      <p className="text-slate-400 text-xs uppercase font-bold">Students</p>
+                    </div>
+                    <div className="text-right border-l border-slate-600 pl-4">
+                      <p className="text-3xl font-black text-white">{pending.length}</p>
+                      <p className="text-slate-400 text-xs uppercase font-bold">Pending</p>
+                    </div>
                   </div>
                 </div>
 
-                {loading ? (
-                  <div className="text-center py-12 text-slate-500">Loading...</div>
-                ) : activeTab === 'submissions' ? (
-                  <>
-                    <h3 className="font-bold text-slate-400 uppercase text-xs tracking-widest mb-4 flex items-center gap-2">
-                      <Clock className="w-4 h-4" /> Pending Reviews ({pending.length})
-                    </h3>
+                {/* Tabs */}
+                <div className="flex gap-4 mb-6 border-b border-slate-700">
+                  <button
+                    onClick={() => setActiveTab('submissions')}
+                    className={`pb-4 px-2 font-bold ${activeTab === 'submissions' ? 'text-green-400 border-b-2 border-green-400' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    Submissions
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('students')}
+                    className={`pb-4 px-2 font-bold ${activeTab === 'students' ? 'text-green-400 border-b-2 border-green-400' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    Students
+                  </button>
+                </div>
 
-                    {pending.length === 0 ? (
-                      <div className="bg-slate-800/50 rounded-xl p-8 text-center text-slate-500 mb-8">
-                        <CheckCircle2 className="w-12 h-12 mx-auto mb-2 opacity-20" />
-                        No pending submissions. You're all caught up!
-                      </div>
+                {activeTab === 'students' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {students.length === 0 ? (
+                      <div className="col-span-full text-center py-12 text-slate-500">No students yet.</div>
                     ) : (
-                      <div className="space-y-4 mb-8">
-                        {pending.map(sub => (
-                          <SubmissionCard key={sub.id} submission={sub} onReview={handleReview} />
-                        ))}
-                      </div>
-                    )}
-
-                    {reviewed.length > 0 && (
-                      <>
-                        <h3 className="font-bold text-slate-400 uppercase text-xs tracking-widest mb-4 flex items-center gap-2 border-t border-slate-700 pt-8">
-                          <CheckCircle2 className="w-4 h-4" /> Reviewed History
-                        </h3>
-                        <div className="opacity-60 hover:opacity-100 transition-opacity space-y-4">
-                          {reviewed.slice(0, 5).map(sub => (
-                             <div key={sub.id} className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
-                               <div>
-                                 <p className="font-bold text-white">{sub.playerName}</p>
-                                 <p className="text-sm text-slate-400">{sub.activityTitle}</p>
-                               </div>
-                               <div className={`px-3 py-1 rounded-full text-xs font-bold ${sub.status === 'approved' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`}>
-                                 {sub.status.toUpperCase()}
-                               </div>
-                             </div>
-                          ))}
+                      students.map(student => (
+                        <div key={student.id} className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-lg`}>
+                              {/* Avatar placeholder - ideally fetch actual avatar */}
+                              👤
+                            </div>
+                            <div>
+                              <p className="font-bold text-white">{student.name}</p>
+                              <p className="text-xs text-slate-400">XP: {student.xp} • Lvl {Math.floor(student.xp/500)+1}</p>
+                            </div>
+                          </div>
                         </div>
+                      ))
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'submissions' && (
+                  <>
+                    {loading ? (
+                      <div className="text-center py-12 text-slate-500">Loading submissions...</div>
+                    ) : (
+                      <>
+                        <h3 className="font-bold text-slate-400 uppercase text-xs tracking-widest mb-4 flex items-center gap-2">
+                          <Clock className="w-4 h-4" /> Pending Reviews ({pending.length})
+                        </h3>
+
+                        {pending.length === 0 ? (
+                          <div className="bg-slate-800/50 rounded-xl p-8 text-center text-slate-500 mb-8">
+                            <CheckCircle2 className="w-12 h-12 mx-auto mb-2 opacity-20" />
+                            No pending submissions. You're all caught up!
+                          </div>
+                        ) : (
+                          <div className="space-y-4 mb-8">
+                            {pending.map(sub => (
+                              <SubmissionCard key={sub.id} submission={sub} onReview={handleReview} />
+                            ))}
+                          </div>
+                        )}
+
+                        {reviewed.length > 0 && (
+                          <>
+                            <h3 className="font-bold text-slate-400 uppercase text-xs tracking-widest mb-4 flex items-center gap-2 border-t border-slate-700 pt-8">
+                              <CheckCircle2 className="w-4 h-4" /> Reviewed History
+                            </h3>
+                            <div className="opacity-60 hover:opacity-100 transition-opacity space-y-4">
+                              {reviewed.slice(0, 5).map(sub => (
+                                <div key={sub.id} className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
+                                  <div>
+                                    <p className="font-bold text-white">{sub.playerName}</p>
+                                    <p className="text-sm text-slate-400">{sub.activityTitle}</p>
+                                  </div>
+                                  <div className={`px-3 py-1 rounded-full text-xs font-bold ${sub.status === 'approved' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`}>
+                                    {sub.status.toUpperCase()}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        )}
                       </>
                     )}
                   </>

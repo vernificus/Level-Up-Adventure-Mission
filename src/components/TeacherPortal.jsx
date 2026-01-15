@@ -3,9 +3,10 @@ import { useAuth } from '../context/AuthContext';
 import { realBackend as backend } from '../services/realBackend';
 import {
   Users, Plus, LogOut, BookOpen, ClipboardList, CheckCircle2,
-  XCircle, Clock, ChevronRight, GraduationCap, Copy, Trash2, Edit, RefreshCw // <-- Add RefreshCw here
+  XCircle, Clock, ChevronRight, GraduationCap, Copy, Trash2, Edit, RefreshCw
 } from 'lucide-react';
 import { FileViewer } from './FileViewer';
+import ActivityEditor from './ActivityEditor';
 
 export default function TeacherPortal() {
   const { user, logout } = useAuth();
@@ -16,7 +17,7 @@ export default function TeacherPortal() {
   const [loading, setLoading] = useState(false);
   const [creatingClass, setCreatingClass] = useState(false);
   const [newClassName, setNewClassName] = useState('');
-  const [activeTab, setActiveTab] = useState('submissions'); // 'submissions' or 'students'
+  const [activeTab, setActiveTab] = useState('submissions'); // 'submissions', 'students', 'activities'
 
   useEffect(() => {
     loadClasses();
@@ -81,17 +82,14 @@ export default function TeacherPortal() {
     // No need to reload, subscription handles it
   };
 
- const handleRefresh = async () => {
-  if (!selectedClass) {
+  const handleRefresh = () => {
     loadClasses();
-    return;
-  }
-  setLoading(true);
-  await loadClasses();
-  const data = await backend.getStudents(selectedClass.id);
-  setStudents(data);
-  setLoading(false);
-};
+    if (selectedClass) {
+        // Trigger reload by resetting selectedClass briefly or just calling fetch
+        // Since we have realtime subscriptions for submissions, we mostly need to refresh students/metadata
+        backend.getStudents(selectedClass.id).then(setStudents);
+    }
+  };
 
   const copyCode = (code) => {
     navigator.clipboard.writeText(code);
@@ -243,7 +241,20 @@ export default function TeacherPortal() {
                   >
                     Students
                   </button>
+                  <button
+                    onClick={() => setActiveTab('activities')}
+                    className={`pb-4 px-2 font-bold ${activeTab === 'activities' ? 'text-green-400 border-b-2 border-green-400' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    Activities
+                  </button>
                 </div>
+
+                {activeTab === 'activities' && (
+                  <ActivityEditor
+                    classId={selectedClass.id}
+                    onSave={() => alert('Activities updated!')}
+                  />
+                )}
 
                 {activeTab === 'students' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

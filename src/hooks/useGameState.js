@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { LEVELS, ACHIEVEMENTS, DAILY_QUESTS, MYSTERY_REWARDS } from '../data/gameData';
+import { LEVELS, ACHIEVEMENTS, DAILY_QUESTS, MYSTERY_REWARDS, LEARNING_PATHS as DEFAULT_PATHS } from '../data/gameData';
 import { realBackend as backend } from '../services/realBackend';
 import { useAuth } from '../context/AuthContext';
 
@@ -34,11 +34,11 @@ const getDefaultState = () => ({
 });
 
 export function useGameState() {
-  const { user } = useAuth(); // Helper context to get current user ID
+  const { user } = useAuth();
 
-  // We initialize with default, but effect will load from "DB"
   const [gameState, setGameState] = useState(getDefaultState());
   const [submissions, setSubmissions] = useState([]);
+  const [learningPaths, setLearningPaths] = useState(DEFAULT_PATHS);
 
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [newLevel, setNewLevel] = useState(null);
@@ -49,15 +49,25 @@ export function useGameState() {
   useEffect(() => {
     if (user && user.role === 'student') {
       loadUserData();
+      loadClassActivities();
     }
   }, [user]);
 
+  const loadClassActivities = async () => {
+    if (!user.classId) return;
+    try {
+      const customPaths = await backend.getClassActivities(user.classId);
+      if (customPaths && customPaths.length > 0) {
+        setLearningPaths(customPaths);
+      }
+    } catch (e) {
+      console.error("Failed to load class activities", e);
+    }
+  };
+
   const loadUserData = async () => {
-    // In a real app with Firebase, this would be a real-time listener (onSnapshot)
     const studentData = await backend.getStudent(user.id);
     if (studentData) {
-      // Filter out non-game keys if necessary, but spreading is fine for now
-      // exclude ID, classId, etc if they conflict, but here we just want game state
       const { id, classId, name, ...gameData } = studentData;
       setGameState(prev => ({
         ...prev,
@@ -71,10 +81,8 @@ export function useGameState() {
   };
 
   // Sync state to "Backend" whenever it changes
-  // Debounce this in production, but here instant is okay for "local" sim
   useEffect(() => {
     if (user && user.role === 'student') {
-      // We only save specific game fields, not the whole user object structure
       backend.updateStudent(user.id, gameState);
     }
   }, [gameState, user]);
@@ -214,7 +222,6 @@ export function useGameState() {
       return existingPending;
     }
 
-    // Create submission in backend
     const newSubmission = await backend.createSubmission(user.id, user.classId, {
       activityId: activity.id,
       activityTitle: activity.title,
@@ -238,7 +245,6 @@ export function useGameState() {
   const submitBossChallenge = useCallback(async (boss, submissionData) => {
     if (!user || user.role !== 'student') return;
 
-    // Check if already has pending submission for this boss
     const existingPending = submissions.find(
       s => s.activityId === boss.id && s.status === 'pending' && s.isBoss
     );
@@ -267,21 +273,17 @@ export function useGameState() {
   }, [user, gameState.playerName, submissions]);
 
   // Since approval happens in TeacherPortal now, the student just needs to poll or listen for updates.
-  // We'll add a poller for simplicity in this demo.
   useEffect(() => {
     if (user && user.role === 'student') {
       const interval = setInterval(async () => {
         try {
           const subs = await backend.getStudentSubmissions(user.id);
 
-          // Only update if we got valid data
           if (!Array.isArray(subs)) {
             console.warn('Invalid submissions data received');
             return;
           }
 
-          // Check if any submission just got approved compared to local state
-          // and trigger XP update
           setSubmissions(currentSubs => {
             // Process rewards for newly approved submissions
             subs.forEach(serverSub => {
@@ -297,14 +299,12 @@ export function useGameState() {
               s => s.status === 'pending' && !serverIds.has(s.id)
             );
 
-            // Return server data plus any local-only pending submissions
             return [...subs, ...localOnlyPending];
           });
         } catch (error) {
           console.error('Error polling submissions:', error);
-          // Don't reset state on error - keep existing submissions
         }
-      }, 3000); // Poll every 3 seconds (slightly longer to reduce load)
+      }, 3000);
       return () => clearInterval(interval);
     }
   }, [user]);
@@ -312,8 +312,6 @@ export function useGameState() {
   const processReward = (submission) => {
     const today = new Date().toDateString();
 
-    // Safety check: already completed?
-    // We access state via functional update to be safe
     setGameState(prev => {
        if (prev.completedActivities.includes(submission.activityId) && !submission.isBoss) {
          return prev;
@@ -328,7 +326,6 @@ export function useGameState() {
        let xpEarned = submission.xp || 100;
 
        if (submission.isBoss) {
-          // Boss logic
           const updatedState = {
             ...prev,
             xp: prev.xp + xpEarned,
@@ -339,9 +336,7 @@ export function useGameState() {
           checkAndSetAchievements(updatedState);
           return updatedState;
        } else {
-          // Regular logic
           let newStreak = prev.currentStreak;
-          // Streak logic (simplified)
           if (prev.lastActivityDate !== today) {
              const diff = (new Date(today) - new Date(prev.lastActivityDate || 0)) / 86400000;
              if (diff <= 1) newStreak++;
@@ -349,7 +344,7 @@ export function useGameState() {
           }
 
           if (isDailyQuestMatch && !prev.dailyQuestCompleted) {
-             xpEarned *= 2; // Multiplier? Simplified
+             xpEarned *= 2;
           }
 
           const newTotal = prev.totalActivitiesCompleted + 1;
@@ -399,7 +394,6 @@ export function useGameState() {
     setGameState(prev => {
         const updated = { ...prev, pendingMysteryBoxes: prev.pendingMysteryBoxes - 1, mysteryBoxesOpened: prev.mysteryBoxesOpened + 1 };
         if (reward.type === 'xp') updated.xp = prev.xp + reward.value;
-        // ... other rewards
         if (reward.type === 'coins') updated.coins = prev.coins + reward.value;
         if (reward.type === 'item') {
           if (reward.value === 'streak_shield') updated.streakShieldActive = true;
@@ -435,6 +429,7 @@ export function useGameState() {
   return {
     gameState,
     submissions,
+    learningPaths, // Export this
     getCurrentLevel,
     getNextLevelXp,
     getDailyQuest,
@@ -446,7 +441,6 @@ export function useGameState() {
     equipAvatarItem,
     setPlayerName,
 
-    // UI state
     showLevelUp,
     setShowLevelUp,
     newLevel,
@@ -455,8 +449,6 @@ export function useGameState() {
     showMysteryReward,
     setShowMysteryReward,
 
-    // Teacher functions are no longer needed here for the Student View
-    // But for compatibility with App.jsx if we don't refactor it fully:
     approveSubmission: () => {},
     rejectSubmission: () => {},
     clearReviewedSubmissions: () => {},

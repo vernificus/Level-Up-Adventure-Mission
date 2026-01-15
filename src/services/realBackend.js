@@ -175,6 +175,36 @@ export const realBackend = {
     }
   },
 
+  // ================= ACTIVITY LIBRARY =================
+  async publishActivity(activity) {
+    try {
+      const newActivity = {
+        ...activity,
+        publishedAt: serverTimestamp()
+      };
+      const docRef = await addDoc(collection(db, "activity_library"), newActivity);
+      return { id: docRef.id, ...newActivity };
+    } catch (error) {
+      console.error("Error publishing activity:", error);
+      throw error;
+    }
+  },
+
+  async getPublicActivities() {
+    try {
+      const q = query(collection(db, "activity_library"));
+      const querySnapshot = await getDocs(q);
+      const activities = [];
+      querySnapshot.forEach((doc) => {
+        activities.push({ id: doc.id, ...doc.data() });
+      });
+      return activities;
+    } catch (error) {
+      console.error("Error fetching library activities:", error);
+      return [];
+    }
+  },
+
   // ================= STUDENT AUTH =================
   async joinClass(classCode, username) {
     try {

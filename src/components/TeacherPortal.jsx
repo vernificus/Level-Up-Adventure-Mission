@@ -178,15 +178,31 @@ export default function TeacherPortal() {
           <div className="lg:col-span-3">
             {selectedClass ? (
               <div>
-                <div className="bg-slate-800 p-6 rounded-2xl mb-8 border border-slate-700 flex justify-between items-center">
-                  <div>
-                    <h2 className="text-2xl font-black text-white">{selectedClass.name}</h2>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-slate-400 text-sm">Class Code:</span>
-                      <code className="text-xl font-mono font-bold text-green-400 tracking-widest">{selectedClass.code}</code>
-                      <button onClick={() => copyCode(selectedClass.code)} className="text-slate-500 hover:text-white">
-                        <Copy className="w-4 h-4" />
+                <div className="bg-slate-800 p-6 rounded-2xl mb-6 border border-slate-700">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h2 className="text-2xl font-black text-white">{selectedClass.name}</h2>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-slate-400 text-sm">Class Code:</span>
+                        <code className="text-xl font-mono font-bold text-green-400 tracking-widest">{selectedClass.code}</code>
+                        <button onClick={() => copyCode(selectedClass.code)} className="text-slate-500 hover:text-white">
+                          <Copy className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={handleRefresh}
+                        disabled={loading}
+                        className="p-2 text-slate-400 hover:text-white transition-colors"
+                        title="Refresh data"
+                      >
+                        <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
                       </button>
+                      <div className="text-right">
+                        <p className="text-3xl font-black text-white">{pending.length}</p>
+                        <p className="text-slate-400 text-xs uppercase font-bold">Pending Reviews</p>
+                      </div>
                     </div>
                   </div>
                   <div className="flex gap-4">
@@ -284,6 +300,53 @@ export default function TeacherPortal() {
                           </>
                         )}
                       </>
+                    )}
+                  </>
+                ) : (
+                  /* Students Tab */
+                  <>
+                    <h3 className="font-bold text-slate-400 uppercase text-xs tracking-widest mb-4 flex items-center gap-2">
+                      <Users className="w-4 h-4" /> Enrolled Students ({students.length})
+                    </h3>
+
+                    {students.length === 0 ? (
+                      <div className="bg-slate-800/50 rounded-xl p-8 text-center text-slate-500">
+                        <User className="w-12 h-12 mx-auto mb-2 opacity-20" />
+                        No students yet. Share the class code with your students to get started!
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {students.map(student => {
+                          const studentSubmissions = submissions.filter(s => s.studentId === student.id);
+                          const approved = studentSubmissions.filter(s => s.status === 'approved').length;
+                          const studentPending = studentSubmissions.filter(s => s.status === 'pending').length;
+                          return (
+                            <div key={student.id} className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                              <div className="flex items-center gap-3 mb-3">
+                                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-lg font-bold">
+                                  {(student.name || 'S').charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <p className="font-bold text-white">{student.name || 'Unknown'}</p>
+                                  <p className="text-xs text-yellow-400 font-bold">{student.xp || 0} XP</p>
+                                </div>
+                              </div>
+                              <div className="flex gap-4 text-xs">
+                                <div className="flex items-center gap-1 text-green-400">
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  <span>{approved} approved</span>
+                                </div>
+                                {studentPending > 0 && (
+                                  <div className="flex items-center gap-1 text-blue-400">
+                                    <Clock className="w-3 h-3" />
+                                    <span>{studentPending} pending</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     )}
                   </>
                 )}

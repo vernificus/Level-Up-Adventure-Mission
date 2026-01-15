@@ -869,6 +869,7 @@ function GameContent() {
   const {
     gameState,
     submissions,
+    learningPaths,
     getCurrentLevel,
     getNextLevelXp,
     getDailyQuest,
@@ -968,7 +969,7 @@ function GameContent() {
         />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          {LEARNING_PATHS.map((path) => (
+          {learningPaths.map((path) => (
             <ActivityCard
               key={path.id}
               path={path}

@@ -302,7 +302,7 @@ export default function TeacherPortal() {
                       </>
                     )}
                   </>
-             
+                )}
               </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-slate-500 border-2 border-dashed border-slate-800 rounded-3xl min-h-[400px]">

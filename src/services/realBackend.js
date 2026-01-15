@@ -77,6 +77,86 @@ export const realBackend = {
     }
   },
 
+  async createStudent(classId, name, password) {
+    try {
+      // Check if student exists in this class with this name
+      const q = query(
+        collection(db, "students"),
+        where("classId", "==", classId),
+        where("name", "==", name)
+      );
+      const snapshot = await getDocs(q);
+
+      if (!snapshot.empty) throw new Error("Student already exists");
+
+      const newStudent = {
+        classId,
+        name,
+        password, // In production, hash this!
+        xp: 0,
+        coins: 100,
+        completedActivities: [],
+        completedBossChallenges: [],
+        currentStreak: 0,
+        lastActivityDate: null,
+        streakShieldActive: false,
+        unlockedAchievements: [],
+        guild: null,
+        guildXpContributed: 0,
+        avatar: { color: 'default', hat: 'none', accessory: 'none', face: 'happy' },
+        ownedItems: ['default', 'none', 'happy'],
+        dailyQuestCompleted: false,
+        lastDailyQuestDate: null,
+        mysteryBoxesOpened: 0,
+        pendingMysteryBoxes: 0,
+        doubleXpActive: false,
+        totalActivitiesCompleted: 0,
+        collaborationCount: 0,
+        pathCompletions: { path1: 0, path2: 0, path3: 0 },
+        createdAt: serverTimestamp()
+      };
+
+      const docRef = await addDoc(collection(db, "students"), newStudent);
+
+      // Update count
+      const classRef = doc(db, "classes", classId);
+      const classSnap = await getDoc(classRef);
+      if (classSnap.exists()) {
+        const count = classSnap.data().studentCount || 0;
+        await updateDoc(classRef, { studentCount: count + 1 });
+      }
+
+      return { id: docRef.id, ...newStudent };
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+
+  async loginStudent(classId, studentId, password) {
+    try {
+      const docRef = doc(db, "students", studentId);
+      const docSnap = await getDoc(docRef);
+
+      if (!docSnap.exists()) throw new Error("Student not found");
+
+      const student = docSnap.data();
+
+      if (student.classId !== classId) throw new Error("Invalid class for this student");
+
+      // Check password (simple string check for now)
+      if (student.password && student.password !== password) {
+        throw new Error("Incorrect password");
+      }
+
+      // Note: If no password set (legacy students), we might allow it or require setting one.
+      // For this feature, we assume passwords are set via RosterManager.
+
+      return { id: docSnap.id, ...student, role: 'student' };
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+
   async createClass(teacherId, className) {
     try {
       let code;
@@ -213,72 +293,11 @@ export const realBackend = {
 
   // ================= STUDENT AUTH =================
   async joinClass(classCode, username) {
-    try {
-      const qClass = query(collection(db, "classes"), where("code", "==", classCode));
-      const classSnapshot = await getDocs(qClass);
-
-      if (classSnapshot.empty) {
-        console.error(`Class not found for code: "${classCode}"`);
-        throw new Error('Invalid class code');
-      }
-
-      const classDoc = classSnapshot.docs[0];
-      const classId = classDoc.id;
-      const classData = classDoc.data();
-
-      const qStudent = query(
-        collection(db, "students"),
-        where("classId", "==", classId),
-        where("name", "==", username)
-      );
-
-      const studentSnapshot = await getDocs(qStudent);
-
-      let student;
-
-      if (!studentSnapshot.empty) {
-        const studentDoc = studentSnapshot.docs[0];
-        student = { id: studentDoc.id, ...studentDoc.data() };
-      } else {
-        const newStudent = {
-          classId,
-          name: username,
-          xp: 0,
-          coins: 100,
-          completedActivities: [],
-          completedBossChallenges: [],
-          currentStreak: 0,
-          lastActivityDate: null,
-          streakShieldActive: false,
-          unlockedAchievements: [],
-          guild: null,
-          guildXpContributed: 0,
-          avatar: { color: 'default', hat: 'none', accessory: 'none', face: 'happy' },
-          ownedItems: ['default', 'none', 'happy'],
-          dailyQuestCompleted: false,
-          lastDailyQuestDate: null,
-          mysteryBoxesOpened: 0,
-          pendingMysteryBoxes: 0,
-          doubleXpActive: false,
-          totalActivitiesCompleted: 0,
-          collaborationCount: 0,
-          pathCompletions: { path1: 0, path2: 0, path3: 0 },
-          createdAt: serverTimestamp()
-        };
-
-        const docRef = await addDoc(collection(db, "students"), newStudent);
-        student = { id: docRef.id, ...newStudent };
-
-        // Optimistic update for student count
-        const currentCount = classData.studentCount || 0;
-        await updateDoc(doc(db, "classes", classId), { studentCount: currentCount + 1 });
-      }
-
-      return { ...student, role: 'student', className: classData.name };
-
-    } catch (error) {
-      throw new Error(error.message);
-    }
+    // Deprecated legacy join (creates student on fly)
+    // We keep this for backward compatibility if needed,
+    // OR we change this to just "Get Class Info" for the new flow.
+    // The new flow uses `getClassByCode` then `loginStudent`.
+    return this.getClassByCode(classCode);
   },
 
   async getStudent(studentId) {

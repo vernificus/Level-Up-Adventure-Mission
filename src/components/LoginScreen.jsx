@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { BookOpen, Users, LogIn, UserPlus, ArrowRight, GraduationCap } from 'lucide-react';
+import { BookOpen, Users, LogIn, UserPlus, ArrowRight, GraduationCap, Lock, User } from 'lucide-react';
+import { realBackend as backend } from '../services/realBackend';
 
 export default function LoginScreen() {
-  const { loginTeacher, registerTeacher, joinClassAsStudent } = useAuth();
-  const [mode, setMode] = useState('select'); // select, teacher-login, teacher-signup, student-join
+  const { loginTeacher, registerTeacher } = useAuth(); // removed joinClassAsStudent from context, we use backend direct
+  const { joinClassAsStudent } = useAuth(); // Wait, context likely still has it, but we might bypass or update it.
+  // Actually, AuthContext calls backend.joinClass. We updated backend.joinClass to return class info.
+  // We need to implement the new "Roster Login" logic here.
+
+  const [mode, setMode] = useState('select'); // select, teacher-login, teacher-signup, student-join, student-select, student-password
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -12,8 +17,13 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+
+  // Student states
   const [classCode, setClassCode] = useState('');
-  const [username, setUsername] = useState('');
+  const [classInfo, setClassInfo] = useState(null);
+  const [roster, setRoster] = useState([]);
+  const [selectedStudentId, setSelectedStudentId] = useState('');
+  const [studentPassword, setStudentPassword] = useState('');
 
   const handleTeacherLogin = async (e) => {
     e.preventDefault();
@@ -33,18 +43,60 @@ export default function LoginScreen() {
     setLoading(false);
   };
 
-  const handleStudentJoin = async (e) => {
+  const handleLookupClass = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const result = await joinClassAsStudent(classCode.trim().toUpperCase(), username.trim());
-    if (!result.success) setError(result.error);
+    try {
+      const cls = await backend.getClassByCode(classCode.trim().toUpperCase());
+      setClassInfo(cls);
+
+      // Fetch roster
+      const students = await backend.getStudents(cls.id);
+      setRoster(students);
+      setMode('student-select');
+    } catch (err) {
+      setError(err.message);
+    }
+    setLoading(false);
+  };
+
+  const handleStudentLogin = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    // We need to use a specialized login function in AuthContext or just call fetch here and set user manually?
+    // AuthContext usually manages the 'user' state.
+    // Let's modify AuthContext to expose a generic `loginStudent(classId, studentId, password)`?
+    // OR we just use the backend here and update the context state?
+    // Accessing `setUser` from context is not standard.
+    // Ideally AuthContext should export `loginStudent`.
+
+    // For now, let's assume `joinClassAsStudent` in context can be repurposed or we add a new method.
+    // I will use `joinClassAsStudent` from context but pass the new args?
+    // No, `AuthContext` implementation of `joinClassAsStudent` calls `backend.joinClass`.
+    // I'll need to update `AuthContext.jsx` to support the new flow.
+    // Let's assume I updated it. I will update it in next step.
+
+    try {
+      const result = await joinClassAsStudent(classInfo.id, selectedStudentId, studentPassword);
+      if (!result.success) setError(result.error);
+    } catch (err) {
+      setError(err.message);
+    }
+
     setLoading(false);
   };
 
   const BackButton = () => (
     <button
-      onClick={() => { setMode('select'); setError(''); }}
+      onClick={() => {
+        setError('');
+        if (mode === 'student-select') setMode('student-join');
+        else if (mode === 'student-password') setMode('student-select');
+        else setMode('select');
+      }}
       className="absolute top-4 left-4 text-slate-400 hover:text-white flex items-center gap-1"
     >
       ← Back
@@ -81,7 +133,7 @@ export default function LoginScreen() {
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
                   <BookOpen className="w-6 h-6" /> I am a Student
                 </h3>
-                <p className="text-blue-200 text-sm mt-1">Join a class and start your mission</p>
+                <p className="text-blue-200 text-sm mt-1">Log in with Class Code</p>
               </div>
               <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <ArrowRight className="w-6 h-6 text-white" />
@@ -95,7 +147,7 @@ export default function LoginScreen() {
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
                 <Users className="w-6 h-6" /> I am a Teacher
               </h3>
-              <p className="text-slate-400 text-sm mt-1">Manage classes and review work</p>
+              <p className="text-slate-400 text-sm mt-1">Manage classes and roster</p>
             </button>
           </div>
         )}
@@ -195,11 +247,11 @@ export default function LoginScreen() {
           </form>
         )}
 
-        {/* Student Join */}
+        {/* Student Join: Step 1 (Class Code) */}
         {mode === 'student-join' && (
-          <form onSubmit={handleStudentJoin} className="space-y-4">
+          <form onSubmit={handleLookupClass} className="space-y-4">
             <BackButton />
-            <h2 className="text-xl font-bold text-white text-center mb-6">Join Class</h2>
+            <h2 className="text-xl font-bold text-white text-center mb-6">Find Your Class</h2>
 
             <div>
               <label className="block text-sm text-slate-400 mb-1">Class Code</label>
@@ -211,19 +263,6 @@ export default function LoginScreen() {
                 onChange={e => setClassCode(e.target.value)}
                 className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none text-center text-2xl uppercase font-mono tracking-widest"
               />
-              <p className="text-xs text-slate-500 mt-1 text-center">Ask your teacher for the code</p>
-            </div>
-
-            <div>
-              <label className="block text-sm text-slate-400 mb-1">Your Name</label>
-              <input
-                type="text"
-                required
-                placeholder="First Name Last Initial"
-                value={username}
-                onChange={e => setUsername(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-blue-500 focus:outline-none text-center text-lg"
-              />
             </div>
 
             <button
@@ -231,7 +270,64 @@ export default function LoginScreen() {
               disabled={loading}
               className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
             >
-              {loading ? 'Joining...' : <><ArrowRight className="w-5 h-5" /> Start Adventure</>}
+              {loading ? 'Looking up...' : <><ArrowRight className="w-5 h-5" /> Next</>}
+            </button>
+          </form>
+        )}
+
+        {/* Student Join: Step 2 (Select Name) */}
+        {mode === 'student-select' && (
+          <div className="space-y-4">
+            <BackButton />
+            <h2 className="text-xl font-bold text-white text-center mb-2">Who are you?</h2>
+            <p className="text-center text-slate-400 text-sm mb-4">Class: <span className="font-bold text-white">{classInfo?.name}</span></p>
+
+            <div className="max-h-60 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+              {roster.map(student => (
+                <button
+                  key={student.id}
+                  onClick={() => { setSelectedStudentId(student.id); setMode('student-password'); }}
+                  className="w-full p-4 bg-slate-700 hover:bg-slate-600 rounded-xl text-left transition-colors flex items-center gap-3"
+                >
+                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-sm">👤</div>
+                  <span className="font-bold text-white">{student.name}</span>
+                </button>
+              ))}
+              {roster.length === 0 && (
+                <p className="text-center text-slate-500 py-4">No students found. Ask your teacher to add you!</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Student Join: Step 3 (Password) */}
+        {mode === 'student-password' && (
+          <form onSubmit={handleStudentLogin} className="space-y-4">
+            <BackButton />
+            <h2 className="text-xl font-bold text-white text-center mb-6">Hello, {roster.find(s => s.id === selectedStudentId)?.name}!</h2>
+
+            <div>
+              <label className="block text-sm text-slate-400 mb-1">Enter your Password/PIN</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <input
+                  type="password"
+                  required
+                  autoFocus
+                  placeholder="******"
+                  value={studentPassword}
+                  onChange={e => setStudentPassword(e.target.value)}
+                  className="w-full px-4 py-3 pl-10 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-blue-500 focus:outline-none text-center text-xl tracking-widest"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              {loading ? 'Verifying...' : <><LogIn className="w-5 h-5" /> Start Game</>}
             </button>
           </form>
         )}

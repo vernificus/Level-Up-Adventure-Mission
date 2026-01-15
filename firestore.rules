@@ -43,6 +43,9 @@ service cloud.firestore {
 
     // STUDENTS
     match /students/{studentId} {
+      // Allow create/update for the teacher (authenticated)
+      // AND allow read/update for students (unauthenticated flow)
+      // This is permissive but required for the "no-email" login flow unless we use Anon Auth.
       allow create: if true;
       allow read: if true;
       allow update: if true;

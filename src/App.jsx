@@ -932,7 +932,7 @@ function GameContent() {
             <Gamepad2 className="w-8 h-8 text-slate-900" />
           </div>
           <h1 className="text-4xl md:text-5xl font-black tracking-tighter italic uppercase mb-2">
-            Level Up: 5th Grade Mission
+            Level Up: Adventure Mission
           </h1>
           <p className="text-slate-400 text-lg">Choose your path. Master the content. Own the game.</p>
         </div>

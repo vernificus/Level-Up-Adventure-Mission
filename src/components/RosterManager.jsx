@@ -138,12 +138,31 @@ export default function RosterManager({ classId, onStudentAdded }) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {students.map(student => (
-              <div key={student.id} className="flex justify-between items-center bg-slate-700 p-3 rounded-lg border border-slate-600">
-                <div>
-                  <p className="font-bold text-white">{student.name}</p>
-                  <p className="text-xs text-slate-400 font-mono">Pass: {student.password || 'N/A'}</p>
+              <div key={student.id} className="bg-slate-700 p-4 rounded-lg border border-slate-600">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-lg">
+                      👤
+                    </div>
+                    <div>
+                      <p className="font-bold text-white text-lg leading-tight">{student.name}</p>
+                      <p className="text-xs text-slate-400 font-mono bg-slate-800 px-2 py-0.5 rounded inline-block mt-1">
+                        Pass: <span className="text-yellow-400">{student.password || 'N/A'}</span>
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                {/* Future: Add delete/edit buttons here */}
+
+                <div className="flex items-center gap-6 text-sm border-t border-slate-600 pt-3">
+                   <div>
+                     <span className="text-slate-400 text-xs uppercase font-bold block">XP</span>
+                     <p className="font-mono text-green-400 font-bold">{student.xp || 0}</p>
+                   </div>
+                   <div>
+                     <span className="text-slate-400 text-xs uppercase font-bold block">Level</span>
+                     <p className="font-mono text-blue-400 font-bold">{Math.floor((student.xp || 0)/500)+1}</p>
+                   </div>
+                </div>
               </div>
             ))}
             {students.length === 0 && <p className="text-slate-500 italic">No students yet.</p>}

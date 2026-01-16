@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { realBackend as backend } from '../services/realBackend';
 
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -38,15 +38,25 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const joinClassAsStudent = async (classCode, username) => {
+  const loginStudent = async (classId, studentId, password) => {
     try {
-      const student = await backend.joinClass(classCode, username);
+      const student = await backend.loginStudent(classId, studentId, password);
       setUser(student);
       sessionStorage.setItem('lvlup_user', JSON.stringify(student));
       return { success: true };
     } catch (error) {
       return { success: false, error: error.message };
     }
+  };
+
+  const joinClassAsStudent = async (classCode, username) => {
+     // Legacy method, might not be used with Roster Mode, but keeping for backward compat if needed
+     // or for "Join by Code" without roster if we enable that.
+     // For now, let's just use it to wrapper backend logic if we had it.
+     // But `backend.joinClass` logic was: find class, create student doc.
+     // We moved to `createStudent` (teacher side) and `loginStudent` (student side).
+     // The 'BookOpen' -> 'Student Join' flow in LoginScreen uses `loginStudent`.
+     return { success: false, error: "Use Roster Login" };
   };
 
   const logout = () => {
@@ -59,6 +69,7 @@ export function AuthProvider({ children }) {
     loading,
     loginTeacher,
     registerTeacher,
+    loginStudent,
     joinClassAsStudent,
     logout
   };

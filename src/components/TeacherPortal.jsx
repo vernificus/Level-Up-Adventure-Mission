@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { FileViewer } from './FileViewer';
 import ActivityEditor from './ActivityEditor';
+import RosterManager from './RosterManager';
 
 export default function TeacherPortal() {
   const { user, logout } = useAuth();
@@ -82,24 +83,21 @@ export default function TeacherPortal() {
     // No need to reload, subscription handles it
   };
 
- const handleRefresh = async () => {
-  if (!selectedClass) {
+  const handleRefresh = () => {
     loadClasses();
-    return;
-  }
-  setLoading(true);
-  await loadClasses();
-  const data = await backend.getStudents(selectedClass.id);
-  setStudents(data);
-  setLoading(false);
-};
+    if (selectedClass) {
+        // Trigger reload by resetting selectedClass briefly or just calling fetch
+        // Since we have realtime subscriptions for submissions, we mostly need to refresh students/metadata
+        backend.getStudents(selectedClass.id).then(setStudents);
+    }
+  };
 
   const copyCode = (code) => {
     navigator.clipboard.writeText(code);
     alert('Class code copied!');
   };
 
-   // Filter submissions
+  // Filter submissions
   const pending = submissions.filter(s => s.status === 'pending');
   const reviewed = submissions.filter(s => s.status !== 'pending');
 
@@ -260,26 +258,10 @@ export default function TeacherPortal() {
                 )}
 
                 {activeTab === 'students' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {students.length === 0 ? (
-                      <div className="col-span-full text-center py-12 text-slate-500">No students yet.</div>
-                    ) : (
-                      students.map(student => (
-                        <div key={student.id} className="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-lg`}>
-                              {/* Avatar placeholder - ideally fetch actual avatar */}
-                              👤
-                            </div>
-                            <div>
-                              <p className="font-bold text-white">{student.name}</p>
-                              <p className="text-xs text-slate-400">XP: {student.xp} • Lvl {Math.floor(student.xp/500)+1}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
+                  <RosterManager
+                    classId={selectedClass.id}
+                    onStudentAdded={() => backend.getStudents(selectedClass.id).then(setStudents)}
+                  />
                 )}
 
                 {activeTab === 'submissions' && (

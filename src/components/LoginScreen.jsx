@@ -4,10 +4,7 @@ import { BookOpen, Users, LogIn, UserPlus, ArrowRight, GraduationCap, Lock, User
 import { realBackend as backend } from '../services/realBackend';
 
 export default function LoginScreen() {
-  const { loginTeacher, registerTeacher } = useAuth(); // removed joinClassAsStudent from context, we use backend direct
-  const { joinClassAsStudent } = useAuth(); // Wait, context likely still has it, but we might bypass or update it.
-  // Actually, AuthContext calls backend.joinClass. We updated backend.joinClass to return class info.
-  // We need to implement the new "Roster Login" logic here.
+  const { loginTeacher, registerTeacher, loginStudent } = useAuth();
 
   const [mode, setMode] = useState('select'); // select, teacher-login, teacher-signup, student-join, student-select, student-password
   const [error, setError] = useState('');
@@ -66,21 +63,8 @@ export default function LoginScreen() {
     setError('');
     setLoading(true);
 
-    // We need to use a specialized login function in AuthContext or just call fetch here and set user manually?
-    // AuthContext usually manages the 'user' state.
-    // Let's modify AuthContext to expose a generic `loginStudent(classId, studentId, password)`?
-    // OR we just use the backend here and update the context state?
-    // Accessing `setUser` from context is not standard.
-    // Ideally AuthContext should export `loginStudent`.
-
-    // For now, let's assume `joinClassAsStudent` in context can be repurposed or we add a new method.
-    // I will use `joinClassAsStudent` from context but pass the new args?
-    // No, `AuthContext` implementation of `joinClassAsStudent` calls `backend.joinClass`.
-    // I'll need to update `AuthContext.jsx` to support the new flow.
-    // Let's assume I updated it. I will update it in next step.
-
     try {
-      const result = await joinClassAsStudent(classInfo.id, selectedStudentId, studentPassword);
+      const result = await loginStudent(classInfo.id, selectedStudentId, studentPassword);
       if (!result.success) setError(result.error);
     } catch (err) {
       setError(err.message);

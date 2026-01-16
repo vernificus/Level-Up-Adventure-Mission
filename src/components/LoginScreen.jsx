@@ -75,6 +75,7 @@ export default function LoginScreen() {
 
   const BackButton = () => (
     <button
+      type="button"
       onClick={() => {
         setError('');
         if (mode === 'student-select') setMode('student-join');

@@ -332,9 +332,9 @@ function SubmissionForm({ activityTitle, onSubmit, onCancel }) {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Check file size (limit to 5MB for localStorage)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('File is too large. Please upload a file smaller than 5MB, or use a link instead.');
+      // Check file size (limit to 900KB for Firestore)
+      if (file.size > 900 * 1024) {
+        alert('File is too large. Please upload a file smaller than 900KB (Firestore Limit), or use a link instead.');
         return;
       }
 

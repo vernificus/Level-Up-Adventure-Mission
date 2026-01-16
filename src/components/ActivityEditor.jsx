@@ -205,15 +205,74 @@ export default function ActivityEditor({ classId, onSave, onCancel }) {
                     onChange={(e) => handleUpdateActivity(path.id, activity.id, 'desc', e.target.value)}
                     rows={2}
                   />
-                  <div className="flex gap-2 mt-2">
-                    <input
-                      className="bg-slate-800 text-xs text-yellow-400 w-16 px-1 rounded"
-                      type="number"
-                      value={activity.xp}
-                      onChange={(e) => handleUpdateActivity(path.id, activity.id, 'xp', parseInt(e.target.value))}
-                    />
-                    <span className="text-xs text-slate-500 pt-1">XP</span>
+                  <div className="grid grid-cols-2 gap-2 mt-2 mb-2">
+                    <div className="flex gap-1">
+                      <span className="text-xs text-slate-500 pt-1">XP:</span>
+                      <input
+                        className="bg-slate-800 text-xs text-yellow-400 w-16 px-1 rounded"
+                        type="number"
+                        value={activity.xp}
+                        onChange={(e) => handleUpdateActivity(path.id, activity.id, 'xp', parseInt(e.target.value))}
+                      />
+                    </div>
+                    <div>
+                      <select
+                        className="bg-slate-800 text-xs text-slate-300 w-full px-1 rounded border-none"
+                        value={activity.type}
+                        onChange={(e) => handleUpdateActivity(path.id, activity.id, 'type', e.target.value)}
+                      >
+                        <option value="Low Tech">Low Tech</option>
+                        <option value="High Tech">High Tech</option>
+                        <option value="Collaboration">Collaboration</option>
+                        <option value="Reflection">Reflection</option>
+                        <option value="Creation">Creation</option>
+                      </select>
+                    </div>
                   </div>
+
+                  <div className="mb-2">
+                    <span className="text-xs text-slate-500 font-bold block mb-1">Steps:</span>
+                    {activity.steps.map((step, idx) => (
+                      <div key={idx} className="flex gap-1 mb-1">
+                         <span className="text-xs text-slate-500 w-4">{idx+1}.</span>
+                         <input
+                           className="bg-slate-800 text-xs text-white flex-1 px-1 rounded"
+                           value={step}
+                           onChange={(e) => {
+                             const newSteps = [...activity.steps];
+                             newSteps[idx] = e.target.value;
+                             handleUpdateActivity(path.id, activity.id, 'steps', newSteps);
+                           }}
+                         />
+                         <button
+                           onClick={() => {
+                              const newSteps = activity.steps.filter((_, i) => i !== idx);
+                              handleUpdateActivity(path.id, activity.id, 'steps', newSteps);
+                           }}
+                           className="text-red-400 text-xs hover:text-white"
+                         >
+                           X
+                         </button>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => handleUpdateActivity(path.id, activity.id, 'steps', [...activity.steps, 'New step'])}
+                      className="text-xs text-blue-400 hover:text-white mt-1"
+                    >
+                      + Add Step
+                    </button>
+                  </div>
+
+                  <div>
+                    <span className="text-xs text-slate-500 font-bold block mb-1">Pro Tip:</span>
+                    <input
+                      className="bg-slate-800 text-xs text-blue-300 w-full px-1 rounded"
+                      value={activity.proTip || ''}
+                      onChange={(e) => handleUpdateActivity(path.id, activity.id, 'proTip', e.target.value)}
+                      placeholder="Tip for students..."
+                    />
+                  </div>
+
                 </div>
               ))}
               <button

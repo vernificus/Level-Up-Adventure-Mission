@@ -325,6 +325,26 @@ export const realBackend = {
     }
   },
 
+  async deleteStudent(studentId, classId) {
+    try {
+      await deleteDoc(doc(db, "students", studentId));
+
+      // Update count
+      if (classId) {
+        const classRef = doc(db, "classes", classId);
+        const classSnap = await getDoc(classRef);
+        if (classSnap.exists()) {
+          const count = classSnap.data().studentCount || 0;
+          await updateDoc(classRef, { studentCount: Math.max(0, count - 1) });
+        }
+      }
+      return true;
+    } catch (error) {
+      console.error("Error deleting student:", error);
+      throw error;
+    }
+  },
+
   // ================= SUBMISSIONS =================
   async getSubmissions(classId) {
     try {

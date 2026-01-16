@@ -350,7 +350,7 @@ function SubmissionCard({ submission, onReview }) {
         ) : (
           <div className="p-2 bg-slate-800 rounded">
             {submission.submissionContent ? (
-               <div className="text-blue-400 flex items-center gap-2">
+               <div className="text-blue-400">
                  <FileViewer content={submission.submissionContent} fileName={submission.fileName} fileType={submission.fileType} />
                </div>
             ) : (

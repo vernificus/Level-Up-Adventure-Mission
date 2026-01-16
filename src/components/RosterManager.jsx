@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { realBackend as backend } from '../services/realBackend';
-import { UserPlus, Lock, Trash2, Save } from 'lucide-react';
+import { UserPlus, Lock, Trash2, Save, Edit, X, Check } from 'lucide-react';
 
 export default function RosterManager({ classId, onStudentAdded }) {
   const [students, setStudents] = useState([]);
@@ -8,6 +8,8 @@ export default function RosterManager({ classId, onStudentAdded }) {
   const [newStudentPassword, setNewStudentPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({ name: '', password: '' });
 
   useEffect(() => {
     loadStudents();
@@ -35,6 +37,32 @@ export default function RosterManager({ classId, onStudentAdded }) {
       alert('Error adding student: ' + error.message);
     }
     setAdding(false);
+  };
+
+  const handleEdit = (student) => {
+    setEditingId(student.id);
+    setEditForm({ name: student.name, password: student.password || '' });
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      await backend.updateStudent(editingId, editForm);
+      setEditingId(null);
+      loadStudents();
+    } catch (error) {
+      alert('Error updating student: ' + error.message);
+    }
+  };
+
+  const handleDelete = async (studentId) => {
+    if (!window.confirm('Are you sure? This deletes all progress for this student.')) return;
+    try {
+      await backend.deleteStudent(studentId, classId);
+      loadStudents();
+      if (onStudentAdded) onStudentAdded(); // Updates count
+    } catch (error) {
+      alert('Error deleting student: ' + error.message);
+    }
   };
 
   // Bulk upload (simple text area parsing)
@@ -138,31 +166,57 @@ export default function RosterManager({ classId, onStudentAdded }) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {students.map(student => (
-              <div key={student.id} className="bg-slate-700 p-4 rounded-lg border border-slate-600">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-lg">
-                      👤
+              <div key={student.id} className="bg-slate-700 p-4 rounded-lg border border-slate-600 relative group">
+                {editingId === student.id ? (
+                   <div className="space-y-2">
+                     <input
+                       className="w-full px-2 py-1 bg-slate-800 border border-slate-600 rounded text-white"
+                       value={editForm.name}
+                       onChange={e => setEditForm({...editForm, name: e.target.value})}
+                     />
+                     <input
+                       className="w-full px-2 py-1 bg-slate-800 border border-slate-600 rounded text-white"
+                       value={editForm.password}
+                       onChange={e => setEditForm({...editForm, password: e.target.value})}
+                     />
+                     <div className="flex gap-2">
+                       <button onClick={handleSaveEdit} className="bg-green-600 px-3 py-1 rounded text-white text-xs font-bold">Save</button>
+                       <button onClick={() => setEditingId(null)} className="bg-slate-600 px-3 py-1 rounded text-white text-xs font-bold">Cancel</button>
+                     </div>
+                   </div>
+                ) : (
+                  <>
+                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => handleEdit(student)} className="p-1 text-slate-400 hover:text-white"><Edit className="w-4 h-4" /></button>
+                      <button onClick={() => handleDelete(student.id)} className="p-1 text-slate-400 hover:text-red-400"><Trash2 className="w-4 h-4" /></button>
                     </div>
-                    <div>
-                      <p className="font-bold text-white text-lg leading-tight">{student.name}</p>
-                      <p className="text-xs text-slate-400 font-mono bg-slate-800 px-2 py-0.5 rounded inline-block mt-1">
-                        Pass: <span className="text-yellow-400">{student.password || 'N/A'}</span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-6 text-sm border-t border-slate-600 pt-3">
-                   <div>
-                     <span className="text-slate-400 text-xs uppercase font-bold block">XP</span>
-                     <p className="font-mono text-green-400 font-bold">{student.xp || 0}</p>
-                   </div>
-                   <div>
-                     <span className="text-slate-400 text-xs uppercase font-bold block">Level</span>
-                     <p className="font-mono text-blue-400 font-bold">{Math.floor((student.xp || 0)/500)+1}</p>
-                   </div>
-                </div>
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-lg">
+                          👤
+                        </div>
+                        <div>
+                          <p className="font-bold text-white text-lg leading-tight">{student.name}</p>
+                          <p className="text-xs text-slate-400 font-mono bg-slate-800 px-2 py-0.5 rounded inline-block mt-1">
+                            Pass: <span className="text-yellow-400">{student.password || 'N/A'}</span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-6 text-sm border-t border-slate-600 pt-3">
+                       <div>
+                         <span className="text-slate-400 text-xs uppercase font-bold block">XP</span>
+                         <p className="font-mono text-green-400 font-bold">{student.xp || 0}</p>
+                       </div>
+                       <div>
+                         <span className="text-slate-400 text-xs uppercase font-bold block">Level</span>
+                         <p className="font-mono text-blue-400 font-bold">{Math.floor((student.xp || 0)/500)+1}</p>
+                       </div>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
             {students.length === 0 && <p className="text-slate-500 italic">No students yet.</p>}

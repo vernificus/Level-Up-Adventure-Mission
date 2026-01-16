@@ -45,6 +45,8 @@ export function useGameState() {
   const [showAchievement, setShowAchievement] = useState(null);
   const [showMysteryReward, setShowMysteryReward] = useState(null);
 
+  const [dataLoaded, setDataLoaded] = useState(false);
+
   // Load data from "Backend" on mount
   useEffect(() => {
     if (user && user.role === 'student') {
@@ -66,26 +68,32 @@ export function useGameState() {
   };
 
   const loadUserData = async () => {
-    const studentData = await backend.getStudent(user.id);
-    if (studentData) {
-      const { id, classId, name, ...gameData } = studentData;
-      setGameState(prev => ({
-        ...prev,
-        ...gameData,
-        playerName: name || prev.playerName
-      }));
-    }
+    try {
+      const studentData = await backend.getStudent(user.id);
+      if (studentData) {
+        const { id, classId, name, ...gameData } = studentData;
+        setGameState(prev => ({
+          ...prev,
+          ...gameData,
+          playerName: name || prev.playerName
+        }));
+      }
 
-    const subs = await backend.getStudentSubmissions(user.id);
-    setSubmissions(subs);
+      const subs = await backend.getStudentSubmissions(user.id);
+      setSubmissions(subs);
+    } catch (error) {
+      console.error("Error loading user data:", error);
+    } finally {
+      setDataLoaded(true);
+    }
   };
 
   // Sync state to "Backend" whenever it changes
   useEffect(() => {
-    if (user && user.role === 'student') {
+    if (user && user.role === 'student' && dataLoaded) {
       backend.updateStudent(user.id, gameState);
     }
-  }, [gameState, user]);
+  }, [gameState, user, dataLoaded]);
 
   // Calculate current level
   const getCurrentLevel = useCallback(() => {

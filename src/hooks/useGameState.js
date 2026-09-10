@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { LEVELS, ACHIEVEMENTS, DAILY_QUESTS, MYSTERY_REWARDS, LEARNING_PATHS as DEFAULT_PATHS, PATH_COLORS } from '../data/gameData';
+import { LEVELS, ACHIEVEMENTS, DAILY_QUESTS, MYSTERY_REWARDS, LEARNING_PATHS as DEFAULT_PATHS, PATH_COLORS, GUILDS, DEFAULT_10_GUILDS } from '../data/gameData';
 import { realBackend as backend } from '../services/realBackend';
 import { useAuth } from '../context/AuthContext';
 
 const getDefaultState = () => ({
+
   // Player info
   playerName: '',
   xp: 0,
@@ -88,12 +89,23 @@ export function useGameState(overrideClassId) {
     }
   }, [user, effectiveClassId]);
 
+  const [categoriesPerRow, setCategoriesPerRow] = useState('auto');
+  const [classGuilds, setClassGuilds] = useState(GUILDS);
+
   const loadClassActivities = async () => {
     if (!effectiveClassId) return;
     try {
       // Fetch the class document once to get both activities and category names
       const classDoc = await backend.getClass(effectiveClassId);
       if (!classDoc) return;
+
+      if (classDoc.categoriesPerRow) {
+        setCategoriesPerRow(classDoc.categoriesPerRow);
+      }
+
+      if (classDoc.guilds && Array.isArray(classDoc.guilds) && classDoc.guilds.length > 0) {
+        setClassGuilds(classDoc.guilds);
+      }
 
       // Start with custom activities if saved, otherwise keep defaults
       let paths = classDoc.activities && classDoc.activities.length > 0
@@ -124,6 +136,23 @@ export function useGameState(overrideClassId) {
             }
           });
         }
+      }
+
+      // Filter out any paths that were removed by the teacher in categoryNames
+      if (classDoc.categoryNames && Object.keys(classDoc.categoryNames).length > 0) {
+        paths = paths.filter(p => p.id in classDoc.categoryNames);
+      }
+
+      // Sort according to custom categoryOrder if specified
+      if (Array.isArray(classDoc.categoryOrder) && classDoc.categoryOrder.length > 0) {
+        paths.sort((a, b) => {
+          const idxA = classDoc.categoryOrder.indexOf(a.id);
+          const idxB = classDoc.categoryOrder.indexOf(b.id);
+          if (idxA === -1 && idxB === -1) return 0;
+          if (idxA === -1) return 1;
+          if (idxB === -1) return -1;
+          return idxA - idxB;
+        });
       }
 
       setLearningPaths(paths);
@@ -220,8 +249,16 @@ export function useGameState(overrideClassId) {
         case 'variety_pack': {
           // Unlocked when the student has completed at least one activity from every available path
           const completions = updatedState.pathCompletions || {};
-          const completedPaths = Object.values(completions).filter(c => c > 0).length;
-          unlocked = completedPaths >= 3 && completedPaths >= Object.keys(completions).length;
+          const activePathIds = (learningPaths && learningPaths.length > 0)
+            ? learningPaths.map(p => p.id)
+            : Object.keys(completions);
+          if (activePathIds.length > 0) {
+            const completedPaths = activePathIds.filter(id => (completions[id] || 0) > 0).length;
+            unlocked = completedPaths >= activePathIds.length;
+          } else {
+            const completedPaths = Object.values(completions).filter(c => c > 0).length;
+            unlocked = completedPaths >= 1;
+          }
           break;
         }
         case 'streak_3':
@@ -277,7 +314,7 @@ export function useGameState(overrideClassId) {
     });
 
     return newAchievements;
-  }, []);
+  }, [learningPaths]);
 
   const checkAndSetAchievements = (updatedState) => {
       const newAchievements = checkAchievements(updatedState);
@@ -532,6 +569,14 @@ export function useGameState(overrideClassId) {
      return false;
   }, [gameState.coins, gameState.ownedItems]);
 
+  const spendCoins = useCallback((amount) => {
+    if (gameState.coins >= amount) {
+      setGameState(prev => ({ ...prev, coins: prev.coins - amount }));
+      return true;
+    }
+    return false;
+  }, [gameState.coins]);
+
   const equipAvatarItem = useCallback((category, itemId) => {
       setGameState(prev => ({ ...prev, avatar: { ...prev.avatar, [category]: itemId } }));
   }, []);
@@ -544,6 +589,9 @@ export function useGameState(overrideClassId) {
     gameState,
     submissions,
     learningPaths, // Export this
+    categoriesPerRow, // Export this
+    classGuilds, // Export this (supports up to 10 guilds)
+    spendCoins, // Helper to spend coins on STEM supplies
     getCurrentLevel,
     getNextLevelXp,
     getDailyQuest,

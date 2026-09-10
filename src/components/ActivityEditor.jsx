@@ -439,6 +439,23 @@ export default function ActivityEditor({
                 }
               });
             }
+
+            // Filter out paths that were removed from categoryNames
+            if (classDoc.categoryNames && Object.keys(classDoc.categoryNames).length > 0) {
+              paths = paths.filter(p => p.id in classDoc.categoryNames);
+            }
+
+            // Sort by categoryOrder if available
+            if (Array.isArray(classDoc.categoryOrder) && classDoc.categoryOrder.length > 0) {
+              paths.sort((a, b) => {
+                const idxA = classDoc.categoryOrder.indexOf(a.id);
+                const idxB = classDoc.categoryOrder.indexOf(b.id);
+                if (idxA === -1 && idxB === -1) return 0;
+                if (idxA === -1) return 1;
+                if (idxB === -1) return -1;
+                return idxA - idxB;
+              });
+            }
           }
 
           // Normalize all steps to object form

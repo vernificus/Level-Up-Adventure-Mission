@@ -4,15 +4,23 @@ import { realBackend as backend } from '../services/realBackend';
 import {
   Users, Plus, LogOut, BookOpen, ClipboardList, CheckCircle2,
   XCircle, Clock, ChevronRight, GraduationCap, Copy, Trash2, Edit, RefreshCw, RotateCcw, Link, Save, Gift,
-  Share2, UserPlus, X, Mail, MessageSquare, Sparkles, Star, Trophy, ChevronDown, ChevronUp, BarChart3, Eye, Zap, Building2, Layers, Shield, ShieldCheck
+  Share2, UserPlus, X, Mail, MessageSquare, Sparkles, Star, Trophy, ChevronDown, ChevronUp, BarChart3, Eye, Zap, Building2, Layers, Shield, ShieldCheck,
+  Camera, Upload, Package, ShoppingBag, Swords, Check, Settings, Image as ImageIcon, Award
 } from 'lucide-react';
-import { LEVELS, ACHIEVEMENTS, GUILDS, GUILD_TROPHIES, GUILD_LEVELS, getGuildLevelInfo, LEARNING_PATHS, MAX_CATEGORIES, PATH_COLORS } from '../data/gameData';
+import {
+  LEVELS, ACHIEVEMENTS, GUILDS, DEFAULT_10_GUILDS, GUILD_TROPHIES,
+  GUILD_LEVELS, getGuildLevelInfo, LEARNING_PATHS, MAX_CATEGORIES,
+  PATH_COLORS, DEFAULT_STEM_SUPPLIES, BOSS_CHALLENGES
+} from '../data/gameData';
+import { compressImageFile, isValidImageUrl } from '../utils/imageUtils';
 import Avatar3D from './Avatar3D';
 import { FileViewer } from './FileViewer';
 import ActivityEditor from './ActivityEditor';
 import RosterManager from './RosterManager';
 import ChoiceBoardExport from './ChoiceBoardExport';
 import LegalModal from './LegalModal';
+import LevelEconomyGuideModal from './LevelEconomyGuideModal';
+
 
 export default function TeacherPortal() {
   const { user, logout } = useAuth();
@@ -28,6 +36,8 @@ export default function TeacherPortal() {
   const [legalTab, setLegalTab] = useState('privacy');
   const [categoryNames, setCategoryNames] = useState({});
   const [categorySubtitles, setCategorySubtitles] = useState({});
+  const [categoryOrder, setCategoryOrder] = useState([]);
+  const [categoriesPerRow, setCategoriesPerRow] = useState('auto');
   const [savingCategories, setSavingCategories] = useState(false);
 
   // Co-teacher state
@@ -49,6 +59,10 @@ export default function TeacherPortal() {
   const [applyingTemplate, setApplyingTemplate] = useState(false);
   const [inspectingTemplate, setInspectingTemplate] = useState(null);
   const [importingSingleActivityId, setImportingSingleActivityId] = useState(null);
+  const [templateForImport, setTemplateForImport] = useState(null);
+  const [importOptionTab, setImportOptionTab] = useState('menu'); // 'menu' | 'selective'
+  const [selectiveActivities, setSelectiveActivities] = useState(new Set());
+  const [showGuideModal, setShowGuideModal] = useState(false);
 
   const loadOrgTemplates = async () => {
     if (!user.organizationId) return;
@@ -91,21 +105,36 @@ export default function TeacherPortal() {
     setImportingSingleActivityId(null);
   };
 
-  const handleImportAllTemplateActivities = async (template) => {
+  const handleOpenImportModal = (template) => {
     if (!selectedClass) {
       alert('Please select a class first.');
       return;
     }
-    if (!window.confirm(`Import all activities from "${template.title}" into "${selectedClass.name}"? Existing activities will NOT be removed.`)) return;
+    setTemplateForImport(template);
+    setImportOptionTab('menu');
+    const allIds = new Set();
+    (template.activities || []).forEach(path => {
+      (path.options || []).forEach(opt => {
+        allIds.add(`${path.id}:${opt.id}`);
+      });
+    });
+    setSelectiveActivities(allIds);
+  };
+
+  const handleExecuteOverwrite = async () => {
+    if (!selectedClass || !templateForImport) return;
+    if (!window.confirm(`⚠️ WARNING: OVERWRITE CHOICE BOARD\n\nThis will replace all current activities and categories in "${selectedClass.name}" with the contents of "${templateForImport.title}".\n\nExisting activity configuration will be overwritten. Proceed?`)) return;
     setApplyingTemplate(true);
     try {
       await backend.importTemplateActivitiesToClass(
         selectedClass.id,
-        template.activities || [],
-        template.categoryNames || {},
-        template.categorySubtitles || {}
+        templateForImport.activities || [],
+        templateForImport.categoryNames || {},
+        templateForImport.categorySubtitles || {},
+        'overwrite'
       );
-      alert(`Successfully imported all activities from "${template.title}" into "${selectedClass.name}"!`);
+      alert(`Choice board overwritten successfully with "${templateForImport.title}"!`);
+      setTemplateForImport(null);
       setShowOrgTemplatesModal(false);
       const updatedClass = await backend.getClass(selectedClass.id);
       if (updatedClass) {
@@ -113,9 +142,75 @@ export default function TeacherPortal() {
         setClasses(prev => prev.map(c => c.id === updatedClass.id ? updatedClass : c));
       }
     } catch (err) {
-      alert('Error importing template activities: ' + err.message);
+      alert('Error overwriting template: ' + err.message);
     }
     setApplyingTemplate(false);
+  };
+
+  const handleExecuteMerge = async () => {
+    if (!selectedClass || !templateForImport) return;
+    setApplyingTemplate(true);
+    try {
+      await backend.importTemplateActivitiesToClass(
+        selectedClass.id,
+        templateForImport.activities || [],
+        templateForImport.categoryNames || {},
+        templateForImport.categorySubtitles || {},
+        'merge'
+      );
+      alert(`Successfully merged all activities from "${templateForImport.title}" into "${selectedClass.name}"! Existing activities were preserved.`);
+      setTemplateForImport(null);
+      setShowOrgTemplatesModal(false);
+      const updatedClass = await backend.getClass(selectedClass.id);
+      if (updatedClass) {
+        setSelectedClass(updatedClass);
+        setClasses(prev => prev.map(c => c.id === updatedClass.id ? updatedClass : c));
+      }
+    } catch (err) {
+      alert('Error merging template: ' + err.message);
+    }
+    setApplyingTemplate(false);
+  };
+
+  const handleExecuteSelective = async () => {
+    if (!selectedClass || !templateForImport) return;
+    if (selectiveActivities.size === 0) {
+      alert('Please select at least one activity to import.');
+      return;
+    }
+    setApplyingTemplate(true);
+    try {
+      const filteredPaths = (templateForImport.activities || []).map(path => {
+        const filteredOptions = (path.options || []).filter(opt => selectiveActivities.has(`${path.id}:${opt.id}`));
+        return {
+          ...path,
+          options: filteredOptions
+        };
+      }).filter(path => path.options.length > 0);
+
+      await backend.importTemplateActivitiesToClass(
+        selectedClass.id,
+        filteredPaths,
+        templateForImport.categoryNames || {},
+        templateForImport.categorySubtitles || {},
+        'merge'
+      );
+      alert(`Successfully imported ${selectiveActivities.size} selected activity(ies) into "${selectedClass.name}"!`);
+      setTemplateForImport(null);
+      setShowOrgTemplatesModal(false);
+      const updatedClass = await backend.getClass(selectedClass.id);
+      if (updatedClass) {
+        setSelectedClass(updatedClass);
+        setClasses(prev => prev.map(c => c.id === updatedClass.id ? updatedClass : c));
+      }
+    } catch (err) {
+      alert('Error importing selective activities: ' + err.message);
+    }
+    setApplyingTemplate(false);
+  };
+
+  const handleImportAllTemplateActivities = async (template) => {
+    handleOpenImportModal(template);
   };
 
   const handleApplyOrgTemplate = async () => {
@@ -289,40 +384,99 @@ export default function TeacherPortal() {
     }
   };
 
-  // Load category names when class changes
+  // Load category names & order when class changes
   useEffect(() => {
     if (selectedClass) {
-      // Build names/subtitles from saved data, falling back to defaults from LEARNING_PATHS
       const names = {};
       const subs = {};
-      // Start with the default paths
-      LEARNING_PATHS.forEach(p => {
-        names[p.id] = selectedClass.categoryNames?.[p.id] || p.title;
-        subs[p.id] = selectedClass.categorySubtitles?.[p.id] || p.subtitle;
-      });
-      // Include any extra paths the teacher may have added beyond defaults
-      if (selectedClass.categoryNames) {
-        Object.keys(selectedClass.categoryNames).forEach(key => {
-          if (!(key in names)) {
-            names[key] = selectedClass.categoryNames[key];
-            subs[key] = selectedClass.categorySubtitles?.[key] || '';
-          }
+      let order = Array.isArray(selectedClass.categoryOrder) ? [...selectedClass.categoryOrder] : [];
+
+      if (selectedClass.categoryNames && Object.keys(selectedClass.categoryNames).length > 0) {
+        // Teacher has customized category names! Respect exact keys saved without resurrecting deleted defaults
+        const savedKeys = Object.keys(selectedClass.categoryNames);
+        order = [...new Set([...order.filter(k => savedKeys.includes(k)), ...savedKeys])];
+        order.forEach(k => {
+          names[k] = selectedClass.categoryNames[k];
+          subs[k] = selectedClass.categorySubtitles?.[k] || '';
         });
+      } else {
+        // Fallback to defaults from LEARNING_PATHS
+        LEARNING_PATHS.forEach(p => {
+          names[p.id] = p.title;
+          subs[p.id] = p.subtitle || '';
+        });
+        order = LEARNING_PATHS.map(p => p.id);
       }
+
       setCategoryNames(names);
       setCategorySubtitles(subs);
+      setCategoryOrder(order);
+      setCategoriesPerRow(selectedClass.categoriesPerRow || 'auto');
     }
   }, [selectedClass]);
+
+  const handleMoveCategory = (index, direction) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= categoryOrder.length) return;
+    const newOrder = [...categoryOrder];
+    const temp = newOrder[index];
+    newOrder[index] = newOrder[targetIndex];
+    newOrder[targetIndex] = temp;
+    setCategoryOrder(newOrder);
+  };
+
+  const handleRemoveCategory = (key) => {
+    if (categoryOrder.length <= 1) {
+      alert('You must have at least 1 category on the choice board.');
+      return;
+    }
+    const name = categoryNames[key] || key;
+    if (!window.confirm(`Remove category "${name}"? Any activities in this category will not be displayed until reassigned.`)) return;
+    setCategoryNames(prev => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    setCategorySubtitles(prev => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    setCategoryOrder(prev => prev.filter(k => k !== key));
+  };
+
+  const handleAddCategory = () => {
+    if (categoryOrder.length >= MAX_CATEGORIES) {
+      alert(`Maximum ${MAX_CATEGORIES} categories reached.`);
+      return;
+    }
+    const nextNum = categoryOrder.length + 1;
+    let key = `path${nextNum}`;
+    let counter = nextNum;
+    while (key in categoryNames) {
+      counter++;
+      key = `path${counter}`;
+    }
+    const newTitle = `Category ${counter}`;
+    setCategoryNames(prev => ({ ...prev, [key]: newTitle }));
+    setCategorySubtitles(prev => ({ ...prev, [key]: '' }));
+    setCategoryOrder(prev => [...prev, key]);
+  };
 
   const handleSaveCategories = async () => {
     if (!selectedClass) return;
     setSavingCategories(true);
     try {
-      await backend.updateClass(selectedClass.id, { categoryNames, categorySubtitles });
+      await backend.updateClass(selectedClass.id, {
+        categoryNames,
+        categorySubtitles,
+        categoryOrder,
+        categoriesPerRow
+      });
       // Update local class data
-      setSelectedClass(prev => ({ ...prev, categoryNames, categorySubtitles }));
-      setClasses(prev => prev.map(c => c.id === selectedClass.id ? { ...c, categoryNames, categorySubtitles } : c));
-      alert('Category names saved!');
+      setSelectedClass(prev => ({ ...prev, categoryNames, categorySubtitles, categoryOrder, categoriesPerRow }));
+      setClasses(prev => prev.map(c => c.id === selectedClass.id ? { ...c, categoryNames, categorySubtitles, categoryOrder, categoriesPerRow } : c));
+      alert('Category settings & layout saved!');
     } catch (error) {
       alert('Error saving categories: ' + error.message);
     }
@@ -515,6 +669,14 @@ export default function TeacherPortal() {
                       <p className="text-slate-400 text-xs uppercase font-bold">Avg XP</p>
                     </div>
                     <div className="ml-auto flex items-start gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowGuideModal(true)}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 rounded-lg text-sm font-bold transition-colors"
+                        title="View Level XP Requirements & Gold Economy Guide"
+                      >
+                        <Award className="w-4 h-4" /> Levels & Gold Guide
+                      </button>
                       <ChoiceBoardExport classId={selectedClass.id} className={selectedClass.name} />
                       <div>
                         <button
@@ -650,88 +812,145 @@ export default function TeacherPortal() {
 
                 {activeTab === 'categories' && (
                   <div role="tabpanel" id="tabpanel-categories" aria-labelledby="tab-categories">
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
-                      <h3 className="text-xl font-bold text-white mb-2">Category Names</h3>
-                      <p className="text-slate-400 text-sm mb-6">Customize your learning path category names and subtitles that students see. You can have up to {MAX_CATEGORIES} categories.</p>
-                      <div className="space-y-6">
-                        {Object.keys(categoryNames).map((key, idx) => {
+                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-6">
+                      <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div>
+                          <h3 className="text-xl font-bold text-white mb-1">Categories & Layout</h3>
+                          <p className="text-slate-400 text-sm">Customize learning path category names, reorder them, and select column layout on the student choice board. You can have 1 to {MAX_CATEGORIES} categories.</p>
+                        </div>
+                        <button
+                          onClick={handleSaveCategories}
+                          disabled={savingCategories}
+                          className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg transition-colors disabled:opacity-50 shadow"
+                        >
+                          <Save className="w-4 h-4" aria-hidden="true" /> {savingCategories ? 'Saving...' : 'Save Settings'}
+                        </button>
+                      </div>
+
+                      {/* Layout Settings Card */}
+                      <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700/80 flex flex-wrap items-center justify-between gap-4">
+                        <div className="max-w-md">
+                          <label htmlFor="categories-per-row" className="block text-sm font-bold text-white mb-1">
+                            Choice Board Columns (Student View)
+                          </label>
+                          <p className="text-xs text-slate-400">
+                            Configure how many category columns appear per row. Content wraps responsively on mobile displays to ensure accessibility (min 44×44px touch targets).
+                          </p>
+                        </div>
+                        <select
+                          id="categories-per-row"
+                          value={categoriesPerRow}
+                          onChange={e => setCategoriesPerRow(e.target.value)}
+                          className="px-3.5 py-2.5 bg-slate-800 border border-slate-600 rounded-lg text-white font-semibold focus:border-green-500 outline-none text-sm cursor-pointer"
+                        >
+                          <option value="auto">Auto / Responsive (Recommended)</option>
+                          <option value="1">1 Column (Single Flow)</option>
+                          <option value="2">2 Columns</option>
+                          <option value="3">3 Columns</option>
+                          <option value="4">4 Columns</option>
+                          <option value="5">5 Columns</option>
+                          <option value="6">6 Columns</option>
+                        </select>
+                      </div>
+
+                      {/* Categories List */}
+                      <div className="space-y-4">
+                        {categoryOrder.map((key, idx) => {
                           const borderColors = ['border-blue-500', 'border-purple-500', 'border-orange-500', 'border-green-500', 'border-pink-500', 'border-teal-500'];
                           const color = borderColors[idx % borderColors.length];
-                          const isDefault = LEARNING_PATHS.some(p => p.id === key);
                           return (
-                          <div key={key} className={`p-4 bg-slate-700 rounded-lg border-l-4 ${color}`}>
-                            <div className="flex items-center justify-between mb-3">
-                              <span className="text-xs text-slate-500 font-mono">{key}</span>
-                              {!isDefault && (
-                                <button
-                                  onClick={() => {
-                                    if (!window.confirm('Remove this category? Activities in it will need to be reassigned.')) return;
-                                    setCategoryNames(prev => { const next = { ...prev }; delete next[key]; return next; });
-                                    setCategorySubtitles(prev => { const next = { ...prev }; delete next[key]; return next; });
-                                  }}
-                                  className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1"
-                                >
-                                  <Trash2 className="w-3 h-3" /> Remove
-                                </button>
-                              )}
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div>
-                                <label htmlFor={`cat-name-${key}`} className="block text-xs text-slate-400 font-bold uppercase mb-1">Category Name</label>
-                                <input
-                                  id={`cat-name-${key}`}
-                                  type="text"
-                                  value={categoryNames[key] || ''}
-                                  onChange={e => setCategoryNames(prev => ({ ...prev, [key]: e.target.value }))}
-                                  placeholder="Category name"
-                                  className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-green-500 outline-none"
-                                />
+                            <div key={key} className={`p-4 bg-slate-700/90 rounded-xl border-l-4 ${color} shadow`}>
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-bold px-2 py-0.5 bg-slate-800 text-slate-300 rounded">
+                                    #{idx + 1}
+                                  </span>
+                                  <span className="text-xs text-slate-400 font-mono">{key}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleMoveCategory(idx, -1)}
+                                    disabled={idx === 0}
+                                    title="Move Up"
+                                    aria-label={`Move ${categoryNames[key] || key} up`}
+                                    className="p-1.5 bg-slate-800 hover:bg-slate-600 text-slate-300 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed min-w-[36px] min-h-[36px] flex items-center justify-center"
+                                  >
+                                    <ChevronUp className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleMoveCategory(idx, 1)}
+                                    disabled={idx === categoryOrder.length - 1}
+                                    title="Move Down"
+                                    aria-label={`Move ${categoryNames[key] || key} down`}
+                                    className="p-1.5 bg-slate-800 hover:bg-slate-600 text-slate-300 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed min-w-[36px] min-h-[36px] flex items-center justify-center"
+                                  >
+                                    <ChevronDown className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveCategory(key)}
+                                    disabled={categoryOrder.length <= 1}
+                                    title="Remove Category"
+                                    aria-label={`Remove category ${categoryNames[key] || key}`}
+                                    className="px-2.5 py-1.5 bg-red-900/40 hover:bg-red-800/60 border border-red-700/50 text-red-300 text-xs rounded transition-colors flex items-center gap-1 min-h-[36px] disabled:opacity-30 disabled:cursor-not-allowed"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" /> Remove
+                                  </button>
+                                </div>
                               </div>
-                              <div>
-                                <label htmlFor={`cat-sub-${key}`} className="block text-xs text-slate-400 font-bold uppercase mb-1">Subtitle</label>
-                                <input
-                                  id={`cat-sub-${key}`}
-                                  type="text"
-                                  value={categorySubtitles[key] || ''}
-                                  onChange={e => setCategorySubtitles(prev => ({ ...prev, [key]: e.target.value }))}
-                                  placeholder="Subtitle"
-                                  className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-green-500 outline-none"
-                                />
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label htmlFor={`cat-name-${key}`} className="block text-xs text-slate-400 font-bold uppercase mb-1">Category Name</label>
+                                  <input
+                                    id={`cat-name-${key}`}
+                                    type="text"
+                                    value={categoryNames[key] || ''}
+                                    onChange={e => setCategoryNames(prev => ({ ...prev, [key]: e.target.value }))}
+                                    placeholder="Category name"
+                                    className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-green-500 outline-none"
+                                  />
+                                </div>
+                                <div>
+                                  <label htmlFor={`cat-sub-${key}`} className="block text-xs text-slate-400 font-bold uppercase mb-1">Subtitle</label>
+                                  <input
+                                    id={`cat-sub-${key}`}
+                                    type="text"
+                                    value={categorySubtitles[key] || ''}
+                                    onChange={e => setCategorySubtitles(prev => ({ ...prev, [key]: e.target.value }))}
+                                    placeholder="Subtitle"
+                                    className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-green-500 outline-none"
+                                  />
+                                </div>
                               </div>
                             </div>
-                          </div>
                           );
                         })}
                       </div>
 
-                      {Object.keys(categoryNames).length < MAX_CATEGORIES && (
-                        <button
-                          onClick={() => {
-                            const nextNum = Object.keys(categoryNames).length + 1;
-                            const newKey = `path${nextNum}`;
-                            // Find a unique key
-                            let key = newKey;
-                            let counter = nextNum;
-                            while (key in categoryNames) {
-                              counter++;
-                              key = `path${counter}`;
-                            }
-                            setCategoryNames(prev => ({ ...prev, [key]: `Category ${counter}` }));
-                            setCategorySubtitles(prev => ({ ...prev, [key]: '' }));
-                          }}
-                          className="mt-4 flex items-center gap-2 px-4 py-2 border-2 border-dashed border-slate-600 hover:border-green-500 text-slate-400 hover:text-green-400 rounded-lg transition-colors"
-                        >
-                          <Plus className="w-4 h-4" /> Add Category
-                        </button>
-                      )}
+                      <div className="flex items-center justify-between pt-2">
+                        {categoryOrder.length < MAX_CATEGORIES ? (
+                          <button
+                            type="button"
+                            onClick={handleAddCategory}
+                            className="flex items-center gap-2 px-4 py-2 border-2 border-dashed border-slate-600 hover:border-green-500 text-slate-300 hover:text-green-400 rounded-lg transition-colors font-medium text-sm"
+                          >
+                            <Plus className="w-4 h-4" /> Add Category
+                          </button>
+                        ) : (
+                          <span className="text-xs text-slate-500 italic">Maximum {MAX_CATEGORIES} categories configured</span>
+                        )}
 
-                      <button
-                        onClick={handleSaveCategories}
-                        disabled={savingCategories}
-                        className="mt-6 flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg transition-colors disabled:opacity-50"
-                      >
-                        <Save className="w-4 h-4" aria-hidden="true" /> {savingCategories ? 'Saving...' : 'Save Category Names'}
-                      </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveCategories}
+                          disabled={savingCategories}
+                          className="flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          <Save className="w-4 h-4" aria-hidden="true" /> {savingCategories ? 'Saving...' : 'Save Settings'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -976,7 +1195,16 @@ export default function TeacherPortal() {
 
                 {activeTab === 'guilds' && (
                   <div role="tabpanel" id="tabpanel-guilds" aria-labelledby="tab-guilds">
-                    <GuildManagement classId={selectedClass.id} students={students} onStudentsUpdated={() => backend.getStudents(selectedClass.id).then(setStudents)} />
+                    <GuildManagement
+                      classId={selectedClass.id}
+                      selectedClass={selectedClass}
+                      onClassUpdated={(updated) => {
+                        setSelectedClass(updated);
+                        setClasses(prev => prev.map(c => c.id === updated.id ? updated : c));
+                      }}
+                      students={students}
+                      onStudentsUpdated={() => backend.getStudents(selectedClass.id).then(setStudents)}
+                    />
                   </div>
                 )}
 
@@ -1084,15 +1312,15 @@ export default function TeacherPortal() {
                               className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs rounded-lg transition-colors border border-slate-600 flex items-center gap-1.5"
                             >
                               <Eye className="w-3.5 h-3.5" />
-                              {isInspecting ? 'Hide Activities' : 'Choose Specific Activities'}
+                              {isInspecting ? 'Hide Preview' : 'Inspect Activities'}
                             </button>
                             <button
-                              onClick={() => handleImportAllTemplateActivities(tmp)}
+                              onClick={() => handleOpenImportModal(tmp)}
                               disabled={applyingTemplate}
-                              className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-lg transition-colors shadow flex items-center gap-1.5 disabled:opacity-50"
+                              className="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-lg transition-colors shadow flex items-center gap-1.5 disabled:opacity-50"
                             >
-                              <Plus className="w-3.5 h-3.5" />
-                              Import All Activities to Class
+                              <Layers className="w-3.5 h-3.5" />
+                              Import to Class...
                             </button>
                           </div>
                         </div>
@@ -1100,9 +1328,17 @@ export default function TeacherPortal() {
                         {/* Selective Activity Inspector */}
                         {isInspecting && (
                           <div className="mt-4 pt-4 border-t border-slate-700/80 space-y-4 bg-slate-900/60 p-4 rounded-xl">
-                            <h5 className="text-xs font-bold text-yellow-400 uppercase tracking-wider">
-                              Activities in "{tmp.title}" &mdash; Click "+ Import" to add to {selectedClass?.name}
-                            </h5>
+                            <div className="flex items-center justify-between">
+                              <h5 className="text-xs font-bold text-yellow-400 uppercase tracking-wider">
+                                Activities in "{tmp.title}"
+                              </h5>
+                              <button
+                                onClick={() => handleOpenImportModal(tmp)}
+                                className="text-xs text-purple-400 hover:text-purple-300 font-bold underline"
+                              >
+                                Open 3-Way Import Options →
+                              </button>
+                            </div>
 
                             <div className="space-y-4">
                               {(tmp.activities || []).map(path => {
@@ -1166,6 +1402,245 @@ export default function TeacherPortal() {
         </div>
       )}
 
+      {/* ================= MODAL: 3-WAY CHOICE BOARD TEMPLATE IMPORTER ================= */}
+      {templateForImport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="template-importer-title">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full p-6 shadow-2xl my-auto max-h-[92vh] flex flex-col">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-5">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-purple-400">Import Choice Board Template</span>
+                <h3 id="template-importer-title" className="text-xl font-bold text-white flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-purple-400" />
+                  {templateForImport.title}
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Target Class: <strong className="text-green-400">{selectedClass?.name}</strong>
+                </p>
+              </div>
+              <button
+                onClick={() => setTemplateForImport(null)}
+                aria-label="Close import dialog"
+                className="text-slate-400 hover:text-white text-xl font-bold p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            {importOptionTab === 'menu' ? (
+              <div className="space-y-4 overflow-y-auto flex-1 pr-1">
+                <p className="text-xs text-slate-300 mb-3">
+                  How would you like to apply this template to <strong>{selectedClass?.name}</strong>? Choose one of the 3 options below:
+                </p>
+
+                {/* Option 1: Overwrite */}
+                <div className="p-5 bg-red-950/30 border-2 border-red-600/50 rounded-xl hover:border-red-500 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="space-y-1 max-w-lg">
+                    <div className="flex items-center gap-2">
+                      <RotateCcw className="w-5 h-5 text-red-400 flex-shrink-0" />
+                      <h4 className="font-bold text-white text-base">Option 1: Overwrite Current Choice Board</h4>
+                    </div>
+                    <p className="text-xs text-red-200/80">
+                      Replaces all current activities and categories in {selectedClass?.name} with this template.
+                    </p>
+                    <span className="inline-block text-[11px] bg-red-900/60 text-red-300 px-2 py-0.5 rounded font-semibold">
+                      ⚠️ Replaces current activities
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleExecuteOverwrite}
+                    disabled={applyingTemplate}
+                    className="px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl transition-colors shadow flex items-center gap-1.5 whitespace-nowrap disabled:opacity-50"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Overwrite Board
+                  </button>
+                </div>
+
+                {/* Option 2: Merge / Keep Existing */}
+                <div className="p-5 bg-purple-950/30 border-2 border-purple-600/50 rounded-xl hover:border-purple-500 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="space-y-1 max-w-lg">
+                    <div className="flex items-center gap-2">
+                      <Layers className="w-5 h-5 text-purple-400 flex-shrink-0" />
+                      <h4 className="font-bold text-white text-base">Option 2: Merge & Keep Existing</h4>
+                    </div>
+                    <p className="text-xs text-purple-200/80">
+                      Appends all activities from this template into your class. Your current activities and categories will NOT be deleted.
+                    </p>
+                    <span className="inline-block text-[11px] bg-purple-900/60 text-purple-300 px-2 py-0.5 rounded font-semibold">
+                      ✨ Safe: keeps existing activities
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleExecuteMerge}
+                    disabled={applyingTemplate}
+                    className="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl transition-colors shadow flex items-center gap-1.5 whitespace-nowrap disabled:opacity-50"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Merge All Activities
+                  </button>
+                </div>
+
+                {/* Option 3: Select Specific Activities */}
+                <div className="p-5 bg-emerald-950/30 border-2 border-emerald-600/50 rounded-xl hover:border-emerald-500 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="space-y-1 max-w-lg">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                      <h4 className="font-bold text-white text-base">Option 3: Select Specific Activities</h4>
+                    </div>
+                    <p className="text-xs text-emerald-200/80">
+                      Cherry-pick only the specific activities and categories you want to import into your class.
+                    </p>
+                    <span className="inline-block text-[11px] bg-emerald-900/60 text-emerald-300 px-2 py-0.5 rounded font-semibold">
+                      🎯 Custom activity selection
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setImportOptionTab('selective')}
+                    disabled={applyingTemplate}
+                    className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-colors shadow flex items-center gap-1.5 whitespace-nowrap disabled:opacity-50"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    Choose Activities →
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Selective Mode Checklist */
+              <div className="space-y-4 overflow-y-auto flex-1 pr-1">
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-800/80 p-3 rounded-xl border border-slate-700">
+                  <button
+                    onClick={() => setImportOptionTab('menu')}
+                    className="text-xs text-slate-400 hover:text-white font-bold flex items-center gap-1"
+                  >
+                    ← Back to Options
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-yellow-400 font-bold">
+                      {selectiveActivities.size} Selected
+                    </span>
+                    <button
+                      onClick={() => {
+                        const allIds = new Set();
+                        (templateForImport.activities || []).forEach(path => {
+                          (path.options || []).forEach(opt => allIds.add(`${path.id}:${opt.id}`));
+                        });
+                        setSelectiveActivities(allIds);
+                      }}
+                      className="text-[11px] px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded font-semibold"
+                    >
+                      Select All
+                    </button>
+                    <button
+                      onClick={() => setSelectiveActivities(new Set())}
+                      className="text-[11px] px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded font-semibold"
+                    >
+                      Deselect All
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {(templateForImport.activities || []).map(path => {
+                    const categoryName = templateForImport.categoryNames?.[path.id] || path.title;
+                    const pathActivityKeys = (path.options || []).map(opt => `${path.id}:${opt.id}`);
+                    const allCategorySelected = pathActivityKeys.length > 0 && pathActivityKeys.every(k => selectiveActivities.has(k));
+
+                    return (
+                      <div key={path.id} className="bg-slate-800 rounded-xl border border-slate-700 p-4 space-y-3">
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-700/60">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={allCategorySelected}
+                              onChange={() => {
+                                setSelectiveActivities(prev => {
+                                  const next = new Set(prev);
+                                  if (allCategorySelected) {
+                                    pathActivityKeys.forEach(k => next.delete(k));
+                                  } else {
+                                    pathActivityKeys.forEach(k => next.add(k));
+                                  }
+                                  return next;
+                                });
+                              }}
+                              className="w-4 h-4 rounded text-green-500 focus:ring-0 cursor-pointer"
+                            />
+                            <span className="font-bold text-white text-sm">{categoryName}</span>
+                          </label>
+                          <span className="text-[11px] text-slate-400">
+                            {path.options?.length || 0} activities
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {(path.options || []).map(opt => {
+                            const key = `${path.id}:${opt.id}`;
+                            const isChecked = selectiveActivities.has(key);
+                            return (
+                              <label
+                                key={opt.id}
+                                className={`p-3 rounded-lg border text-left cursor-pointer transition-colors flex items-start gap-2.5 ${
+                                  isChecked
+                                    ? 'bg-slate-700/90 border-green-500/80 shadow-sm'
+                                    : 'bg-slate-900/60 border-slate-700/80 hover:border-slate-600'
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => {
+                                    setSelectiveActivities(prev => {
+                                      const next = new Set(prev);
+                                      if (next.has(key)) next.delete(key);
+                                      else next.add(key);
+                                      return next;
+                                    });
+                                  }}
+                                  className="mt-0.5 w-4 h-4 rounded text-green-500 focus:ring-0 cursor-pointer flex-shrink-0"
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <div className="font-bold text-xs text-white truncate">{opt.title}</div>
+                                  <div className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">{opt.desc}</div>
+                                  <div className="text-[10px] text-yellow-400 font-semibold mt-1">
+                                    {opt.type} &middot; {opt.xp} XP
+                                  </div>
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between gap-3 pt-4 border-t border-slate-800 mt-4">
+              <button
+                type="button"
+                onClick={() => setTemplateForImport(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold"
+              >
+                Cancel
+              </button>
+
+              {importOptionTab === 'selective' && (
+                <button
+                  type="button"
+                  onClick={handleExecuteSelective}
+                  disabled={applyingTemplate || selectiveActivities.size === 0}
+                  className="px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white font-bold text-xs rounded-xl transition-colors shadow flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <Plus className="w-4 h-4" />
+                  {applyingTemplate ? 'Importing...' : `Import ${selectiveActivities.size} Selected Activities`}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
         {/* Legal & Student Data Privacy Footer */}
         <footer className="mt-12 pt-6 border-t border-slate-800 text-center text-xs text-slate-500 space-y-2 print:hidden">
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
@@ -1200,12 +1675,18 @@ export default function TeacherPortal() {
           onClose={() => setLegalModalOpen(false)}
           initialTab={legalTab}
         />
+
+        <LevelEconomyGuideModal
+          isOpen={showGuideModal}
+          onClose={() => setShowGuideModal(false)}
+        />
       </div>
   );
 }
 
 // ============== GUILD MANAGEMENT (TEACHER) ==============
-function GuildManagement({ classId, students, onStudentsUpdated }) {
+function GuildManagement({ classId, selectedClass, onClassUpdated, students, onStudentsUpdated }) {
+  const [subTab, setSubTab] = useState('standings'); // 'standings', 'setup', 'stem_orders', 'boss'
   const [guildData, setGuildData] = useState({});
   const [loading, setLoading] = useState(true);
   const [rewardGuild, setRewardGuild] = useState(null);
@@ -1219,8 +1700,59 @@ function GuildManagement({ classId, students, onStudentsUpdated }) {
   const [awardingTrophy, setAwardingTrophy] = useState(false);
   const [guildHalls, setGuildHalls] = useState({});
 
+  // Guild Customizer State (2 to 10 Guilds)
+  const [activeGuilds, setActiveGuilds] = useState(
+    selectedClass?.guilds && selectedClass.guilds.length > 0 ? selectedClass.guilds : GUILDS
+  );
+  const [savingGuilds, setSavingGuilds] = useState(false);
+  const [showAddGuildModal, setShowAddGuildModal] = useState(false);
+
+  // STEM Supplies Audit State
+  const [stemPurchases, setStemPurchases] = useState([]);
+  const [stemFilter, setStemFilter] = useState('all'); // 'all', 'pending', 'fulfilled'
+  const [loadingPurchases, setLoadingPurchases] = useState(false);
+  const [stemCatalog, setStemCatalog] = useState(DEFAULT_STEM_SUPPLIES);
+  const [showCatalogEditor, setShowCatalogEditor] = useState(false);
+  const [savingCatalog, setSavingCatalog] = useState(false);
+
+  // Boss Battle State
+  const [activeBossInfo, setActiveBossInfo] = useState(null);
+  const [bossForm, setBossForm] = useState({
+    name: '',
+    title: '',
+    icon: '🤖',
+    desc: '',
+    steps: ['', '', ''],
+    reward: 500,
+    coinReward: 100,
+  });
+  const [savingBoss, setSavingBoss] = useState(false);
+
+  const GUILD_COLOR_THEMES = [
+    { name: 'Red / Crimson', color: 'bg-red-600', gradient: 'from-red-600 to-amber-500', border: 'border-red-400' },
+    { name: 'Blue / Azure', color: 'bg-blue-600', gradient: 'from-blue-600 to-indigo-500', border: 'border-blue-400' },
+    { name: 'Purple / Amethyst', color: 'bg-purple-600', gradient: 'from-purple-600 to-pink-500', border: 'border-purple-400' },
+    { name: 'Green / Emerald', color: 'bg-emerald-600', gradient: 'from-emerald-600 to-teal-500', border: 'border-emerald-400' },
+    { name: 'Amber / Gold', color: 'bg-amber-600', gradient: 'from-amber-600 to-yellow-500', border: 'border-amber-400' },
+    { name: 'Cyan / Laser', color: 'bg-cyan-600', gradient: 'from-cyan-600 to-blue-500', border: 'border-cyan-400' },
+    { name: 'Slate / Titanium', color: 'bg-slate-600', gradient: 'from-slate-600 to-zinc-500', border: 'border-slate-400' },
+    { name: 'Rose / Pink', color: 'bg-pink-600', gradient: 'from-pink-600 to-rose-500', border: 'border-pink-400' },
+    { name: 'Teal / Astro', color: 'bg-teal-600', gradient: 'from-teal-600 to-emerald-500', border: 'border-teal-400' },
+    { name: 'Indigo / Cosmic', color: 'bg-indigo-600', gradient: 'from-indigo-600 to-purple-500', border: 'border-indigo-400' },
+  ];
+
+  useEffect(() => {
+    if (selectedClass?.guilds && selectedClass.guilds.length > 0) {
+      setActiveGuilds(selectedClass.guilds);
+    } else {
+      setActiveGuilds(GUILDS);
+    }
+  }, [selectedClass]);
+
   useEffect(() => {
     loadGuildData();
+    loadStemData();
+    loadBossData();
   }, [classId]);
 
   const loadGuildData = async () => {
@@ -1228,16 +1760,51 @@ function GuildManagement({ classId, students, onStudentsUpdated }) {
     try {
       const data = await backend.getGuildLeaderboard(classId);
       setGuildData(data);
-      // Load guild halls
+      const guildsToLoad = selectedClass?.guilds && selectedClass.guilds.length > 0 ? selectedClass.guilds : GUILDS;
       const halls = {};
-      for (const guild of GUILDS) {
-        halls[guild.id] = await backend.getGuildHall(classId, guild.id);
+      for (const g of guildsToLoad) {
+        halls[g.id] = await backend.getGuildHall(classId, g.id);
       }
       setGuildHalls(halls);
     } catch (e) {
       console.error("Failed to load guild data", e);
     }
     setLoading(false);
+  };
+
+  const loadStemData = async () => {
+    setLoadingPurchases(true);
+    try {
+      const [purchases, catalog] = await Promise.all([
+        backend.getStemPurchases(classId),
+        backend.getStemShopItems(classId),
+      ]);
+      setStemPurchases(purchases || []);
+      if (catalog && catalog.length > 0) setStemCatalog(catalog);
+    } catch (e) {
+      console.error("Failed to load STEM data", e);
+    }
+    setLoadingPurchases(false);
+  };
+
+  const loadBossData = async () => {
+    try {
+      const boss = await backend.getActiveBoss(classId, selectedClass?.organizationId);
+      setActiveBossInfo(boss);
+      if (selectedClass?.customBoss) {
+        setBossForm({
+          name: selectedClass.customBoss.name || '',
+          title: selectedClass.customBoss.title || '',
+          icon: selectedClass.customBoss.icon || '🤖',
+          desc: selectedClass.customBoss.desc || '',
+          steps: selectedClass.customBoss.steps || ['', '', ''],
+          reward: selectedClass.customBoss.reward || 500,
+          coinReward: selectedClass.customBoss.coinReward || 100,
+        });
+      }
+    } catch (e) {
+      console.error("Failed to load boss data", e);
+    }
   };
 
   const handleGuildReward = async () => {
@@ -1253,7 +1820,7 @@ function GuildManagement({ classId, students, onStudentsUpdated }) {
         value = rewardAchievement;
       }
       const count = await backend.rewardGuild(classId, rewardGuild, rewardType, value);
-      const guildName = GUILDS.find(g => g.id === rewardGuild)?.name || rewardGuild;
+      const guildName = activeGuilds.find(g => g.id === rewardGuild)?.name || rewardGuild;
       alert(`Reward given to ${count} members of ${guildName}!`);
       setRewardGuild(null);
       setRewardAmount('');
@@ -1275,7 +1842,7 @@ function GuildManagement({ classId, students, onStudentsUpdated }) {
         ...trophy,
         message: trophyMessage || '',
       });
-      const guildName = GUILDS.find(g => g.id === trophyGuild)?.name || trophyGuild;
+      const guildName = activeGuilds.find(g => g.id === trophyGuild)?.name || trophyGuild;
       alert(`${trophy.title} awarded to ${guildName}!`);
       setTrophyGuild(null);
       setSelectedTrophy('');
@@ -1289,8 +1856,8 @@ function GuildManagement({ classId, students, onStudentsUpdated }) {
 
   const handleAutoBalance = async (mode = 'unassigned') => {
     const msg = mode === 'all'
-      ? 'Rebalance ALL students evenly across the 4 guilds?'
-      : 'Auto-assign all unassigned students to balance guild rosters?';
+      ? `Rebalance ALL students evenly across the ${activeGuilds.length} guilds?`
+      : `Auto-assign all unassigned students evenly across the ${activeGuilds.length} guilds?`;
     if (!window.confirm(msg)) return;
     try {
       const res = await backend.autoBalanceGuilds(classId, mode);
@@ -1302,8 +1869,167 @@ function GuildManagement({ classId, students, onStudentsUpdated }) {
     }
   };
 
+  // Guild Customizer Handlers
+  const handleUpdateGuildField = (guildId, field, value) => {
+    setActiveGuilds(prev => prev.map(g => g.id === guildId ? { ...g, [field]: value } : g));
+  };
+
+  const handleGuildPhotoUpload = async (guildId, file) => {
+    if (!file) return;
+    try {
+      const dataUri = await compressImageFile(file, 500, 500, 0.82);
+      setActiveGuilds(prev => prev.map(g => g.id === guildId ? { ...g, botPictureUrl: dataUri } : g));
+    } catch (err) {
+      alert('Error reading image: ' + err.message);
+    }
+  };
+
+  const handleSaveGuilds = async () => {
+    if (activeGuilds.length < 2) {
+      alert('You must have at least 2 guilds in a class.');
+      return;
+    }
+    if (activeGuilds.length > 10) {
+      alert('You cannot have more than 10 guilds in a class.');
+      return;
+    }
+    setSavingGuilds(true);
+    try {
+      await backend.updateClassGuilds(classId, activeGuilds);
+      alert('Guild configuration saved successfully!');
+      if (onClassUpdated) {
+        onClassUpdated({ ...selectedClass, guilds: activeGuilds });
+      }
+      loadGuildData();
+    } catch (err) {
+      alert('Error saving guilds: ' + err.message);
+    }
+    setSavingGuilds(false);
+  };
+
+  const handleRemoveGuild = (guildId, guildName) => {
+    if (activeGuilds.length <= 2) {
+      alert('Classes must have at least 2 guilds.');
+      return;
+    }
+    const studentCount = students.filter(s => s.guild === guildId).length;
+    const confirmMsg = studentCount > 0
+      ? `Remove "${guildName}"? ${studentCount} students are currently in this guild and will become unassigned.`
+      : `Remove "${guildName}" from this class?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setActiveGuilds(prev => prev.filter(g => g.id !== guildId));
+  };
+
+  const handleAddPresetGuild = (preset) => {
+    if (activeGuilds.length >= 10) {
+      alert('Maximum of 10 guilds reached.');
+      return;
+    }
+    setActiveGuilds(prev => [...prev, { ...preset, botPictureUrl: '' }]);
+    setShowAddGuildModal(false);
+  };
+
+  const handleAddCustomGuild = () => {
+    if (activeGuilds.length >= 10) {
+      alert('Maximum of 10 guilds reached.');
+      return;
+    }
+    const newId = 'guild_' + Date.now();
+    const newGuild = {
+      id: newId,
+      name: `Guild ${activeGuilds.length + 1}`,
+      emoji: '⚡',
+      motto: 'Strive for excellence!',
+      color: 'bg-indigo-600',
+      borderColor: 'border-indigo-400',
+      gradient: 'from-indigo-600 to-purple-500',
+      symbol: 'Valor',
+      botPictureUrl: '',
+    };
+    setActiveGuilds(prev => [...prev, newGuild]);
+    setShowAddGuildModal(false);
+  };
+
+  // STEM Purchase fulfillment
+  const handleToggleFulfill = async (purchaseId, currentStatus) => {
+    try {
+      await backend.markStemPurchaseFulfilled(purchaseId, !currentStatus);
+      setStemPurchases(prev => prev.map(p => p.id === purchaseId ? { ...p, fulfilled: !currentStatus } : p));
+    } catch (err) {
+      alert('Error updating purchase status: ' + err.message);
+    }
+  };
+
+  const handleSaveStemCatalog = async () => {
+    setSavingCatalog(true);
+    try {
+      await backend.updateStemShopItems(classId, stemCatalog);
+      alert('STEM Shop catalog & prices saved!');
+      setShowCatalogEditor(false);
+    } catch (err) {
+      alert('Error saving STEM catalog: ' + err.message);
+    }
+    setSavingCatalog(false);
+  };
+
+  // Boss Battle Handlers
+  const handleSaveClassBoss = async (e) => {
+    e.preventDefault();
+    if (!bossForm.name.trim()) {
+      alert('Please enter a boss name');
+      return;
+    }
+    setSavingBoss(true);
+    try {
+      const bossData = {
+        id: selectedClass?.customBoss?.id || 'boss_custom_' + Date.now(),
+        name: bossForm.name.trim(),
+        title: bossForm.title.trim(),
+        icon: bossForm.icon.trim() || '🤖',
+        desc: bossForm.desc.trim(),
+        steps: bossForm.steps.filter(s => s && s.trim()),
+        reward: parseInt(bossForm.reward) || 500,
+        coinReward: parseInt(bossForm.coinReward) || 100,
+        updatedAt: new Date().toISOString(),
+      };
+      await backend.setClassCustomBoss(classId, bossData);
+      alert(`Class custom boss "${bossData.name}" activated! Students will now see this weekly boss.`);
+      if (onClassUpdated) {
+        onClassUpdated({ ...selectedClass, customBoss: bossData });
+      }
+      loadBossData();
+    } catch (err) {
+      alert('Error saving class boss: ' + err.message);
+    }
+    setSavingBoss(false);
+  };
+
+  const handleClearClassBoss = async () => {
+    if (!window.confirm('Reset to organization weekly boss or default boss rotation?')) return;
+    try {
+      await backend.clearClassCustomBoss(classId);
+      alert('Class custom boss cleared. Class will now follow district/default rotation.');
+      if (onClassUpdated) {
+        onClassUpdated({ ...selectedClass, customBoss: null });
+      }
+      setBossForm({
+        name: '',
+        title: '',
+        icon: '🤖',
+        desc: '',
+        steps: ['', '', ''],
+        reward: 500,
+        coinReward: 100,
+      });
+      loadBossData();
+    } catch (err) {
+      alert('Error clearing class boss: ' + err.message);
+    }
+  };
+
   // Sort guilds by total XP for leaderboard
-  const sortedGuilds = [...GUILDS].sort((a, b) => {
+  const sortedGuilds = [...activeGuilds].sort((a, b) => {
     const aXp = guildData[a.id]?.totalXp || 0;
     const bXp = guildData[b.id]?.totalXp || 0;
     return bXp - aXp;
@@ -1311,171 +2037,807 @@ function GuildManagement({ classId, students, onStudentsUpdated }) {
 
   const unassigned = students.filter(s => !s.guild);
 
+  // Filter STEM purchases
+  const filteredStemPurchases = stemFilter === 'all'
+    ? stemPurchases
+    : stemFilter === 'pending'
+    ? stemPurchases.filter(p => !p.fulfilled)
+    : stemPurchases.filter(p => p.fulfilled);
+
   return (
     <div className="space-y-6">
-      {/* Guild Leaderboard Header & Auto-Balance Controls */}
-      <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <div>
-            <h3 className="text-xl font-black text-white flex items-center gap-2">
-              <Trophy className="w-6 h-6 text-yellow-400" aria-hidden="true" /> Guild Hub & Leaderboard
-            </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Monitor team progression, guild perks, award trophies, and auto-balance student rosters.
-            </p>
-          </div>
+      {/* Sub-Tabs Header */}
+      <div className="flex items-center gap-2 border-b border-slate-700 pb-3 overflow-x-auto text-xs font-bold">
+        <button
+          onClick={() => setSubTab('standings')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all min-h-[44px] ${
+            subTab === 'standings' ? 'bg-yellow-500 text-slate-950 font-black shadow' : 'bg-slate-800 text-slate-300 hover:text-white'
+          }`}
+        >
+          <Trophy className="w-4 h-4" /> Leaderboard & Spirits
+        </button>
 
-          {/* Auto-Balance Action Buttons */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {unassigned.length > 0 && (
+        <button
+          onClick={() => setSubTab('setup')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all min-h-[44px] ${
+            subTab === 'setup' ? 'bg-purple-600 text-white font-black shadow' : 'bg-slate-800 text-slate-300 hover:text-white'
+          }`}
+        >
+          <Settings className="w-4 h-4" /> Guild Customizer ({activeGuilds.length}/10)
+        </button>
+
+        <button
+          onClick={() => setSubTab('stem_orders')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all min-h-[44px] relative ${
+            subTab === 'stem_orders' ? 'bg-emerald-600 text-white font-black shadow' : 'bg-slate-800 text-slate-300 hover:text-white'
+          }`}
+        >
+          <Package className="w-4 h-4" /> STEM Supplies Audit
+          {stemPurchases.filter(p => !p.fulfilled).length > 0 && (
+            <span className="bg-amber-400 text-slate-950 text-[10px] font-black px-1.5 py-0.2 rounded-full">
+              {stemPurchases.filter(p => !p.fulfilled).length}
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => setSubTab('boss')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all min-h-[44px] ${
+            subTab === 'boss' ? 'bg-red-600 text-white font-black shadow' : 'bg-slate-800 text-slate-300 hover:text-white'
+          }`}
+        >
+          <Swords className="w-4 h-4" /> Class Weekly Boss
+        </button>
+      </div>
+
+      {/* SUB-TAB 1: STANDINGS & LEADERBOARD */}
+      {subTab === 'standings' && (
+        <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div>
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
+                <Trophy className="w-6 h-6 text-yellow-400" aria-hidden="true" /> Guild Hub & Leaderboard
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Monitor team progression, guild perks, bot showcase, award trophies, and auto-balance student rosters.
+              </p>
+            </div>
+
+            {/* Auto-Balance Action Buttons */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {unassigned.length > 0 && (
+                <button
+                  onClick={() => handleAutoBalance('unassigned')}
+                  className="px-3.5 py-2 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1.5 shadow transition-all min-h-[44px]"
+                >
+                  <Sparkles className="w-3.5 h-3.5" /> Auto-Assign ({unassigned.length}) Unassigned
+                </button>
+              )}
               <button
-                onClick={() => handleAutoBalance('unassigned')}
-                className="px-3.5 py-2 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1.5 shadow transition-all"
+                onClick={() => handleAutoBalance('all')}
+                className="px-3.5 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl text-xs flex items-center gap-1.5 border border-slate-600 transition-colors min-h-[44px]"
+                title={`Evenly rebalance all students across the ${activeGuilds.length} guilds`}
               >
-                <Sparkles className="w-3.5 h-3.5" /> Auto-Assign ({unassigned.length}) Unassigned
+                <RefreshCw className="w-3.5 h-3.5 text-blue-400" /> Rebalance All {activeGuilds.length} Guilds
               </button>
-            )}
-            <button
-              onClick={() => handleAutoBalance('all')}
-              className="px-3.5 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl text-xs flex items-center gap-1.5 border border-slate-600 transition-colors"
-              title="Evenly rebalance all students across the 4 guilds"
-            >
-              <RefreshCw className="w-3.5 h-3.5 text-blue-400" /> Rebalance All Guilds
-            </button>
+            </div>
           </div>
-        </div>
 
-        {loading ? (
-          <p className="text-slate-500 text-center py-4" role="status">Loading guild data...</p>
-        ) : (
-          <div className="space-y-3">
-            {sortedGuilds.map((guild, idx) => {
-              const stats = guildData[guild.id];
-              const hallTrophies = guildHalls[guild.id]?.trophies || [];
-              const levelInfo = getGuildLevelInfo(stats?.totalXp || 0);
+          {loading ? (
+            <p className="text-slate-500 text-center py-4" role="status">Loading guild data...</p>
+          ) : (
+            <div className="space-y-3">
+              {sortedGuilds.map((guild, idx) => {
+                const stats = guildData[guild.id];
+                const hallTrophies = guildHalls[guild.id]?.trophies || [];
+                const levelInfo = getGuildLevelInfo(stats?.totalXp || 0);
+                const botPic = guild.botPictureUrl || guildHalls[guild.id]?.botPictureUrl || null;
 
-              return (
-                <div key={guild.id} className={`p-5 rounded-2xl border-2 transition-all ${idx === 0 ? 'border-yellow-500/50 bg-yellow-500/5 shadow-lg' : 'border-slate-700 bg-slate-700/30'}`}>
-                  <div className="flex items-center gap-4 flex-wrap sm:flex-nowrap">
-                    <div className="w-8 text-center flex-shrink-0">
-                      {idx === 0 && <span className="text-2xl" aria-hidden="true">🥇</span>}
-                      {idx === 1 && <span className="text-2xl" aria-hidden="true">🥈</span>}
-                      {idx === 2 && <span className="text-2xl" aria-hidden="true">🥉</span>}
-                      {idx === 3 && <span className="text-lg font-bold text-slate-500">#4</span>}
-                    </div>
-                    <div className={`w-12 h-12 rounded-2xl ${guild.color} flex items-center justify-center shadow`}>
-                      <span className="text-2xl" aria-hidden="true">{guild.emoji}</span>
-                    </div>
-                    <div className="flex-1 min-w-[200px]">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-black text-white text-lg">{guild.name}</p>
-                        <span className="text-[11px] font-black uppercase px-2.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">
-                          Level {levelInfo.level} • {levelInfo.name}
-                        </span>
+                return (
+                  <div key={guild.id} className={`p-5 rounded-2xl border-2 transition-all ${idx === 0 ? 'border-yellow-500/50 bg-yellow-500/5 shadow-lg' : 'border-slate-700 bg-slate-700/30'}`}>
+                    <div className="flex items-center gap-4 flex-wrap sm:flex-nowrap">
+                      <div className="w-8 text-center flex-shrink-0">
+                        {idx === 0 && <span className="text-2xl" aria-hidden="true">🥇</span>}
+                        {idx === 1 && <span className="text-2xl" aria-hidden="true">🥈</span>}
+                        {idx === 2 && <span className="text-2xl" aria-hidden="true">🥉</span>}
+                        {idx >= 3 && <span className="text-lg font-bold text-slate-500">#{idx + 1}</span>}
                       </div>
-                      <p className="text-xs text-slate-400 mt-0.5">Perk: <span className="text-slate-300 font-semibold">{levelInfo.perk}</span></p>
+
+                      {/* Bot picture or Guild Avatar */}
+                      {botPic ? (
+                        <div className="relative flex-shrink-0">
+                          <img
+                            src={botPic}
+                            alt={`${guild.name} robot`}
+                            className="w-12 h-12 rounded-xl object-cover border border-yellow-400 shadow"
+                          />
+                          <span className="absolute -bottom-1 -right-1 bg-slate-950 text-[8px] font-black uppercase px-1 rounded text-yellow-300 border border-yellow-500/50">
+                            Bot
+                          </span>
+                        </div>
+                      ) : (
+                        <div className={`w-12 h-12 rounded-2xl ${guild.color || 'bg-slate-700'} flex items-center justify-center shadow flex-shrink-0`}>
+                          <span className="text-2xl" aria-hidden="true">{guild.emoji || '🛡️'}</span>
+                        </div>
+                      )}
+
+                      <div className="flex-1 min-w-[200px]">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-black text-white text-lg">{guild.name}</p>
+                          <span className="text-[11px] font-black uppercase px-2.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">
+                            Level {levelInfo.level} • {levelInfo.name}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-0.5">Perk: <span className="text-slate-300 font-semibold">{levelInfo.perk}</span></p>
+                      </div>
+
+                      <div className="text-right px-2">
+                        <p className="text-xl font-black text-yellow-400">{(stats?.totalXp || 0).toLocaleString()} XP</p>
+                        <p className="text-[11px] text-slate-400">{levelInfo.isMax ? 'Max Level' : `${levelInfo.xpNeeded.toLocaleString()} to Lvl ${levelInfo.level + 1}`}</p>
+                      </div>
+
+                      <div className="text-right px-2">
+                        <p className="text-lg font-bold text-blue-400">{stats?.memberCount || 0}</p>
+                        <p className="text-xs text-slate-400">Members</p>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => { setRewardGuild(guild.id); setRewardType('xp'); setRewardAmount(''); }}
+                          className="p-2.5 bg-slate-800 hover:bg-yellow-500/20 text-slate-400 hover:text-yellow-400 rounded-xl border border-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                          title={`Give direct reward drop to ${guild.name}`}
+                          aria-label={`Give reward to ${guild.name}`}
+                        >
+                          <Gift className="w-4 h-4" aria-hidden="true" />
+                        </button>
+                        <button
+                          onClick={() => { setTrophyGuild(guild.id); setSelectedTrophy(''); setTrophyMessage(''); }}
+                          className="p-2.5 bg-slate-800 hover:bg-purple-500/20 text-slate-400 hover:text-purple-400 rounded-xl border border-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                          title={`Award trophy to ${guild.name}`}
+                          aria-label={`Award trophy to ${guild.name}`}
+                        >
+                          <Trophy className="w-4 h-4" aria-hidden="true" />
+                        </button>
+                      </div>
                     </div>
 
-                    <div className="text-right px-2">
-                      <p className="text-xl font-black text-yellow-400">{(stats?.totalXp || 0).toLocaleString()} XP</p>
-                      <p className="text-[11px] text-slate-400">{levelInfo.isMax ? 'Max Level' : `${levelInfo.xpNeeded.toLocaleString()} to Lvl ${levelInfo.level + 1}`}</p>
+                    {/* Level Progress Bar */}
+                    <div className="mt-3 w-full h-2 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-700">
+                      <div
+                        className="h-full bg-gradient-to-r from-yellow-400 to-amber-300 rounded-full transition-all duration-500"
+                        style={{ width: `${levelInfo.progress}%` }}
+                      />
                     </div>
 
-                    <div className="text-right px-2">
-                      <p className="text-lg font-bold text-blue-400">{stats?.memberCount || 0}</p>
-                      <p className="text-xs text-slate-400">Members</p>
-                    </div>
+                    {/* Guild Hall Trophies Preview */}
+                    {hallTrophies.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-slate-600/50 flex items-center gap-2 flex-wrap">
+                        <span className="text-xs text-slate-400 uppercase font-black">Hall Trophies:</span>
+                        {hallTrophies.map((t, i) => (
+                          <span key={i} className="text-lg bg-slate-800/80 px-2 py-0.5 rounded-lg border border-slate-700" title={`${t.title}${t.message ? ': ' + t.message : ''}`} aria-label={t.title}>
+                            {t.icon} <span className="text-xs font-bold text-slate-300 ml-1">{t.title}</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
 
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => { setRewardGuild(guild.id); setRewardType('xp'); setRewardAmount(''); }}
-                        className="p-2.5 bg-slate-800 hover:bg-yellow-500/20 text-slate-400 hover:text-yellow-400 rounded-xl border border-slate-700 transition-colors"
-                        title={`Give direct reward drop to ${guild.name}`}
-                        aria-label={`Give reward to ${guild.name}`}
-                      >
-                        <Gift className="w-4 h-4" aria-hidden="true" />
-                      </button>
-                      <button
-                        onClick={() => { setTrophyGuild(guild.id); setSelectedTrophy(''); setTrophyMessage(''); }}
-                        className="p-2.5 bg-slate-800 hover:bg-purple-500/20 text-slate-400 hover:text-purple-400 rounded-xl border border-slate-700 transition-colors"
-                        title={`Award trophy to ${guild.name}`}
-                        aria-label={`Award trophy to ${guild.name}`}
-                      >
-                        <Trophy className="w-4 h-4" aria-hidden="true" />
-                      </button>
-                    </div>
+                    {/* Member List */}
+                    {stats && stats.members.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-slate-600/50">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                          {stats.members.map(member => {
+                            const level = LEVELS.reduce((acc, l) => member.totalXp >= l.xpRequired ? l : acc, LEVELS[0]);
+                            return (
+                              <div key={member.id} className="flex items-center gap-2 p-2 bg-slate-800/50 rounded-xl border border-slate-700/50 text-sm">
+                                <Avatar3D avatar={member.avatar} level={level.level} size="sm" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-bold text-white truncate text-xs">{member.name}</p>
+                                  <p className={`text-[10px] ${level.color}`}>Lv.{level.level} • {member.currentStreak || 0}d streak</p>
+                                </div>
+                                <span className="text-yellow-400 font-black text-xs">{member.xp} XP</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
+                );
+              })}
+            </div>
+          )}
 
-                  {/* Level Progress Bar */}
-                  <div className="mt-3 w-full h-2 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-700">
-                    <div
-                      className="h-full bg-gradient-to-r from-yellow-400 to-amber-300 rounded-full transition-all duration-500"
-                      style={{ width: `${levelInfo.progress}%` }}
+          {/* Unassigned students section */}
+          {unassigned.length > 0 && (
+            <div className="mt-6 p-5 bg-slate-900/60 rounded-2xl border-2 border-dashed border-amber-500/40">
+              <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                <h4 className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                  <Users className="w-4 h-4" /> Students Without a Guild ({unassigned.length})
+                </h4>
+                <button
+                  onClick={() => handleAutoBalance('unassigned')}
+                  className="px-3 py-1 bg-yellow-500 text-slate-950 font-black rounded-lg text-xs hover:bg-yellow-400 transition-colors min-h-[44px]"
+                >
+                  Auto-Distribute Now
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {unassigned.map(s => (
+                  <span key={s.id} className="px-3 py-1 bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold text-slate-300">
+                    {s.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SUB-TAB 2: GUILD CUSTOMIZER (UP TO 10 GUILDS & BOT PHOTOS) */}
+      {subTab === 'setup' && (
+        <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-xl font-black text-white">Class Guild Customizer</h3>
+                <span className="text-xs font-black uppercase px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                  {activeGuilds.length} / 10 Guilds Active
+                </span>
+              </div>
+              <p className="text-slate-400 text-xs mt-1">
+                Customize guild names, robot photos, team colors, and add up to 10 guilds per class.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              {activeGuilds.length < 10 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAddGuildModal(true)}
+                  className="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow transition-colors min-h-[44px]"
+                >
+                  <Plus className="w-4 h-4" /> Add Guild ({10 - activeGuilds.length} slots left)
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={handleSaveGuilds}
+                disabled={savingGuilds}
+                className="px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white font-black rounded-xl text-xs flex items-center gap-1.5 shadow transition-colors disabled:opacity-50 min-h-[44px]"
+              >
+                <Save className="w-4 h-4" /> {savingGuilds ? 'Saving Guilds...' : 'Save Guild Configuration'}
+              </button>
+            </div>
+          </div>
+
+          {/* Guilds List Editor */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {activeGuilds.map((g, idx) => (
+              <div
+                key={g.id}
+                className="bg-slate-900/90 rounded-2xl border border-slate-700 p-4 space-y-3 shadow-lg"
+              >
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-slate-800 text-slate-400 text-xs font-black flex items-center justify-center">
+                      {idx + 1}
+                    </span>
+                    <input
+                      type="text"
+                      value={g.emoji || '🛡️'}
+                      onChange={e => handleUpdateGuildField(g.id, 'emoji', e.target.value)}
+                      className="w-10 text-center py-1 bg-slate-800 border border-slate-700 rounded-lg text-lg outline-none focus:border-purple-500"
+                      title="Guild Emoji"
+                      maxLength={4}
+                    />
+                    <input
+                      type="text"
+                      value={g.name}
+                      onChange={e => handleUpdateGuildField(g.id, 'name', e.target.value)}
+                      placeholder="Guild Name"
+                      className="px-3 py-1 bg-slate-800 border border-slate-700 rounded-lg text-white font-bold text-sm outline-none focus:border-purple-500 flex-1 min-w-[140px]"
                     />
                   </div>
 
-                  {/* Guild Hall Trophies Preview */}
-                  {hallTrophies.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-slate-600/50 flex items-center gap-2 flex-wrap">
-                      <span className="text-xs text-slate-400 uppercase font-black">Hall Trophies:</span>
-                      {hallTrophies.map((t, i) => (
-                        <span key={i} className="text-lg bg-slate-800/80 px-2 py-0.5 rounded-lg border border-slate-700" title={`${t.title}${t.message ? ': ' + t.message : ''}`} aria-label={t.title}>
-                          {t.icon} <span className="text-xs font-bold text-slate-300 ml-1">{t.title}</span>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Member List */}
-                  {stats && stats.members.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-slate-600/50">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                        {stats.members.map(member => {
-                          const level = LEVELS.reduce((acc, l) => member.totalXp >= l.xpRequired ? l : acc, LEVELS[0]);
-                          return (
-                            <div key={member.id} className="flex items-center gap-2 p-2 bg-slate-800/50 rounded-xl border border-slate-700/50 text-sm">
-                              <Avatar3D avatar={member.avatar} level={level.level} size="sm" />
-                              <div className="flex-1 min-w-0">
-                                <p className="font-bold text-white truncate text-xs">{member.name}</p>
-                                <p className={`text-[10px] ${level.color}`}>Lv.{level.level} • {member.currentStreak || 0}d streak</p>
-                              </div>
-                              <span className="text-yellow-400 font-black text-xs">{member.xp} XP</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
+                  {activeGuilds.length > 2 && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveGuild(g.id, g.name)}
+                      className="p-1.5 text-slate-400 hover:text-red-400 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+                      title="Remove Guild"
+                      aria-label={`Remove guild ${g.name}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   )}
                 </div>
-              );
-            })}
-          </div>
-        )}
 
-        {/* Unassigned students section */}
-        {unassigned.length > 0 && (
-          <div className="mt-6 p-5 bg-slate-900/60 rounded-2xl border-2 border-dashed border-amber-500/40">
-            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-              <h4 className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-                <Users className="w-4 h-4" /> Students Without a Guild ({unassigned.length})
-              </h4>
-              <button
-                onClick={() => handleAutoBalance('unassigned')}
-                className="px-3 py-1 bg-yellow-500 text-slate-950 font-black rounded-lg text-xs hover:bg-yellow-400 transition-colors"
+                {/* Motto & Symbol */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Motto</label>
+                    <input
+                      type="text"
+                      value={g.motto || ''}
+                      onChange={e => handleUpdateGuildField(g.id, 'motto', e.target.value)}
+                      placeholder="e.g. Together we build!"
+                      className="w-full px-2.5 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs outline-none focus:border-purple-500 min-h-[36px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Theme Color</label>
+                    <select
+                      value={g.color || 'bg-slate-600'}
+                      onChange={e => {
+                        const theme = GUILD_COLOR_THEMES.find(t => t.color === e.target.value);
+                        if (theme) {
+                          setActiveGuilds(prev => prev.map(item => item.id === g.id ? {
+                            ...item,
+                            color: theme.color,
+                            gradient: theme.gradient,
+                            borderColor: theme.border
+                          } : item));
+                        }
+                      }}
+                      className="w-full px-2.5 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs outline-none focus:border-purple-500 min-h-[36px] cursor-pointer"
+                    >
+                      {GUILD_COLOR_THEMES.map(t => (
+                        <option key={t.color} value={t.color}>{t.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Bot Picture Section */}
+                <div className="pt-2 border-t border-slate-800">
+                  <label className="block text-[11px] font-black text-yellow-400 uppercase mb-1 flex items-center gap-1.5">
+                    <Camera className="w-3.5 h-3.5" /> Guild Robot Picture
+                  </label>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {g.botPictureUrl ? (
+                      <div className="relative flex-shrink-0">
+                        <img
+                          src={g.botPictureUrl}
+                          alt="Bot"
+                          className="w-14 h-14 rounded-xl object-cover border border-yellow-400 shadow"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateGuildField(g.id, 'botPictureUrl', '')}
+                          className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full p-0.5 hover:bg-red-500 shadow"
+                          title="Remove Photo"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-14 h-14 rounded-xl bg-slate-800 border border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-500 flex-shrink-0 text-[10px]">
+                        <ImageIcon className="w-4 h-4 mb-0.5 opacity-50" /> No Photo
+                      </div>
+                    )}
+
+                    <div className="flex-1 min-w-[180px] space-y-1.5">
+                      <input
+                        type="url"
+                        value={g.botPictureUrl && !g.botPictureUrl.startsWith('data:') ? g.botPictureUrl : ''}
+                        onChange={e => handleUpdateGuildField(g.id, 'botPictureUrl', e.target.value)}
+                        placeholder="Paste image link URL..."
+                        className="w-full px-2.5 py-1 bg-slate-800 border border-slate-700 rounded-lg text-white text-[11px] outline-none focus:border-yellow-500 min-h-[32px]"
+                      />
+                      <label className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] font-bold border border-slate-700 cursor-pointer transition-colors min-h-[32px]">
+                        <Upload className="w-3 h-3 text-yellow-400" /> Upload Image File
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={e => handleGuildPhotoUpload(g.id, e.target.files?.[0])}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Add Guild Modal */}
+          {showAddGuildModal && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+              role="dialog"
+              aria-modal="true"
+              onClick={() => setShowAddGuildModal(false)}
+            >
+              <div
+                className="bg-slate-900 border-2 border-purple-500 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
+                onClick={e => e.stopPropagation()}
               >
-                Auto-Distribute Now
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    <Plus className="w-5 h-5 text-purple-400" /> Add Guild to Class
+                  </h3>
+                  <button onClick={() => setShowAddGuildModal(false)} className="text-slate-400 hover:text-white">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <p className="text-xs text-slate-300">
+                  Select a themed preset or create a custom guild for this class. You can have up to 10 guilds.
+                </p>
+
+                <div className="space-y-2">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-purple-400">Available Themed Presets</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {DEFAULT_10_GUILDS.filter(p => !activeGuilds.some(g => g.id === p.id)).map(preset => (
+                      <button
+                        key={preset.id}
+                        onClick={() => handleAddPresetGuild(preset)}
+                        className={`p-3 rounded-xl border border-white/20 bg-gradient-to-br ${preset.gradient} text-left flex items-center gap-3 hover:scale-[1.02] transition-transform min-h-[44px] shadow text-white`}
+                      >
+                        <span className="text-2xl">{preset.emoji}</span>
+                        <div>
+                          <p className="font-bold text-sm">{preset.name}</p>
+                          <p className="text-[10px] opacity-80 italic">"{preset.motto}"</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-800 flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={handleAddCustomGuild}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-purple-300 font-bold rounded-xl text-xs border border-purple-500/40 flex items-center gap-1.5 min-h-[44px]"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Blank Custom Guild
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddGuildModal(false)}
+                    className="px-4 py-2 bg-slate-800 text-slate-400 hover:text-white rounded-xl text-xs font-semibold min-h-[44px]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SUB-TAB 3: STEM SUPPLIES AUDIT & CATALOG */}
+      {subTab === 'stem_orders' && (
+        <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
+                <Package className="w-6 h-6 text-emerald-400" /> STEM Supplies & Guild Orders Audit
+              </h3>
+              <p className="text-xs text-slate-400 mt-1">
+                Track all student coin expenditures for guild STEM hardware and extra VEX Pitch time. Mark orders fulfilled as you deliver materials in class.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setShowCatalogEditor(!showCatalogEditor)}
+                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl text-xs flex items-center gap-1.5 border border-slate-600 transition-colors min-h-[44px]"
+              >
+                <Settings className="w-4 h-4 text-emerald-400" /> {showCatalogEditor ? 'Hide Catalog Editor' : 'Edit Catalog & Pricing'}
               </button>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {unassigned.map(s => (
-                <span key={s.id} className="px-3 py-1 bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold text-slate-300">
-                  {s.name}
-                </span>
+          </div>
+
+          {/* Catalog Editor Accordion */}
+          {showCatalogEditor && (
+            <div className="p-5 bg-slate-900/90 rounded-2xl border border-emerald-500/40 space-y-4 animate-in slide-in-from-top-2">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-black text-white flex items-center gap-2">
+                  <Settings className="w-4 h-4 text-emerald-400" /> Customize STEM Supplies Shop & Prices
+                </h4>
+                <button
+                  type="button"
+                  onClick={handleSaveStemCatalog}
+                  disabled={savingCatalog}
+                  className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition-colors shadow min-h-[36px]"
+                >
+                  {savingCatalog ? 'Saving...' : 'Save Catalog Changes'}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {stemCatalog.map(item => (
+                  <div key={item.id} className="p-3 bg-slate-800 rounded-xl border border-slate-700 space-y-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xl">{item.icon || '⚙️'}</span>
+                      <input
+                        type="text"
+                        value={item.name}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setStemCatalog(prev => prev.map(i => i.id === item.id ? { ...i, name: val } : i));
+                        }}
+                        className="px-2.5 py-1 bg-slate-900 border border-slate-700 rounded-lg text-white font-bold flex-1 text-xs"
+                      />
+                      <div className="flex items-center gap-1">
+                        <span className="text-yellow-400 font-bold">🪙</span>
+                        <input
+                          type="number"
+                          min="1"
+                          value={item.costCoins}
+                          onChange={e => {
+                            const val = parseInt(e.target.value) || 0;
+                            setStemCatalog(prev => prev.map(i => i.id === item.id ? { ...i, costCoins: val } : i));
+                          }}
+                          className="w-16 px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-yellow-400 font-bold text-center text-xs"
+                        />
+                      </div>
+                    </div>
+                    <input
+                      type="text"
+                      value={item.desc}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setStemCatalog(prev => prev.map(i => i.id === item.id ? { ...i, desc: val } : i));
+                      }}
+                      placeholder="Item description"
+                      className="w-full px-2.5 py-1 bg-slate-900 border border-slate-700 rounded-lg text-slate-300 text-[11px]"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Filter Pills */}
+          <div className="flex items-center justify-between flex-wrap gap-3 pb-2 border-b border-slate-700">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-400">Filter Status:</span>
+              {[
+                { id: 'all', label: `All (${stemPurchases.length})` },
+                { id: 'pending', label: `Pending (${stemPurchases.filter(p => !p.fulfilled).length})` },
+                { id: 'fulfilled', label: `Delivered (${stemPurchases.filter(p => p.fulfilled).length})` },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setStemFilter(tab.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[36px] ${
+                    stemFilter === tab.id
+                      ? 'bg-emerald-500 text-slate-950 font-black shadow'
+                      : 'bg-slate-700 text-slate-300 hover:text-white'
+                  }`}
+                >
+                  {tab.label}
+                </button>
               ))}
             </div>
+
+            <button
+              onClick={loadStemData}
+              className="p-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+              title="Refresh Purchases"
+            >
+              <RefreshCw className="w-4 h-4 text-emerald-400" />
+            </button>
           </div>
-        )}
-      </div>
+
+          {/* Purchases List */}
+          {loadingPurchases ? (
+            <p className="text-slate-500 text-center py-6 text-xs">Loading purchase log...</p>
+          ) : filteredStemPurchases.length === 0 ? (
+            <div className="p-8 text-center bg-slate-900/40 rounded-2xl border border-slate-700">
+              <Package className="w-10 h-10 text-slate-600 mx-auto mb-2" />
+              <p className="text-sm font-bold text-slate-300">No STEM supply orders match this filter</p>
+              <p className="text-xs text-slate-500 mt-1">Student supply purchases made with their coins will appear here instantly.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {filteredStemPurchases.map(p => (
+                <div
+                  key={p.id}
+                  className="p-4 bg-slate-900/80 rounded-2xl border border-slate-700 flex items-center justify-between gap-4 flex-wrap"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl p-2 bg-slate-800 rounded-xl border border-slate-700">{p.icon || '⚙️'}</span>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-black text-white text-sm">{p.itemName}</span>
+                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          Tier {p.tier || 1}
+                        </span>
+                        <span className="text-xs font-bold text-yellow-400">🪙 {p.costCoins}</span>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Purchased by <strong className="text-white">{p.studentName}</strong> for <strong className="text-yellow-300">{p.guildEmoji} {p.guildName}</strong>
+                      </p>
+                      <p className="text-[11px] text-slate-500">{new Date(p.timestamp).toLocaleString()}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => handleToggleFulfill(p.id, p.fulfilled)}
+                      className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow min-h-[44px] ${
+                        p.fulfilled
+                          ? 'bg-slate-800 hover:bg-amber-500/20 text-emerald-400 hover:text-amber-400 border border-emerald-500/40'
+                          : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 active:scale-95'
+                      }`}
+                    >
+                      {p.fulfilled ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Delivered (Tap to Undo)
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-4 h-4" /> Mark Delivered to Guild
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SUB-TAB 4: CLASS WEEKLY BOSS BATTLE */}
+      {subTab === 'boss' && (
+        <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-6">
+          <div>
+            <h3 className="text-xl font-black text-white flex items-center gap-2">
+              <Swords className="w-6 h-6 text-red-400" /> Class Weekly Boss Challenge
+            </h3>
+            <p className="text-xs text-slate-400 mt-1">
+              Configure a custom weekly boss for this class, or inherit the district/school-wide boss challenge.
+            </p>
+          </div>
+
+          {/* Active Boss Status Card */}
+          <div className="p-4 bg-slate-900 rounded-2xl border border-slate-700 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="text-4xl p-2 bg-slate-800 rounded-xl border border-slate-700">{activeBossInfo?.icon || '👹'}</span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="font-black text-white text-base">{activeBossInfo?.name || 'Weekly Boss'}</h4>
+                  <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                    activeBossInfo?.source === 'class'
+                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                      : activeBossInfo?.source === 'org'
+                      ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                      : 'bg-slate-800 text-slate-400 border border-slate-700'
+                  }`}>
+                    {activeBossInfo?.source === 'class' ? 'Class Custom' : activeBossInfo?.source === 'org' ? 'District / Org' : 'Default Rotation'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">{activeBossInfo?.desc}</p>
+                <p className="text-[11px] text-yellow-400 mt-1 font-bold">Reward: +{activeBossInfo?.reward || 500} XP • +{activeBossInfo?.coinReward || 100} Coins</p>
+              </div>
+            </div>
+
+            {selectedClass?.customBoss && (
+              <button
+                type="button"
+                onClick={handleClearClassBoss}
+                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-red-400 hover:text-red-300 rounded-xl text-xs font-bold border border-red-500/30 transition-colors min-h-[44px]"
+              >
+                Reset to Org / Default Boss
+              </button>
+            )}
+          </div>
+
+          {/* Custom Boss Form */}
+          <form onSubmit={handleSaveClassBoss} className="bg-slate-900/60 p-5 rounded-2xl border border-slate-700 space-y-4">
+            <h4 className="text-sm font-black text-white uppercase tracking-wider text-red-400">
+              {selectedClass?.customBoss ? 'Edit Class Custom Boss' : 'Create Class Custom Boss'}
+            </h4>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">Boss Name</label>
+                <input
+                  type="text"
+                  required
+                  value={bossForm.name}
+                  onChange={e => setBossForm({ ...bossForm, name: e.target.value })}
+                  placeholder="e.g. The Quantum Drake"
+                  className="w-full px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs outline-none focus:border-red-500 min-h-[44px]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">Title / Subtitle</label>
+                <input
+                  type="text"
+                  value={bossForm.title}
+                  onChange={e => setBossForm({ ...bossForm, title: e.target.value })}
+                  placeholder="e.g. Master of Algorithmic Mazes"
+                  className="w-full px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs outline-none focus:border-red-500 min-h-[44px]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">Boss Icon / Emoji</label>
+                <input
+                  type="text"
+                  value={bossForm.icon}
+                  onChange={e => setBossForm({ ...bossForm, icon: e.target.value })}
+                  placeholder="🤖, 🐉, 👾"
+                  className="w-full px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs outline-none focus:border-red-500 min-h-[44px]"
+                  maxLength={4}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1">Lore / Battle Description</label>
+              <textarea
+                rows={2}
+                value={bossForm.desc}
+                onChange={e => setBossForm({ ...bossForm, desc: e.target.value })}
+                placeholder="Describe this week's mission challenge..."
+                className="w-full px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs outline-none focus:border-red-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1">Battle Plan Steps</label>
+              <div className="space-y-2">
+                {bossForm.steps.map((step, sIdx) => (
+                  <div key={sIdx} className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-red-950 text-red-400 font-bold text-xs flex items-center justify-center flex-shrink-0">
+                      {sIdx + 1}
+                    </span>
+                    <input
+                      type="text"
+                      value={step}
+                      onChange={e => {
+                        const newSteps = [...bossForm.steps];
+                        newSteps[sIdx] = e.target.value;
+                        setBossForm({ ...bossForm, steps: newSteps });
+                      }}
+                      placeholder={`Step ${sIdx + 1} requirement`}
+                      className="flex-1 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs outline-none focus:border-red-500 min-h-[36px]"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">XP Reward</label>
+                <input
+                  type="number"
+                  min="50"
+                  value={bossForm.reward}
+                  onChange={e => setBossForm({ ...bossForm, reward: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-yellow-400 font-bold text-xs outline-none focus:border-red-500 min-h-[44px]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">Coin Reward</label>
+                <input
+                  type="number"
+                  min="10"
+                  value={bossForm.coinReward}
+                  onChange={e => setBossForm({ ...bossForm, coinReward: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-yellow-400 font-bold text-xs outline-none focus:border-red-500 min-h-[44px]"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={savingBoss}
+              className="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl text-xs uppercase tracking-wider transition-colors shadow min-h-[44px]"
+            >
+              {savingBoss ? 'Saving Boss Challenge...' : 'Publish Class Boss Challenge'}
+            </button>
+          </form>
+        </div>
+      )}
 
       {/* Guild Reward Modal */}
       {rewardGuild && (
@@ -1483,7 +2845,7 @@ function GuildManagement({ classId, students, onStudentsUpdated }) {
           <div className="bg-slate-800 border-2 border-yellow-500 rounded-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                <Gift className="w-6 h-6 text-yellow-400" aria-hidden="true" /> Guild Reward
+                <Gift className="w-6 h-6 text-yellow-400" aria-hidden="true" /> Guild Reward Drop
               </h3>
               <button onClick={() => setRewardGuild(null)} className="text-slate-400 hover:text-white" aria-label="Close">
                 <X className="w-5 h-5" aria-hidden="true" />
@@ -1491,13 +2853,13 @@ function GuildManagement({ classId, students, onStudentsUpdated }) {
             </div>
 
             {(() => {
-              const guild = GUILDS.find(g => g.id === rewardGuild);
+              const guild = activeGuilds.find(g => g.id === rewardGuild) || GUILDS.find(g => g.id === rewardGuild);
               const stats = guildData[rewardGuild];
               return (
-                <div className={`p-3 rounded-xl ${guild.color} bg-opacity-30 mb-4 flex items-center gap-3`}>
-                  <span className="text-3xl" aria-hidden="true">{guild.emoji}</span>
+                <div className={`p-3 rounded-xl ${guild?.color || 'bg-slate-700'} bg-opacity-30 mb-4 flex items-center gap-3`}>
+                  <span className="text-3xl" aria-hidden="true">{guild?.emoji || '🛡️'}</span>
                   <div>
-                    <p className="font-bold text-white">{guild.name}</p>
+                    <p className="font-bold text-white">{guild?.name}</p>
                     <p className="text-xs text-slate-300">{stats?.memberCount || 0} members will receive this reward</p>
                   </div>
                 </div>
@@ -1505,13 +2867,13 @@ function GuildManagement({ classId, students, onStudentsUpdated }) {
             })()}
 
             <div className="flex gap-2 mb-4" role="group" aria-label="Reward type">
-              <button onClick={() => setRewardType('xp')} className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 ${rewardType === 'xp' ? 'bg-green-600 text-white' : 'bg-slate-700 text-slate-300'}`}>
+              <button onClick={() => setRewardType('xp')} className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 min-h-[44px] ${rewardType === 'xp' ? 'bg-green-600 text-white' : 'bg-slate-700 text-slate-300'}`}>
                 <Zap className="w-4 h-4" aria-hidden="true" /> XP
               </button>
-              <button onClick={() => setRewardType('coins')} className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 ${rewardType === 'coins' ? 'bg-yellow-600 text-white' : 'bg-slate-700 text-slate-300'}`}>
+              <button onClick={() => setRewardType('coins')} className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 min-h-[44px] ${rewardType === 'coins' ? 'bg-yellow-600 text-white' : 'bg-slate-700 text-slate-300'}`}>
                 <Star className="w-4 h-4" aria-hidden="true" /> Coins
               </button>
-              <button onClick={() => setRewardType('achievement')} className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 ${rewardType === 'achievement' ? 'bg-purple-600 text-white' : 'bg-slate-700 text-slate-300'}`}>
+              <button onClick={() => setRewardType('achievement')} className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 min-h-[44px] ${rewardType === 'achievement' ? 'bg-purple-600 text-white' : 'bg-slate-700 text-slate-300'}`}>
                 <Trophy className="w-4 h-4" aria-hidden="true" /> Trophy
               </button>
             </div>
@@ -1528,7 +2890,7 @@ function GuildManagement({ classId, students, onStudentsUpdated }) {
                   value={rewardAmount}
                   onChange={e => setRewardAmount(e.target.value)}
                   placeholder={rewardType === 'xp' ? 'e.g. 100' : 'e.g. 50'}
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-yellow-500 outline-none"
+                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-yellow-500 outline-none min-h-[44px]"
                 />
               </div>
             )}
@@ -1540,7 +2902,7 @@ function GuildManagement({ classId, students, onStudentsUpdated }) {
                   id="guild-reward-achievement"
                   value={rewardAchievement}
                   onChange={e => setRewardAchievement(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-yellow-500 outline-none"
+                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-yellow-500 outline-none min-h-[44px] cursor-pointer"
                 >
                   <option value="">-- Choose --</option>
                   {ACHIEVEMENTS.map(a => (
@@ -1553,7 +2915,7 @@ function GuildManagement({ classId, students, onStudentsUpdated }) {
             <button
               onClick={handleGuildReward}
               disabled={givingReward}
-              className="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold rounded-lg transition-colors disabled:opacity-50"
+              className="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold rounded-lg transition-colors disabled:opacity-50 min-h-[44px]"
             >
               {givingReward ? 'Giving...' : 'Give Reward to Entire Guild'}
             </button>
@@ -1575,12 +2937,12 @@ function GuildManagement({ classId, students, onStudentsUpdated }) {
             </div>
 
             {(() => {
-              const guild = GUILDS.find(g => g.id === trophyGuild);
+              const guild = activeGuilds.find(g => g.id === trophyGuild) || GUILDS.find(g => g.id === trophyGuild);
               return (
-                <div className={`p-3 rounded-xl ${guild.color} bg-opacity-30 mb-4 flex items-center gap-3`}>
-                  <span className="text-3xl" aria-hidden="true">{guild.emoji}</span>
+                <div className={`p-3 rounded-xl ${guild?.color || 'bg-slate-700'} bg-opacity-30 mb-4 flex items-center gap-3`}>
+                  <span className="text-3xl" aria-hidden="true">{guild?.emoji || '🛡️'}</span>
                   <div>
-                    <p className="font-bold text-white">{guild.name} Guild Hall</p>
+                    <p className="font-bold text-white">{guild?.name} Guild Hall</p>
                     <p className="text-xs text-slate-300">This trophy will be displayed in their Guild Hall</p>
                   </div>
                 </div>
@@ -1589,12 +2951,12 @@ function GuildManagement({ classId, students, onStudentsUpdated }) {
 
             <div className="mb-4">
               <label className="block text-sm text-slate-400 mb-2">Select Trophy</label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
                 {GUILD_TROPHIES.map(t => (
                   <button
                     key={t.id}
                     onClick={() => setSelectedTrophy(t.id)}
-                    className={`p-3 rounded-lg text-left transition-colors ${selectedTrophy === t.id ? 'bg-purple-600/30 border-2 border-purple-500' : 'bg-slate-700 border-2 border-transparent hover:border-slate-500'}`}
+                    className={`p-3 rounded-lg text-left transition-colors min-h-[44px] ${selectedTrophy === t.id ? 'bg-purple-600/30 border-2 border-purple-500' : 'bg-slate-700 border-2 border-transparent hover:border-slate-500'}`}
                   >
                     <span className="text-2xl" aria-hidden="true">{t.icon}</span>
                     <p className="font-bold text-white text-xs mt-1">{t.title}</p>
@@ -1613,14 +2975,14 @@ function GuildManagement({ classId, students, onStudentsUpdated }) {
                 onChange={e => setTrophyMessage(e.target.value)}
                 placeholder="e.g. Great teamwork this week!"
                 maxLength={100}
-                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-purple-500 outline-none"
+                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-purple-500 outline-none min-h-[44px]"
               />
             </div>
 
             <button
               onClick={handleAwardTrophy}
               disabled={awardingTrophy || !selectedTrophy}
-              className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg transition-colors disabled:opacity-50"
+              className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg transition-colors disabled:opacity-50 min-h-[44px]"
             >
               {awardingTrophy ? 'Awarding...' : 'Award Trophy to Guild Hall'}
             </button>

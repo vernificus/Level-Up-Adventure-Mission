@@ -375,8 +375,78 @@ function Hat({ type, cx, baseY, s = 1 }) {
   }
 }
 
-// ── Blocky Outfit overlays on body ──
-function Outfit({ type, skin }) {
+// ── Blocky Back Outfit (rendered behind torso and arms) ──
+function BackOutfit({ type, animate }) {
+  switch (type) {
+    case 'cape':
+      return (
+        <g>
+          {/* Flowing hero cape behind body */}
+          <rect x="58" y="138" width="84" height="96" fill="#9B2C2C" />
+          <rect x="62" y="142" width="76" height="94" fill="#E53E3E" />
+          {/* Gold bottom trim and side folds */}
+          <rect x="62" y="230" width="76" height="6" fill="#D69E2E" />
+          <rect x="58" y="142" width="4" height="90" fill="#742A2A" />
+          <rect x="138" y="142" width="4" height="90" fill="#742A2A" />
+          {/* Cape ripples */}
+          <rect x="78" y="150" width="6" height="74" fill="#C53030" opacity="0.7" />
+          <rect x="97" y="150" width="6" height="74" fill="#C53030" opacity="0.7" />
+          <rect x="116" y="150" width="6" height="74" fill="#C53030" opacity="0.7" />
+        </g>
+      );
+    case 'guild_cloak':
+      return (
+        <g>
+          {/* Royal Guild Banner Cloak flowing behind */}
+          <rect x="56" y="136" width="88" height="102" fill="#44337A" />
+          <rect x="60" y="140" width="80" height="98" fill="#6B46C1" />
+          {/* Gold trim */}
+          <rect x="60" y="232" width="80" height="6" fill="#ECC94B" />
+          <rect x="56" y="140" width="4" height="94" fill="#322659" />
+          <rect x="140" y="140" width="4" height="94" fill="#322659" />
+          {/* Purple folds */}
+          <rect x="76" y="150" width="8" height="76" fill="#553C9A" opacity="0.8" />
+          <rect x="116" y="150" width="8" height="76" fill="#553C9A" opacity="0.8" />
+        </g>
+      );
+    case 'phoenix_wings':
+      return (
+        <g>
+          {/* Left Phoenix Wing */}
+          <g>
+            <rect x="12" y="126" width="58" height="12" fill="#C53030" />
+            <rect x="16" y="112" width="54" height="16" fill="#DD6B20" />
+            <rect x="24" y="98" width="46" height="16" fill="#ED8936" />
+            <rect x="34" y="84" width="36" height="16" fill="#ECC94B" />
+            <rect x="46" y="72" width="24" height="14" fill="#FEFCBF" />
+            {/* Feathers tips */}
+            <rect x="8" y="130" width="12" height="6" fill="#9B2C2C" />
+            <rect x="12" y="116" width="12" height="6" fill="#C53030" />
+            <rect x="20" y="102" width="12" height="6" fill="#DD6B20" />
+            <rect x="30" y="88" width="12" height="6" fill="#ED8936" />
+          </g>
+          {/* Right Phoenix Wing */}
+          <g>
+            <rect x="130" y="126" width="58" height="12" fill="#C53030" />
+            <rect x="130" y="112" width="54" height="16" fill="#DD6B20" />
+            <rect x="130" y="98" width="46" height="16" fill="#ED8936" />
+            <rect x="130" y="84" width="36" height="16" fill="#ECC94B" />
+            <rect x="130" y="72" width="24" height="14" fill="#FEFCBF" />
+            {/* Feathers tips */}
+            <rect x="180" y="130" width="12" height="6" fill="#9B2C2C" />
+            <rect x="176" y="116" width="12" height="6" fill="#C53030" />
+            <rect x="168" y="102" width="12" height="6" fill="#DD6B20" />
+            <rect x="158" y="88" width="12" height="6" fill="#ED8936" />
+          </g>
+        </g>
+      );
+    default:
+      return null;
+  }
+}
+
+// ── Blocky Front Outfit overlays on body & arms ──
+function FrontOutfit({ type, skin }) {
   switch (type) {
     case 'star':
       return (
@@ -404,50 +474,47 @@ function Outfit({ type, skin }) {
     case 'cape':
       return (
         <g>
-          {/* Cape flowing behind */}
-          <rect x="72" y="140" width="4" height="70" fill="#E53E3E" opacity="0.8" />
-          <rect x="68" y="150" width="4" height="56" fill="#E53E3E" opacity="0.6" />
-          <rect x="124" y="140" width="4" height="70" fill="#E53E3E" opacity="0.8" />
-          <rect x="128" y="150" width="4" height="56" fill="#E53E3E" opacity="0.6" />
-          <rect x="72" y="138" width="56" height="4" fill="#D69E2E" />
+          {/* Gold shoulder clasps and collar band */}
+          <rect x="70" y="136" width="60" height="4" fill="#D69E2E" />
+          <rect x="68" y="136" width="10" height="10" fill="#ECC94B" stroke="#B7791F" strokeWidth="1" />
+          <rect x="122" y="136" width="10" height="10" fill="#ECC94B" stroke="#B7791F" strokeWidth="1" />
+          <rect x="71" y="139" width="4" height="4" fill="#E53E3E" />
+          <rect x="125" y="139" width="4" height="4" fill="#E53E3E" />
         </g>
       );
     case 'guild_cloak':
       return (
         <g>
-          {/* Royal Guild Banner Cloak */}
-          <rect x="70" y="138" width="6" height="74" fill="#805AD5" opacity="0.9" />
-          <rect x="66" y="148" width="6" height="60" fill="#6B46C1" opacity="0.7" />
-          <rect x="124" y="138" width="6" height="74" fill="#805AD5" opacity="0.9" />
-          <rect x="128" y="148" width="6" height="60" fill="#6B46C1" opacity="0.7" />
+          {/* Royal Guild Banner Cloak clasps & crest */}
           <rect x="70" y="136" width="60" height="5" fill="#ECC94B" />
-          <rect x="96" y="152" width="8" height="12" fill="#ECC94B" />
+          <rect x="66" y="136" width="12" height="12" fill="#D69E2E" stroke="#ECC94B" strokeWidth="1" />
+          <rect x="122" y="136" width="12" height="12" fill="#D69E2E" stroke="#ECC94B" strokeWidth="1" />
+          {/* Guild Emblem on chest */}
+          <rect x="94" y="150" width="12" height="14" fill="#805AD5" stroke="#ECC94B" strokeWidth="1" />
+          <rect x="98" y="152" width="4" height="10" fill="#ECC94B" />
         </g>
       );
     case 'phoenix_wings':
       return (
         <g>
-          {/* Phoenix Fire Wings */}
-          <rect x="56" y="130" width="12" height="6" fill="#ED8936" opacity="0.9" />
-          <rect x="48" y="136" width="16" height="10" fill="#E53E3E" opacity="0.8" />
-          <rect x="42" y="146" width="18" height="14" fill="#DD6B20" opacity="0.7" />
-          <rect x="132" y="130" width="12" height="6" fill="#ED8936" opacity="0.9" />
-          <rect x="136" y="136" width="16" height="10" fill="#E53E3E" opacity="0.8" />
-          <rect x="140" y="146" width="18" height="14" fill="#DD6B20" opacity="0.7" />
+          {/* Phoenix fire emblem on chest */}
+          <rect x="96" y="152" width="8" height="10" fill="#ED8936" />
+          <rect x="98" y="148" width="4" height="6" fill="#ECC94B" />
+          <rect x="94" y="156" width="12" height="4" fill="#E53E3E" />
         </g>
       );
     case 'shield':
       return (
         <g>
-          {/* Pixel shield on chest */}
-          <rect x="88" y="148" width="24" height="4" fill="#4A5568" />
-          <rect x="86" y="152" width="28" height="16" fill="#4A5568" />
-          <rect x="88" y="168" width="24" height="4" fill="#4A5568" />
-          <rect x="92" y="172" width="16" height="4" fill="#4A5568" />
-          <rect x="96" y="176" width="8" height="4" fill="#4A5568" />
-          {/* Cross emblem */}
-          <rect x="96" y="154" width="8" height="14" fill="#E53E3E" />
-          <rect x="92" y="158" width="16" height="4" fill="#E53E3E" />
+          {/* Knight Shield mounted on left forearm */}
+          <rect x="30" y="144" width="24" height="34" fill="#4A5568" stroke="#2D3748" strokeWidth="1.5" />
+          <rect x="32" y="174" width="20" height="8" fill="#4A5568" stroke="#2D3748" strokeWidth="1.5" />
+          <rect x="36" y="180" width="12" height="6" fill="#4A5568" />
+          {/* Shield cross emblem */}
+          <rect x="38" y="150" width="8" height="24" fill="#E53E3E" />
+          <rect x="34" y="158" width="16" height="8" fill="#E53E3E" />
+          {/* Shield rim highlight */}
+          <rect x="32" y="146" width="20" height="2" fill="#A0AEC0" />
         </g>
       );
     default:
@@ -607,6 +674,7 @@ export function AvatarColorSwatch({ colorId, size = 32 }) {
 // ── Mini avatar head for shop previews (blocky) ──
 export function AvatarPreviewHead({ avatar, overrides = {}, size = 48 }) {
   const merged = { ...({ color: 'default', hat: 'none', accessory: 'none', face: 'happy' }), ...avatar, ...overrides };
+  const acc = merged.accessory || merged.accessorie || 'none';
   const skin = SKIN_COLORS[merged.color] || SKIN_COLORS.default;
   const gradientColors = skin.gradientColors || ['#FC8181', '#F6E05E', '#63B3ED'];
 
@@ -621,55 +689,96 @@ export function AvatarPreviewHead({ avatar, overrides = {}, size = 48 }) {
           </linearGradient>
         </defs>
       )}
+
+      {/* Back layer for head preview: cape, cloak, wings behind head */}
+      {acc === 'cape' && (
+        <g>
+          <rect x="6" y="28" width="12" height="64" fill="#9B2C2C" />
+          <rect x="82" y="28" width="12" height="64" fill="#9B2C2C" />
+          <rect x="8" y="26" width="8" height="66" fill="#E53E3E" />
+          <rect x="84" y="26" width="8" height="66" fill="#E53E3E" />
+          <rect x="6" y="88" width="12" height="4" fill="#D69E2E" />
+          <rect x="82" y="88" width="12" height="4" fill="#D69E2E" />
+        </g>
+      )}
+      {acc === 'guild_cloak' && (
+        <g>
+          <rect x="6" y="26" width="12" height="66" fill="#44337A" />
+          <rect x="82" y="26" width="12" height="66" fill="#44337A" />
+          <rect x="8" y="24" width="8" height="68" fill="#6B46C1" />
+          <rect x="84" y="24" width="8" height="68" fill="#6B46C1" />
+          <rect x="6" y="88" width="12" height="4" fill="#ECC94B" />
+          <rect x="82" y="88" width="12" height="4" fill="#ECC94B" />
+        </g>
+      )}
+      {acc === 'phoenix_wings' && (
+        <g>
+          <rect x="0" y="32" width="16" height="14" fill="#ED8936" />
+          <rect x="84" y="32" width="16" height="14" fill="#ED8936" />
+          <rect x="2" y="44" width="14" height="16" fill="#E53E3E" />
+          <rect x="84" y="44" width="14" height="16" fill="#E53E3E" />
+          <rect x="0" y="22" width="12" height="12" fill="#ECC94B" />
+          <rect x="88" y="22" width="12" height="12" fill="#ECC94B" />
+        </g>
+      )}
+
       {/* Blocky square head */}
       <rect x="14" y="16" width="72" height="72" fill={skin.gradient ? `url(#preview-grad-${merged.color})` : skin.base} stroke={skin.outline} strokeWidth="2.5" />
       {/* Highlight */}
       <rect x="18" y="20" width="20" height="14" fill={skin.light} opacity="0.3" />
       <Eyes expression={merged.face} cx={50} cy={50} s={0.85} />
       <Mouth expression={merged.face} cx={50} cy={66} s={0.85} />
-      {merged.accessory === 'glasses' && <Glasses cx={50} cy={50} s={0.85} />}
+      {acc === 'glasses' && <Glasses cx={50} cy={50} s={0.85} />}
       {merged.hat !== 'none' && <Hat type={merged.hat} cx={50} baseY={20} s={0.7} />}
-      {/* Accessory indicators */}
-      {merged.accessory === 'star' && (
+
+      {/* Front Accessory indicators on head */}
+      {acc === 'star' && (
         <g>
-          <rect x="78" y="74" width="8" height="4" fill="#ECC94B" />
-          <rect x="80" y="70" width="4" height="12" fill="#ECC94B" />
+          <rect x="74" y="70" width="10" height="4" fill="#ECC94B" />
+          <rect x="77" y="67" width="4" height="10" fill="#ECC94B" />
         </g>
       )}
-      {merged.accessory === 'lightning' && (
+      {acc === 'lightning' && (
         <g>
-          <rect x="78" y="70" width="8" height="4" fill="#ECC94B" />
-          <rect x="76" y="74" width="8" height="4" fill="#ECC94B" />
-          <rect x="80" y="78" width="8" height="4" fill="#ECC94B" />
+          <rect x="76" y="68" width="8" height="4" fill="#ECC94B" />
+          <rect x="74" y="72" width="8" height="4" fill="#ECC94B" />
+          <rect x="78" y="76" width="8" height="4" fill="#ECC94B" />
         </g>
       )}
-      {merged.accessory === 'fire' && (
+      {acc === 'fire' && (
         <g>
-          <rect x="14" y="64" width="6" height="12" fill="#ED8936" opacity="0.7" />
-          <rect x="15" y="60" width="4" height="8" fill="#ECC94B" opacity="0.8" />
-          <rect x="80" y="64" width="6" height="12" fill="#ED8936" opacity="0.7" />
-          <rect x="81" y="60" width="4" height="8" fill="#ECC94B" opacity="0.8" />
+          <rect x="12" y="60" width="6" height="14" fill="#ED8936" opacity="0.8" />
+          <rect x="13" y="56" width="4" height="10" fill="#ECC94B" opacity="0.9" />
+          <rect x="82" y="60" width="6" height="14" fill="#ED8936" opacity="0.8" />
+          <rect x="83" y="56" width="4" height="10" fill="#ECC94B" opacity="0.9" />
         </g>
       )}
-      {merged.accessory === 'sparkle' && (
+      {acc === 'sparkle' && (
         <g>
-          <rect x="14" y="48" width="8" height="2" fill="#ECC94B" />
-          <rect x="17" y="45" width="2" height="8" fill="#ECC94B" />
-          <rect x="78" y="40" width="8" height="2" fill="#ECC94B" />
-          <rect x="81" y="37" width="2" height="8" fill="#ECC94B" />
+          <rect x="12" y="46" width="8" height="2" fill="#ECC94B" />
+          <rect x="15" y="43" width="2" height="8" fill="#ECC94B" />
+          <rect x="80" y="38" width="8" height="2" fill="#ECC94B" />
+          <rect x="83" y="35" width="2" height="8" fill="#ECC94B" />
         </g>
       )}
-      {merged.accessory === 'cape' && (
+      {acc === 'shield' && (
         <g>
-          <rect x="14" y="80" width="4" height="8" fill="#E53E3E" opacity="0.6" />
-          <rect x="82" y="80" width="4" height="8" fill="#E53E3E" opacity="0.6" />
+          <rect x="72" y="64" width="16" height="18" fill="#4A5568" stroke="#2D3748" strokeWidth="1" />
+          <rect x="75" y="80" width="10" height="4" fill="#4A5568" />
+          <rect x="78" y="68" width="4" height="12" fill="#E53E3E" />
+          <rect x="74" y="72" width="12" height="4" fill="#E53E3E" />
         </g>
       )}
-      {merged.accessory === 'shield' && (
+      {acc === 'cape' && (
         <g>
-          <rect x="76" y="68" width="12" height="14" fill="#4A5568" />
-          <rect x="78" y="82" width="8" height="4" fill="#4A5568" />
-          <rect x="80" y="72" width="4" height="8" fill="#E53E3E" />
+          <rect x="20" y="78" width="10" height="6" fill="#D69E2E" />
+          <rect x="70" y="78" width="10" height="6" fill="#D69E2E" />
+        </g>
+      )}
+      {acc === 'guild_cloak' && (
+        <g>
+          <rect x="18" y="78" width="12" height="6" fill="#ECC94B" />
+          <rect x="70" y="78" width="12" height="6" fill="#ECC94B" />
         </g>
       )}
     </svg>
@@ -680,7 +789,7 @@ export function AvatarPreviewHead({ avatar, overrides = {}, size = 48 }) {
 export default function Avatar3D({ avatar = {}, level = 1, size = 'md', animate = true, className = '' }) {
   const color = avatar.color || 'default';
   const hat = avatar.hat || 'none';
-  const accessory = avatar.accessory || 'none';
+  const accessory = avatar.accessory || avatar.accessorie || 'none';
   const face = avatar.face || 'happy';
 
   const skin = SKIN_COLORS[color] || SKIN_COLORS.default;
@@ -718,6 +827,33 @@ export default function Avatar3D({ avatar = {}, level = 1, size = 'md', animate 
               {animate && <animate attributeName="opacity" values="0.3;0.7;0.3" dur="2s" repeatCount="indefinite" />}
             </rect>
           )}
+
+          {/* Small size back layers */}
+          {accessory === 'cape' && (
+            <g>
+              <rect x="8" y="28" width="10" height="64" fill="#9B2C2C" />
+              <rect x="82" y="28" width="10" height="64" fill="#9B2C2C" />
+              <rect x="10" y="26" width="6" height="66" fill="#E53E3E" />
+              <rect x="84" y="26" width="6" height="66" fill="#E53E3E" />
+            </g>
+          )}
+          {accessory === 'guild_cloak' && (
+            <g>
+              <rect x="8" y="26" width="10" height="66" fill="#44337A" />
+              <rect x="82" y="26" width="10" height="66" fill="#44337A" />
+              <rect x="10" y="24" width="6" height="68" fill="#6B46C1" />
+              <rect x="84" y="24" width="6" height="68" fill="#6B46C1" />
+            </g>
+          )}
+          {accessory === 'phoenix_wings' && (
+            <g>
+              <rect x="2" y="32" width="14" height="12" fill="#ED8936" />
+              <rect x="84" y="32" width="14" height="12" fill="#ED8936" />
+              <rect x="4" y="44" width="12" height="16" fill="#E53E3E" />
+              <rect x="84" y="44" width="12" height="16" fill="#E53E3E" />
+            </g>
+          )}
+
           {/* Blocky Head */}
           <rect x="14" y="16" width="72" height="72" fill={skin.gradient ? `url(#rainbow-sm-${color})` : skin.base} stroke={skin.outline} strokeWidth="2.5" />
           <rect x="18" y="20" width="20" height="14" fill={skin.light} opacity="0.3" />
@@ -756,6 +892,25 @@ export default function Avatar3D({ avatar = {}, level = 1, size = 'md', animate 
               <rect x="17" y="45" width="2" height="8" fill="#ECC94B" />
               <rect x="78" y="40" width="8" height="2" fill="#ECC94B" />
               <rect x="81" y="37" width="2" height="8" fill="#ECC94B" />
+            </g>
+          )}
+          {accessory === 'shield' && (
+            <g>
+              <rect x="74" y="66" width="14" height="16" fill="#4A5568" />
+              <rect x="76" y="80" width="10" height="4" fill="#4A5568" />
+              <rect x="78" y="70" width="6" height="8" fill="#E53E3E" />
+            </g>
+          )}
+          {accessory === 'cape' && (
+            <g>
+              <rect x="20" y="78" width="8" height="5" fill="#D69E2E" />
+              <rect x="72" y="78" width="8" height="5" fill="#D69E2E" />
+            </g>
+          )}
+          {accessory === 'guild_cloak' && (
+            <g>
+              <rect x="18" y="78" width="10" height="5" fill="#ECC94B" />
+              <rect x="72" y="78" width="10" height="5" fill="#ECC94B" />
             </g>
           )}
         </svg>
@@ -825,6 +980,9 @@ export default function Avatar3D({ avatar = {}, level = 1, size = 'md', animate 
             <animateTransform attributeName="transform" type="translate" values="0,0;0,-5;0,0" dur="2.5s" repeatCount="indefinite" />
           )}
 
+          {/* Back outfit overlay (rendered behind character body) */}
+          <BackOutfit type={accessory} animate={animate} />
+
           {/* Legs - blocky rectangles */}
           <rect x="80" y="212" width="16" height="40" fill={darkColor} stroke={skin.outline} strokeWidth="1.5" />
           <rect x="104" y="212" width="16" height="40" fill={darkColor} stroke={skin.outline} strokeWidth="1.5" />
@@ -843,8 +1001,8 @@ export default function Avatar3D({ avatar = {}, level = 1, size = 'md', animate 
           {/* Belt / waistline detail */}
           <rect x="70" y="188" width="60" height="3" fill={skin.outline} opacity="0.4" />
 
-          {/* Outfit overlay */}
-          <Outfit type={accessory} skin={skin} />
+          {/* Front Outfit overlay (star, lightning, shield, clasps) */}
+          <FrontOutfit type={accessory} skin={skin} />
 
           {/* Shoulder armor for evo 3+ */}
           {evo >= 3 && <ShoulderArmor color={auraColor} />}

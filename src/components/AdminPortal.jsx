@@ -4,11 +4,13 @@ import { realBackend as backend } from '../services/realBackend';
 import {
   Building2, Users, BookOpen, Plus, Search, LogOut, CheckCircle2,
   XCircle, Edit, Trash2, ShieldCheck, ChevronRight, Share2, Filter,
-  CheckSquare, Square, RefreshCw, AlertCircle, Layers, Sparkles, Shield, Copy
+  CheckSquare, Square, RefreshCw, AlertCircle, Layers, Sparkles, Shield, Copy,
+  Swords, Package, ShoppingBag, Check
 } from 'lucide-react';
 import ActivityEditor from './ActivityEditor';
 import LegalModal from './LegalModal';
-import { LEARNING_PATHS as DEFAULT_PATHS, PATH_COLORS } from '../data/gameData';
+import { LEARNING_PATHS as DEFAULT_PATHS, PATH_COLORS, BOSS_CHALLENGES } from '../data/gameData';
+
 
 export default function AdminPortal() {
   const { user, logout } = useAuth();
@@ -61,6 +63,26 @@ export default function AdminPortal() {
   const [orgClassesForAssign, setOrgClassesForAssign] = useState([]);
   const [assigningLoading, setAssigningLoading] = useState(false);
 
+  // Weekly Boss Battles & STEM Supplies Audit State
+  const [orgWeeklyBoss, setOrgWeeklyBoss] = useState(null);
+  const [orgBossForm, setOrgBossForm] = useState({
+    name: 'Giga-Byte the Grid Guardian',
+    title: 'Cyber Circuit Overlord',
+    emoji: '🤖',
+    desc: 'The mainframe is locked in a computational deadlock. All guilds across the district must coordinate learning modules to reboot the core!',
+    steps: [
+      'Submit 3 coding or circuit activities in your class',
+      'Contribute at least 200 XP toward your Guild total',
+      'Synthesize your team data with another guild member'
+    ],
+    xpReward: 350,
+    coinReward: 120
+  });
+  const [savingOrgBoss, setSavingOrgBoss] = useState(false);
+  const [orgPurchases, setOrgPurchases] = useState([]);
+  const [loadingOrgPurchases, setLoadingOrgPurchases] = useState(false);
+  const [stemFilterStatus, setStemFilterStatus] = useState('all');
+
   useEffect(() => {
     loadAllData();
   }, []);
@@ -96,8 +118,39 @@ export default function AdminPortal() {
       sessionStorage.setItem('lvlup_admin_selected_org', selectedOrgId);
       loadTemplatesForOrg(selectedOrgId);
       loadClassesForOrg(selectedOrgId);
+      loadBossAndPurchasesForOrg(selectedOrgId);
     }
   }, [selectedOrgId]);
+
+  const loadBossAndPurchasesForOrg = async (orgId) => {
+    if (!orgId) return;
+    setLoadingOrgPurchases(true);
+    try {
+      const [boss, purchases] = await Promise.all([
+        backend.getActiveBoss(null, orgId),
+        backend.getOrgStemPurchases(orgId)
+      ]);
+      if (boss && boss.source === 'org') {
+        setOrgWeeklyBoss(boss);
+        setOrgBossForm({
+          name: boss.name || '',
+          title: boss.title || '',
+          emoji: boss.emoji || '🤖',
+          desc: boss.desc || '',
+          steps: boss.steps && boss.steps.length > 0 ? boss.steps : [''],
+          xpReward: boss.xpReward || 350,
+          coinReward: boss.coinReward || 120
+        });
+      } else {
+        setOrgWeeklyBoss(null);
+      }
+      setOrgPurchases(purchases || []);
+    } catch (err) {
+      console.error('Error fetching org boss or purchases:', err);
+    } finally {
+      setLoadingOrgPurchases(false);
+    }
+  };
 
   const loadTemplatesForOrg = async (orgId) => {
     try {
@@ -346,6 +399,68 @@ export default function AdminPortal() {
     setAssigningLoading(false);
   };
 
+  // ================= ORG BOSS & STEM AUDIT HANDLERS =================
+  const handleSaveOrgBoss = async (e) => {
+    e.preventDefault();
+    if (!selectedOrgId) {
+      setError('Please select an organization first.');
+      return;
+    }
+    if (!orgBossForm.name.trim()) {
+      setError('Please provide a Boss Name.');
+      return;
+    }
+    setSavingOrgBoss(true);
+    setError('');
+    try {
+      await backend.setOrgWeeklyBoss(selectedOrgId, {
+        name: orgBossForm.name.trim(),
+        title: orgBossForm.title.trim() || 'Weekly Org Boss',
+        emoji: orgBossForm.emoji.trim() || '👾',
+        desc: orgBossForm.desc.trim(),
+        steps: orgBossForm.steps.filter(s => s && s.trim()),
+        xpReward: Number(orgBossForm.xpReward) || 350,
+        coinReward: Number(orgBossForm.coinReward) || 120,
+        updatedAt: new Date().toISOString()
+      });
+      notifySuccess(`Published district/org weekly boss challenge: "${orgBossForm.name.trim()}"`);
+      await loadBossAndPurchasesForOrg(selectedOrgId);
+    } catch (err) {
+      setError('Failed to publish org boss: ' + err.message);
+    } finally {
+      setSavingOrgBoss(false);
+    }
+  };
+
+  const handleClearOrgBoss = async () => {
+    if (!selectedOrgId) return;
+    if (!window.confirm('Reset this organization’s weekly boss challenge back to default weekly rotation?')) return;
+    try {
+      await backend.clearOrgWeeklyBoss(selectedOrgId);
+      setOrgWeeklyBoss(null);
+      notifySuccess('Reset org boss to default rotation.');
+      await loadBossAndPurchasesForOrg(selectedOrgId);
+    } catch (err) {
+      setError('Failed to clear org boss: ' + err.message);
+    }
+  };
+
+  const handleToggleOrgPurchaseFulfill = async (purchaseId, currentFulfilled) => {
+    try {
+      await backend.markStemPurchaseFulfilled(purchaseId, !currentFulfilled);
+      setOrgPurchases(prev => prev.map(p => p.id === purchaseId ? { ...p, fulfilled: !currentFulfilled } : p));
+      notifySuccess(!currentFulfilled ? 'Order marked as Delivered!' : 'Order marked as Pending.');
+    } catch (err) {
+      setError('Failed to update order fulfillment: ' + err.message);
+    }
+  };
+
+  const filteredOrgPurchases = orgPurchases.filter(p => {
+    if (stemFilterStatus === 'pending') return !p.fulfilled;
+    if (stemFilterStatus === 'delivered') return !!p.fulfilled;
+    return true;
+  });
+
   const currentOrg = organizations.find(o => o.id === selectedOrgId);
 
   return (
@@ -474,6 +589,18 @@ export default function AdminPortal() {
           >
             <Layers className="w-4 h-4" />
             <span>Choice Board Templates</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('bosses')}
+            className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold transition-all text-sm ${
+              activeTab === 'bosses'
+                ? 'bg-yellow-500 text-slate-950 shadow-lg shadow-yellow-500/10'
+                : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
+            }`}
+          >
+            <Swords className="w-4 h-4" />
+            <span>Weekly Boss & STEM Audit</span>
           </button>
         </div>
 
@@ -803,6 +930,388 @@ export default function AdminPortal() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* TAB 4: WEEKLY BOSS BATTLES & STEM SUPPLIES AUDIT */}
+        {activeTab === 'bosses' && (
+          <div className="space-y-8">
+            {/* Header with Org selector */}
+            <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-900 p-6 border border-slate-800 rounded-2xl">
+              <div>
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Swords className="w-6 h-6 text-amber-400" />
+                  District Weekly Boss & STEM Supplies Audit
+                </h2>
+                <p className="text-slate-400 text-sm">
+                  Publish district-wide weekly challenges and audit STEM supplies purchased by students across all classes
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-slate-400 font-semibold">Active Org:</span>
+                <select
+                  value={selectedOrgId}
+                  onChange={e => setSelectedOrgId(e.target.value)}
+                  className="px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm font-bold focus:border-yellow-500 focus:outline-none"
+                >
+                  {organizations.length === 0 && <option value="">No Organizations Available</option>}
+                  {organizations.map(o => (
+                    <option key={o.id} value={o.id}>{o.name} ({o.code})</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => loadBossAndPurchasesForOrg(selectedOrgId)}
+                  className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors border border-slate-700"
+                  title="Refresh data"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* SECTION 1: DISTRICT / ORG-WIDE WEEKLY BOSS */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-800">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-lg font-bold text-white">District-Wide Weekly Boss Challenge</h3>
+                    {orgWeeklyBoss ? (
+                      <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5" /> District Custom Boss Active
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-400 border border-slate-700">
+                        Default Rotation Active
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1">
+                    When active, this weekly challenge is shown to all classes in <strong className="text-white">{currentOrg?.name}</strong> unless a teacher configures their own class-level boss.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <select
+                    onChange={(e) => {
+                      const idx = Number(e.target.value);
+                      if (idx >= 0 && BOSS_CHALLENGES[idx]) {
+                        const preset = BOSS_CHALLENGES[idx];
+                        setOrgBossForm({
+                          name: preset.name,
+                          title: preset.title,
+                          emoji: preset.emoji,
+                          desc: preset.desc,
+                          steps: [...preset.steps],
+                          xpReward: preset.xpReward || 350,
+                          coinReward: preset.coinReward || 120
+                        });
+                      }
+                    }}
+                    defaultValue=""
+                    className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300 focus:border-yellow-500 outline-none"
+                  >
+                    <option value="" disabled>Load from Standard Presets...</option>
+                    {BOSS_CHALLENGES.map((b, idx) => (
+                      <option key={idx} value={idx}>{b.emoji} {b.name} ({b.title})</option>
+                    ))}
+                  </select>
+
+                  {orgWeeklyBoss && (
+                    <button
+                      type="button"
+                      onClick={handleClearOrgBoss}
+                      className="px-3 py-2 bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-800/60 rounded-xl text-xs font-bold transition-all"
+                    >
+                      Revert to Default
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <form onSubmit={handleSaveOrgBoss} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold text-slate-400 mb-1">Emoji</label>
+                    <input
+                      type="text"
+                      value={orgBossForm.emoji}
+                      onChange={e => setOrgBossForm(prev => ({ ...prev, emoji: e.target.value }))}
+                      className="w-full text-center text-2xl px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:border-yellow-500 outline-none"
+                      maxLength={4}
+                    />
+                  </div>
+                  <div className="sm:col-span-5">
+                    <label className="block text-xs font-semibold text-slate-400 mb-1">Boss Name</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Apex Cipher Dragon"
+                      value={orgBossForm.name}
+                      onChange={e => setOrgBossForm(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-yellow-500 outline-none"
+                    />
+                  </div>
+                  <div className="sm:col-span-5">
+                    <label className="block text-xs font-semibold text-slate-400 mb-1">Boss Title / Subtitle</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Guardian of the Silicon Void"
+                      value={orgBossForm.title}
+                      onChange={e => setOrgBossForm(prev => ({ ...prev, title: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-yellow-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Challenge Mission Description</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Describe the weekly threat facing the guilds and why collaborative STEM learning will defeat it..."
+                    value={orgBossForm.desc}
+                    onChange={e => setOrgBossForm(prev => ({ ...prev, desc: e.target.value }))}
+                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-yellow-500 outline-none"
+                  />
+                </div>
+
+                {/* Steps */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs font-semibold text-slate-400">Battle Plan Objectives (Steps to Win)</label>
+                    <button
+                      type="button"
+                      onClick={() => setOrgBossForm(prev => ({ ...prev, steps: [...prev.steps, ''] }))}
+                      className="text-xs text-yellow-400 hover:text-yellow-300 font-bold flex items-center gap-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add Step
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {orgBossForm.steps.map((step, sIdx) => (
+                      <div key={sIdx} className="flex items-center gap-2">
+                        <span className="w-6 text-xs text-slate-500 font-mono text-center">{sIdx + 1}.</span>
+                        <input
+                          type="text"
+                          value={step}
+                          placeholder={`Objective ${sIdx + 1}`}
+                          onChange={e => {
+                            const newSteps = [...orgBossForm.steps];
+                            newSteps[sIdx] = e.target.value;
+                            setOrgBossForm(prev => ({ ...prev, steps: newSteps }));
+                          }}
+                          className="flex-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs focus:border-yellow-500 outline-none"
+                        />
+                        {orgBossForm.steps.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOrgBossForm(prev => ({
+                                ...prev,
+                                steps: prev.steps.filter((_, idx) => idx !== sIdx)
+                              }));
+                            }}
+                            className="p-1.5 text-slate-500 hover:text-red-400 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1">Guild XP Reward</label>
+                    <input
+                      type="number"
+                      min="50"
+                      step="25"
+                      value={orgBossForm.xpReward}
+                      onChange={e => setOrgBossForm(prev => ({ ...prev, xpReward: Number(e.target.value) }))}
+                      className="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-yellow-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1">Coin Reward per Student</label>
+                    <input
+                      type="number"
+                      min="10"
+                      step="10"
+                      value={orgBossForm.coinReward}
+                      onChange={e => setOrgBossForm(prev => ({ ...prev, coinReward: Number(e.target.value) }))}
+                      className="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-yellow-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-3">
+                  <button
+                    type="submit"
+                    disabled={savingOrgBoss}
+                    className="px-6 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold rounded-xl text-sm transition-all shadow-md flex items-center gap-2"
+                  >
+                    <Swords className="w-4 h-4" />
+                    {savingOrgBoss ? 'Publishing...' : 'Publish District Boss Challenge'}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* SECTION 2: DISTRICT / ORG STEM SUPPLIES AUDIT */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-800">
+                <div>
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <Package className="w-5 h-5 text-yellow-400" />
+                    District STEM Supplies Order Audit
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Master ledger of all STEM supplies purchased by students across all classes in <strong className="text-white">{currentOrg?.name}</strong>.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setStemFilterStatus('all')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                      stemFilterStatus === 'all'
+                        ? 'bg-yellow-500 text-slate-950'
+                        : 'bg-slate-800 text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    All ({orgPurchases.length})
+                  </button>
+                  <button
+                    onClick={() => setStemFilterStatus('pending')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                      stemFilterStatus === 'pending'
+                        ? 'bg-amber-500 text-slate-950'
+                        : 'bg-slate-800 text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    Pending ({orgPurchases.filter(p => !p.fulfilled).length})
+                  </button>
+                  <button
+                    onClick={() => setStemFilterStatus('delivered')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                      stemFilterStatus === 'delivered'
+                        ? 'bg-emerald-500 text-slate-950'
+                        : 'bg-slate-800 text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    Delivered ({orgPurchases.filter(p => !!p.fulfilled).length})
+                  </button>
+                </div>
+              </div>
+
+              {/* Stats overview */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+                  <div className="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Total Orders</div>
+                  <div className="text-2xl font-black text-white mt-1">{orgPurchases.length}</div>
+                </div>
+                <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+                  <div className="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Coins Invested</div>
+                  <div className="text-2xl font-black text-yellow-400 mt-1">
+                    🪙 {orgPurchases.reduce((acc, p) => acc + (p.cost || 0), 0).toLocaleString()}
+                  </div>
+                </div>
+                <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+                  <div className="text-[11px] uppercase tracking-wider text-amber-400 font-bold">Pending Delivery</div>
+                  <div className="text-2xl font-black text-amber-400 mt-1">
+                    {orgPurchases.filter(p => !p.fulfilled).length}
+                  </div>
+                </div>
+                <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+                  <div className="text-[11px] uppercase tracking-wider text-emerald-400 font-bold">Delivered</div>
+                  <div className="text-2xl font-black text-emerald-400 mt-1">
+                    {orgPurchases.filter(p => !!p.fulfilled).length}
+                  </div>
+                </div>
+              </div>
+
+              {/* Table */}
+              {loadingOrgPurchases ? (
+                <div className="text-center py-12 text-slate-400">Loading district purchases...</div>
+              ) : filteredOrgPurchases.length === 0 ? (
+                <div className="text-center py-12 border border-dashed border-slate-800 rounded-xl">
+                  <Package className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+                  <p className="text-sm font-bold text-slate-300">No STEM Supply Purchases Found</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    When students buy STEM materials for their guilds, orders will be tracked here.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-400 bg-slate-950/60">
+                        <th className="py-3 px-4">Date & Time</th>
+                        <th className="py-3 px-4">Student & Guild</th>
+                        <th className="py-3 px-4">Item & Tier</th>
+                        <th className="py-3 px-4">Cost</th>
+                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800 text-xs">
+                      {filteredOrgPurchases.map(p => (
+                        <tr key={p.id} className="hover:bg-slate-800/40 transition-colors">
+                          <td className="py-3 px-4 text-slate-400 font-mono whitespace-nowrap">
+                            {p.timestamp ? new Date(p.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Recently'}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="font-bold text-white">{p.studentName || 'Student'}</div>
+                            <div className="text-slate-400 text-[11px] flex items-center gap-1">
+                              <span>{p.guildEmoji || '🛡️'}</span>
+                              <span>{p.guildName || 'Guild'}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="font-bold text-slate-200 flex items-center gap-1.5">
+                              <span>{p.itemEmoji || '📦'}</span>
+                              <span>{p.itemName || 'STEM Supply'}</span>
+                            </div>
+                            <div className="text-slate-400 text-[11px]">Tier {p.itemTier || 1}</div>
+                          </td>
+                          <td className="py-3 px-4 font-bold text-yellow-400">
+                            🪙 {p.cost}
+                          </td>
+                          <td className="py-3 px-4">
+                            {p.fulfilled ? (
+                              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                Delivered
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                Pending Delivery
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleOrgPurchaseFulfill(p.id, p.fulfilled)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 ${
+                                p.fulfilled
+                                  ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                                  : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30'
+                              }`}
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              {p.fulfilled ? 'Mark Pending' : 'Mark Delivered'}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

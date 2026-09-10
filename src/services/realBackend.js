@@ -19,7 +19,7 @@ import {
   onSnapshot
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
-import { GUILDS, GUILD_LEVELS, GUILD_CHALLENGES, getGuildLevelInfo } from "../data/gameData";
+import { GUILDS, DEFAULT_10_GUILDS, DEFAULT_STEM_SUPPLIES, GUILD_LEVELS, GUILD_CHALLENGES, BOSS_CHALLENGES, getGuildLevelInfo } from "../data/gameData";
 
 export const realBackend = {
   // ================= TEACHER AUTH =================
@@ -875,17 +875,22 @@ export const realBackend = {
   // ================= GUILD SYSTEM 2.0 =================
   async getGuildLeaderboard(classId) {
     try {
+      const classDoc = await this.getClass(classId);
+      const activeGuilds = classDoc?.guilds && classDoc.guilds.length > 0 ? classDoc.guilds : GUILDS;
       const students = await this.getStudents(classId);
       const guildStats = {};
 
-      // Initialize all 4 guilds
-      GUILDS.forEach(g => {
+      // Initialize all active guilds (supports up to 10 customizable guilds)
+      activeGuilds.forEach(g => {
         guildStats[g.id] = {
           id: g.id,
           name: g.name,
           color: g.color,
+          borderColor: g.borderColor || 'border-slate-500',
+          gradient: g.gradient || 'from-slate-600 to-slate-700',
           emoji: g.emoji,
-          motto: g.motto,
+          motto: g.motto || '',
+          botPictureUrl: g.botPictureUrl || '',
           totalXp: 0,
           memberCount: 0,
           members: [],
@@ -1078,6 +1083,8 @@ export const realBackend = {
   // ================= AUTO-BALANCE GUILDS (TEACHER) =================
   async autoBalanceGuilds(classId, mode = 'unassigned') {
     try {
+      const classDoc = await this.getClass(classId);
+      const activeGuilds = classDoc?.guilds && classDoc.guilds.length > 0 ? classDoc.guilds : GUILDS;
       const students = await this.getStudents(classId);
       if (!students || students.length === 0) return { updatedCount: 0 };
 
@@ -1095,7 +1102,7 @@ export const realBackend = {
 
       // Count current members per guild if balancing unassigned
       const guildCounts = {};
-      GUILDS.forEach(g => {
+      activeGuilds.forEach(g => {
         guildCounts[g.id] = mode === 'all' ? 0 : students.filter(s => s.guild === g.id).length;
       });
 
@@ -1104,7 +1111,7 @@ export const realBackend = {
         // Find guild with smallest count
         const targetGuild = Object.keys(guildCounts).reduce((minId, currentId) => {
           return guildCounts[currentId] < guildCounts[minId] ? currentId : minId;
-        }, GUILDS[0].id);
+        }, activeGuilds[0].id);
 
         guildCounts[targetGuild]++;
         await updateDoc(doc(db, "students", student.id), { guild: targetGuild });
@@ -1657,13 +1664,26 @@ export const realBackend = {
     }
   },
 
-  async importTemplateActivitiesToClass(classId, activitiesToImport, categoryNames = {}, categorySubtitles = {}) {
+  async importTemplateActivitiesToClass(classId, activitiesToImport, categoryNames = {}, categorySubtitles = {}, mode = 'merge') {
     try {
       const classRef = doc(db, "classes", classId);
       const classSnap = await getDoc(classRef);
       if (!classSnap.exists()) throw new Error("Class not found");
 
       const classData = classSnap.data();
+
+      if (mode === 'overwrite') {
+        const order = activitiesToImport.map(p => p.id);
+        await updateDoc(classRef, {
+          activities: activitiesToImport,
+          categoryNames: categoryNames,
+          categorySubtitles: categorySubtitles,
+          categoryOrder: order,
+          updatedAt: serverTimestamp()
+        });
+        return { success: true, activities: activitiesToImport, categoryNames, categorySubtitles, categoryOrder: order };
+      }
+
       let currentActivities = classData.activities && classData.activities.length > 0
         ? classData.activities
         : DEFAULT_PATHS;
@@ -1693,16 +1713,252 @@ export const realBackend = {
         }
       });
 
+      const existingOrder = Array.isArray(classData.categoryOrder) ? classData.categoryOrder : updatedActivities.map(p => p.id);
+      const mergedOrder = [...new Set([...existingOrder, ...updatedActivities.map(p => p.id)])];
+
       await updateDoc(classRef, {
         activities: updatedActivities,
         categoryNames: mergedCategoryNames,
         categorySubtitles: mergedCategorySubtitles,
+        categoryOrder: mergedOrder,
         updatedAt: serverTimestamp()
       });
 
-      return { success: true, activities: updatedActivities, categoryNames: mergedCategoryNames, categorySubtitles: mergedCategorySubtitles };
+      return { success: true, activities: updatedActivities, categoryNames: mergedCategoryNames, categorySubtitles: mergedCategorySubtitles, categoryOrder: mergedOrder };
     } catch (error) {
       throw new Error("Failed to import activities to class: " + error.message);
+    }
+  },
+
+  // ================= GUILD CONFIGURATION & BOT PICTURES =================
+  async updateClassGuilds(classId, guilds) {
+    try {
+      const classRef = doc(db, "classes", classId);
+      await updateDoc(classRef, { guilds, updatedAt: serverTimestamp() });
+      return { success: true };
+    } catch (error) {
+      console.error("Error updating class guilds:", error);
+      throw error;
+    }
+  },
+
+  async updateGuildBotPicture(classId, guildId, botPictureUrl) {
+    try {
+      const classDoc = await this.getClass(classId);
+      const currentGuilds = classDoc?.guilds && classDoc.guilds.length > 0 ? [...classDoc.guilds] : [...GUILDS];
+      const updatedGuilds = currentGuilds.map(g => g.id === guildId ? { ...g, botPictureUrl } : g);
+      await this.updateClassGuilds(classId, updatedGuilds);
+      return { success: true, botPictureUrl };
+    } catch (error) {
+      console.error("Error updating guild bot picture:", error);
+      throw error;
+    }
+  },
+
+  // ================= STEM SUPPLIES DEPOT & GUILD REWARDS =================
+  async getStemShopItems(classId) {
+    try {
+      if (!classId) return DEFAULT_STEM_SUPPLIES;
+      const classDoc = await this.getClass(classId);
+      return classDoc?.stemSupplies && classDoc.stemSupplies.length > 0
+        ? classDoc.stemSupplies
+        : DEFAULT_STEM_SUPPLIES;
+    } catch (e) {
+      return DEFAULT_STEM_SUPPLIES;
+    }
+  },
+
+  async updateStemShopItems(classId, stemSupplies) {
+    try {
+      const classRef = doc(db, "classes", classId);
+      await updateDoc(classRef, { stemSupplies, updatedAt: serverTimestamp() });
+      return { success: true };
+    } catch (error) {
+      console.error("Error updating STEM shop items:", error);
+      throw error;
+    }
+  },
+
+  async buyStemSupply(classId, studentId, itemId) {
+    try {
+      const classDoc = await this.getClass(classId);
+      const student = await this.getStudent(studentId);
+      if (!student) throw new Error("Student not found");
+      if (!student.guild) throw new Error("You must join a guild before purchasing STEM supplies!");
+
+      const items = classDoc?.stemSupplies && classDoc.stemSupplies.length > 0
+        ? classDoc.stemSupplies
+        : DEFAULT_STEM_SUPPLIES;
+      const item = items.find(i => i.id === itemId);
+      if (!item) throw new Error("Item not found in catalog");
+
+      if ((student.coins || 0) < item.costCoins) {
+        throw new Error(`Not enough coins! You have ${student.coins || 0} coins, but this item costs ${item.costCoins} coins.`);
+      }
+
+      // Check guild level requirement
+      const leaderboard = await this.getGuildLeaderboard(classId);
+      const guildStats = leaderboard[student.guild];
+      const guildLevel = guildStats?.levelInfo?.level || 1;
+      if (guildLevel < item.requiredGuildLevel) {
+        throw new Error(`Your guild must reach Level ${item.requiredGuildLevel} to unlock this tier! (Current: Level ${guildLevel})`);
+      }
+
+      // Deduct student's personal coins
+      const newCoins = (student.coins || 0) - item.costCoins;
+      await this.updateStudent(studentId, { coins: newCoins });
+
+      // Find guild info
+      const activeGuilds = classDoc?.guilds && classDoc.guilds.length > 0 ? classDoc.guilds : GUILDS;
+      const guildInfo = activeGuilds.find(g => g.id === student.guild);
+
+      // Create purchase audit log record
+      const purchaseData = {
+        classId,
+        studentId,
+        studentName: student.name,
+        guildId: student.guild,
+        guildName: guildInfo?.name || student.guild,
+        guildEmoji: guildInfo?.emoji || '🛡️',
+        itemId: item.id,
+        itemName: item.name,
+        tier: item.tier || 1,
+        costCoins: item.costCoins,
+        icon: item.icon || '⚙️',
+        timestamp: new Date().toISOString(),
+        fulfilled: false,
+        fulfilledAt: null,
+      };
+
+      const docRef = await addDoc(collection(db, "stem_purchases"), purchaseData);
+      return { success: true, purchaseId: docRef.id, newCoins, item, purchase: { id: docRef.id, ...purchaseData } };
+    } catch (error) {
+      console.error("Error purchasing STEM supply:", error);
+      throw error;
+    }
+  },
+
+  async getStemPurchases(classId) {
+    try {
+      const q = query(
+        collection(db, "stem_purchases"),
+        where("classId", "==", classId)
+      );
+      const snap = await getDocs(q);
+      const purchases = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      purchases.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      return purchases;
+    } catch (error) {
+      console.error("Error fetching STEM purchases:", error);
+      return [];
+    }
+  },
+
+  async markStemPurchaseFulfilled(purchaseId, fulfilled = true) {
+    try {
+      const ref = doc(db, "stem_purchases", purchaseId);
+      await updateDoc(ref, {
+        fulfilled,
+        fulfilledAt: fulfilled ? new Date().toISOString() : null
+      });
+      return { success: true };
+    } catch (error) {
+      console.error("Error marking purchase fulfilled:", error);
+      throw error;
+    }
+  },
+
+  async getOrgStemPurchases(organizationId) {
+    try {
+      const classes = await this.getClassesForOrganization(organizationId);
+      const classIds = classes.map(c => c.id);
+      if (classIds.length === 0) return [];
+      const snap = await getDocs(collection(db, "stem_purchases"));
+      const allPurchases = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(p => classIds.includes(p.classId));
+      allPurchases.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      return allPurchases;
+    } catch (error) {
+      console.error("Error fetching org STEM purchases:", error);
+      return [];
+    }
+  },
+
+  // ================= BOSS BATTLES (ADMIN ORG-WIDE & TEACHER CLASS-LEVEL) =================
+  async setClassCustomBoss(classId, bossData) {
+    try {
+      const classRef = doc(db, "classes", classId);
+      await updateDoc(classRef, { customBoss: bossData, updatedAt: serverTimestamp() });
+      return { success: true };
+    } catch (error) {
+      console.error("Error setting class custom boss:", error);
+      throw error;
+    }
+  },
+
+  async clearClassCustomBoss(classId) {
+    try {
+      const classRef = doc(db, "classes", classId);
+      await updateDoc(classRef, { customBoss: null, updatedAt: serverTimestamp() });
+      return { success: true };
+    } catch (error) {
+      console.error("Error clearing class custom boss:", error);
+      throw error;
+    }
+  },
+
+  async setOrgWeeklyBoss(organizationId, bossData) {
+    try {
+      const orgRef = doc(db, "organizations", organizationId);
+      await updateDoc(orgRef, { activeBoss: bossData, updatedAt: serverTimestamp() });
+      return { success: true };
+    } catch (error) {
+      console.error("Error setting org weekly boss:", error);
+      throw error;
+    }
+  },
+
+  async clearOrgWeeklyBoss(organizationId) {
+    try {
+      const orgRef = doc(db, "organizations", organizationId);
+      await updateDoc(orgRef, { activeBoss: null, updatedAt: serverTimestamp() });
+      return { success: true };
+    } catch (error) {
+      console.error("Error clearing org weekly boss:", error);
+      throw error;
+    }
+  },
+
+  async getActiveBoss(classId, organizationId) {
+    try {
+      // 1. Check Class-specific custom boss
+      if (classId) {
+        const classDoc = await this.getClass(classId);
+        if (classDoc?.customBoss && classDoc.customBoss.name) {
+          return { ...classDoc.customBoss, source: 'class' };
+        }
+        if (!organizationId && classDoc?.organizationId) {
+          organizationId = classDoc.organizationId;
+        }
+      }
+
+      // 2. Check Org-wide weekly boss
+      if (organizationId) {
+        const orgDoc = await this.getOrganization(organizationId);
+        if (orgDoc?.activeBoss && orgDoc.activeBoss.name) {
+          return { ...orgDoc.activeBoss, source: 'org' };
+        }
+      }
+
+      // 3. Fallback to weekly rotation from BOSS_CHALLENGES
+      const today = new Date();
+      const weekOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 604800000);
+      const defaultBoss = BOSS_CHALLENGES[weekOfYear % BOSS_CHALLENGES.length];
+      return { ...defaultBoss, source: 'default' };
+    } catch (error) {
+      console.error("Error resolving active boss:", error);
+      return { ...BOSS_CHALLENGES[0], source: 'default' };
     }
   }
 };

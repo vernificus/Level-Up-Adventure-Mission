@@ -3,7 +3,7 @@ import {
   Gamepad2, Mic, BarChart3, Palette, CheckCircle2, Trophy, Rocket, Info, X, PlayCircle,
   Star, Gift, Swords, Users, User, Sparkles, Zap, Shield, ShieldCheck, Crown, Target,
   Upload, Link, Link2, Clock, CheckCheck, XCircle, ClipboardList, Lock, Eye, FileText, LogOut,
-  MessageSquare, Pencil, BookOpen
+  MessageSquare, Pencil, BookOpen, Award
 } from 'lucide-react';
 import { useGameState } from './hooks/useGameState';
 import {
@@ -19,6 +19,7 @@ import Avatar3D, { AvatarColorSwatch, AvatarPreviewHead } from './components/Ava
 import Leaderboard from './components/Leaderboard';
 import LegalModal from './components/LegalModal';
 import GuildPanel from './components/GuildPanel';
+import LevelEconomyGuideModal from './components/LevelEconomyGuideModal';
 import { realBackend as backend } from './services/realBackend';
 
 const IconMap = { Mic, BarChart3, Palette, BookOpen };
@@ -149,13 +150,14 @@ function DailyQuestBanner({ quest, completed }) {
 }
 
 // ============== BOSS CHALLENGE ==============
-function BossChallenge({ completedBosses, onSubmit, hasPendingSubmission }) {
+function BossChallenge({ completedBosses, onSubmit, hasPendingSubmission, activeBoss }) {
   const [showBoss, setShowBoss] = useState(false);
   const [showSubmitForm, setShowSubmitForm] = useState(false);
 
   const today = new Date();
   const weekOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 604800000);
-  const currentBoss = BOSS_CHALLENGES[weekOfYear % BOSS_CHALLENGES.length];
+  const defaultBoss = BOSS_CHALLENGES[weekOfYear % BOSS_CHALLENGES.length];
+  const currentBoss = activeBoss || defaultBoss;
   const isCompleted = completedBosses.includes(currentBoss.id);
 
   const handleSubmit = (submissionData) => {
@@ -177,10 +179,23 @@ function BossChallenge({ completedBosses, onSubmit, hasPendingSubmission }) {
               <Swords className="w-6 h-6" />
             </div>
             <div className="text-left">
-              <p className="text-xs font-bold uppercase tracking-widest text-red-400">Weekly Boss</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-bold uppercase tracking-widest text-red-400">Weekly Boss</p>
+                {currentBoss.source === 'class' && (
+                  <span className="text-[10px] font-black uppercase bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full">
+                    Class Custom
+                  </span>
+                )}
+                {currentBoss.source === 'org' && (
+                  <span className="text-[10px] font-black uppercase bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded-full">
+                    District / Org
+                  </span>
+                )}
+              </div>
               <p className="font-black text-white">{currentBoss.name}</p>
             </div>
           </div>
+
           {isCompleted ? (
             <span className="text-green-400 font-bold flex items-center gap-1">
               <Crown className="w-5 h-5" aria-hidden="true" /> Defeated!
@@ -205,15 +220,16 @@ function BossChallenge({ completedBosses, onSubmit, hasPendingSubmission }) {
             {!showSubmitForm ? (
               <>
                 <div className="text-center mb-6">
-                  <div className="text-6xl mb-4" aria-hidden="true">👹</div>
+                  <div className="text-6xl mb-4" aria-hidden="true">{currentBoss.icon || '👹'}</div>
                   <h3 id="boss-dialog-title" className="text-2xl font-black uppercase italic text-red-400">{currentBoss.name}</h3>
+                  {currentBoss.title && <p className="text-xs text-yellow-400 font-bold uppercase tracking-wider mt-0.5">{currentBoss.title}</p>}
                   <p className="text-slate-400 mt-2">{currentBoss.desc}</p>
                 </div>
 
                 <div className="space-y-4 mb-6">
                   <h4 className="font-bold text-slate-300 uppercase text-xs tracking-widest">Battle Plan:</h4>
                   <ol className="space-y-3">
-                    {currentBoss.steps.map((step, idx) => (
+                    {(currentBoss.steps || []).map((step, idx) => (
                       <li key={idx} className="flex gap-3 text-slate-300">
                         <span className="flex-shrink-0 w-6 h-6 rounded-full bg-red-900 text-red-400 flex items-center justify-center text-xs font-bold">
                           {idx + 1}
@@ -569,10 +585,25 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
 
   const items = activeTab === 'rewards' ? [] : (AVATAR_ITEMS[activeTab] || []);
 
+  const TAB_TO_SLOT = {
+    colors: 'color',
+    hats: 'hat',
+    accessories: 'accessory',
+    faces: 'face'
+  };
+  const slotKey = TAB_TO_SLOT[activeTab] || activeTab.slice(0, -1);
+
+  const currentAvatarNormalized = {
+    color: gameState.avatar?.color || 'default',
+    hat: gameState.avatar?.hat || 'none',
+    face: gameState.avatar?.face || 'happy',
+    accessory: gameState.avatar?.accessory || gameState.avatar?.accessorie || 'none'
+  };
+
   // Preview avatar: show hovered item if any, otherwise current equipped
   const previewAvatar = hoveredItem
-    ? { ...gameState.avatar, ...hoveredItem }
-    : gameState.avatar;
+    ? { ...currentAvatarNormalized, ...hoveredItem }
+    : currentAvatarNormalized;
 
   const handleRedeemReward = async (item) => {
     if (gameState.coins < item.cost) return;
@@ -662,10 +693,10 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
               <p className="text-xs text-slate-400 uppercase tracking-widest font-bold mb-2">Currently Equipped</p>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 {[
-                  { label: 'Skin', value: AVATAR_ITEMS.colors.find(c => c.id === gameState.avatar.color)?.name || 'Default' },
-                  { label: 'Hat', value: AVATAR_ITEMS.hats.find(h => h.id === gameState.avatar.hat)?.name || 'None' },
-                  { label: 'Effect', value: AVATAR_ITEMS.accessories.find(a => a.id === gameState.avatar.accessory)?.name || 'None' },
-                  { label: 'Face', value: AVATAR_ITEMS.faces.find(f => f.id === gameState.avatar.face)?.name || 'Happy' },
+                  { label: 'Skin', value: AVATAR_ITEMS.colors.find(c => c.id === currentAvatarNormalized.color)?.name || 'Default' },
+                  { label: 'Hat', value: AVATAR_ITEMS.hats.find(h => h.id === currentAvatarNormalized.hat)?.name || 'None' },
+                  { label: 'Effect', value: AVATAR_ITEMS.accessories.find(a => a.id === currentAvatarNormalized.accessory)?.name || 'None' },
+                  { label: 'Face', value: AVATAR_ITEMS.faces.find(f => f.id === currentAvatarNormalized.face)?.name || 'Happy' },
                 ].map(slot => (
                   <div key={slot.label} className="flex items-center gap-1.5">
                     <span className="text-slate-500">{slot.label}:</span>
@@ -757,13 +788,13 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
           <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 max-h-64 overflow-y-auto" role="tabpanel" aria-label={`${activeTab} items`}>
             {items.map(item => {
               const owned = gameState.ownedItems.includes(item.id);
-              const equipped = gameState.avatar[activeTab.slice(0, -1)] === item.id;
+              const equipped = currentAvatarNormalized[slotKey] === item.id;
 
               return (
                 <button
                   key={item.id}
-                  onClick={() => owned ? onEquip(activeTab.slice(0, -1), item.id) : gameState.coins >= item.cost && onBuy(item.id, item.cost)}
-                  onMouseEnter={() => setHoveredItem({ [activeTab.slice(0, -1)]: item.id })}
+                  onClick={() => owned ? onEquip(slotKey, item.id) : gameState.coins >= item.cost && onBuy(item.id, item.cost)}
+                  onMouseEnter={() => setHoveredItem({ [slotKey]: item.id })}
                   onMouseLeave={() => setHoveredItem(null)}
                   disabled={!owned && gameState.coins < item.cost}
                   className={`p-2.5 rounded-xl border-2 flex flex-col items-center gap-1 transition-all ${
@@ -779,7 +810,7 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
                     {activeTab === 'colors' ? (
                       <AvatarColorSwatch colorId={item.id} size={36} />
                     ) : (
-                      <AvatarPreviewHead avatar={gameState.avatar} overrides={{ [activeTab.slice(0, -1)]: item.id }} size={44} />
+                      <AvatarPreviewHead avatar={currentAvatarNormalized} overrides={{ [slotKey]: item.id }} size={44} />
                     )}
                   </div>
                   <p className="text-xs font-bold truncate w-full text-center">{item.name}</p>
@@ -1108,6 +1139,9 @@ function GameContent({ emulatedClassId } = {}) {
     gameState,
     submissions,
     learningPaths,
+    categoriesPerRow,
+    classGuilds,
+    spendCoins,
     getCurrentLevel,
     getNextLevelXp,
     getDailyQuest,
@@ -1138,6 +1172,8 @@ function GameContent({ emulatedClassId } = {}) {
   const [classSpotlight, setClassSpotlight] = useState(null);
   const [showLegalModal, setShowLegalModal] = useState(false);
   const [legalModalTab, setLegalModalTab] = useState('privacy');
+  const [activeBoss, setActiveBoss] = useState(null);
+  const [showLevelEconomyGuide, setShowLevelEconomyGuide] = useState(false);
 
   const dailyQuest = getDailyQuest();
 
@@ -1148,10 +1184,14 @@ function GameContent({ emulatedClassId } = {}) {
           setClassSpotlight(cls.spotlight);
         }
       }).catch(e => console.error("Error loading class spotlight", e));
-    }
-  }, [effectiveClassId]);
 
-  // Load class spotlight
+      backend.getActiveBoss(effectiveClassId, user?.organizationId).then(b => {
+        if (b) setActiveBoss(b);
+      }).catch(e => console.error("Error loading active boss", e));
+    }
+  }, [effectiveClassId, user?.organizationId]);
+
+  // Load class spotlight & active boss
   useEffect(() => {
     refreshClassData();
   }, [refreshClassData]);
@@ -1178,8 +1218,10 @@ function GameContent({ emulatedClassId } = {}) {
   // Check for current boss pending status
   const today = new Date();
   const weekOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 604800000);
-  const currentBoss = BOSS_CHALLENGES[weekOfYear % BOSS_CHALLENGES.length];
+  const defaultBoss = BOSS_CHALLENGES[weekOfYear % BOSS_CHALLENGES.length];
+  const currentBoss = activeBoss || defaultBoss;
   const hasPendingBoss = pendingBossIds.includes(currentBoss.id);
+
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8 font-sans relative">
@@ -1224,6 +1266,14 @@ function GameContent({ emulatedClassId } = {}) {
           >
             <Crown className="w-5 h-5 text-blue-400" aria-hidden="true" />
             <span className="font-bold">Leaderboard</span>
+          </button>
+          <button
+            onClick={() => setShowLevelEconomyGuide(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg hover:border-amber-400 transition-colors text-amber-300"
+            aria-label="View Level Progression & Gold Guide"
+          >
+            <Award className="w-5 h-5 text-amber-400" aria-hidden="true" />
+            <span className="font-bold">Levels & Gold Guide</span>
           </button>
           <button
             onClick={() => { setLegalModalTab('privacy'); setShowLegalModal(true); }}
@@ -1277,19 +1327,32 @@ function GameContent({ emulatedClassId } = {}) {
           classId={effectiveClassId}
           gameState={{ id: user?.id, name: gameState.playerName, ...gameState }}
           onStateUpdate={refreshClassData}
+          guilds={classGuilds}
+          spendCoins={spendCoins}
         />
         <BossChallenge
           completedBosses={gameState.completedBossChallenges}
           onSubmit={handleSubmitBoss}
           hasPendingSubmission={hasPendingBoss}
+          activeBoss={currentBoss}
         />
 
         <main
           id="main-content"
-          className={`grid grid-cols-1 gap-6 mb-12 ${
-            learningPaths.length === 4 ? 'md:grid-cols-4' :
-            learningPaths.length === 2 ? 'md:grid-cols-2' :
-            'md:grid-cols-3'
+          className={`grid gap-6 mb-12 ${
+            categoriesPerRow === '1' ? 'grid-cols-1 max-w-2xl mx-auto' :
+            categoriesPerRow === '2' ? 'grid-cols-1 md:grid-cols-2 max-w-5xl mx-auto' :
+            categoriesPerRow === '3' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' :
+            categoriesPerRow === '4' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' :
+            categoriesPerRow === '5' ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5' :
+            categoriesPerRow === '6' ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6' :
+            // Auto / responsive default
+            learningPaths.length === 1 ? 'grid-cols-1 max-w-2xl mx-auto' :
+            learningPaths.length === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-5xl mx-auto' :
+            learningPaths.length === 4 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' :
+            learningPaths.length === 5 ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5' :
+            learningPaths.length >= 6 ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6' :
+            'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
           }`}
           aria-label="Learning paths"
         >
@@ -1352,6 +1415,7 @@ function GameContent({ emulatedClassId } = {}) {
       {showMysteryReward && <MysteryBoxModal reward={showMysteryReward} onClose={() => setShowMysteryReward(null)} />}
       {showLevelUp && newLevel && <LevelUpModal level={newLevel} avatar={gameState.avatar} onClose={() => setShowLevelUp(false)} />}
       {showAchievement && <AchievementModal achievement={showAchievement} onClose={() => setShowAchievement(null)} />}
+      <LevelEconomyGuideModal isOpen={showLevelEconomyGuide} onClose={() => setShowLevelEconomyGuide(false)} />
 
       <footer className="mt-12 pt-6 border-t border-slate-800 text-center text-xs text-slate-500 space-y-2 print:hidden">
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">

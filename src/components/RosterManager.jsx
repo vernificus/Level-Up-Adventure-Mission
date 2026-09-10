@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { realBackend as backend } from '../services/realBackend';
-import { UserPlus, Lock, Trash2, Save, Edit, X, Check, RotateCcw, Gift, Star, Zap, Trophy, Eye, EyeOff } from 'lucide-react';
-import { ACHIEVEMENTS } from '../data/gameData';
+import { UserPlus, Lock, Trash2, Save, Edit, X, Check, RotateCcw, Gift, Star, Zap, Trophy, Eye, EyeOff, Sparkles, User, ShieldCheck } from 'lucide-react';
+import { ACHIEVEMENTS, LEVELS, AVATAR_ITEMS } from '../data/gameData';
+import Avatar3D, { AvatarColorSwatch } from './Avatar3D';
 
 export default function RosterManager({ classId, onStudentAdded }) {
   const [students, setStudents] = useState([]);
@@ -12,6 +13,63 @@ export default function RosterManager({ classId, onStudentAdded }) {
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', password: '' });
   const [visiblePasswords, setVisiblePasswords] = useState({});
+
+  // Student Avatar & Rewards Inspector State
+  const [inspectStudent, setInspectStudent] = useState(null);
+  const [inspectAvatar, setInspectAvatar] = useState({ color: 'default', hat: 'none', accessory: 'none', face: 'happy' });
+  const [inspectCoins, setInspectCoins] = useState(100);
+  const [inspectOwnedItems, setInspectOwnedItems] = useState([]);
+  const [savingAvatar, setSavingAvatar] = useState(false);
+  const [itemToGrant, setItemToGrant] = useState('');
+
+  const handleOpenAvatarInspector = (student) => {
+    const normAvatar = {
+      color: student.avatar?.color || 'default',
+      hat: student.avatar?.hat || 'none',
+      accessory: student.avatar?.accessory || student.avatar?.accessorie || 'none',
+      face: student.avatar?.face || 'happy'
+    };
+    setInspectStudent(student);
+    setInspectAvatar(normAvatar);
+    setInspectCoins(student.coins || 0);
+    setInspectOwnedItems(student.ownedItems || ['default', 'none', 'happy']);
+    setItemToGrant('');
+  };
+
+  const handleSaveStudentAvatar = async () => {
+    if (!inspectStudent) return;
+    setSavingAvatar(true);
+    try {
+      await backend.updateStudent(inspectStudent.id, {
+        avatar: inspectAvatar,
+        coins: parseInt(inspectCoins) || 0,
+        ownedItems: inspectOwnedItems
+      });
+      alert(`Avatar & rewards updated for ${inspectStudent.name}!`);
+      setInspectStudent(null);
+      loadStudents();
+      if (onStudentAdded) onStudentAdded();
+    } catch (err) {
+      alert('Error saving student avatar: ' + err.message);
+    }
+    setSavingAvatar(false);
+  };
+
+  const handleGrantItem = () => {
+    if (!itemToGrant) return;
+    if (!inspectOwnedItems.includes(itemToGrant)) {
+      setInspectOwnedItems(prev => [...prev, itemToGrant]);
+    }
+    // Auto-equip if applicable
+    for (const [catKey, catList] of Object.entries(AVATAR_ITEMS)) {
+      if (catList.some(item => item.id === itemToGrant)) {
+        const slot = catKey === 'colors' ? 'color' : catKey === 'hats' ? 'hat' : catKey === 'accessories' ? 'accessory' : 'face';
+        setInspectAvatar(prev => ({ ...prev, [slot]: itemToGrant }));
+        break;
+      }
+    }
+    setItemToGrant('');
+  };
 
   useEffect(() => {
     loadStudents();
@@ -256,11 +314,31 @@ export default function RosterManager({ classId, onStudentAdded }) {
 
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-lg" aria-hidden="true">
-                          👤
-                        </div>
+                        {(() => {
+                          const studentLevel = LEVELS.reduce((acc, l) => (student.xp || 0) >= l.xpRequired ? l : acc, LEVELS[0]);
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenAvatarInspector(student)}
+                              className="rounded-xl overflow-hidden hover:ring-2 hover:ring-yellow-400 transition-all cursor-pointer flex-shrink-0 bg-slate-900 p-0.5"
+                              title={`View & customize ${student.name}'s avatar & rewards`}
+                            >
+                              <Avatar3D avatar={student.avatar || { color: 'default', hat: 'none', accessory: 'none', face: 'happy' }} level={studentLevel.level} size="sm" />
+                            </button>
+                          );
+                        })()}
                         <div>
-                          <p className="font-bold text-white text-lg leading-tight">{student.name}</p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-bold text-white text-lg leading-tight">{student.name}</p>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenAvatarInspector(student)}
+                              className="text-[11px] bg-slate-700 hover:bg-yellow-500/20 text-yellow-400 font-semibold px-2 py-0.5 rounded border border-slate-600 hover:border-yellow-500 transition-colors flex items-center gap-1"
+                              title="Inspect Avatar & Rewards"
+                            >
+                              <Sparkles className="w-3 h-3" /> Avatar & Rewards
+                            </button>
+                          </div>
                           <p className="text-xs text-slate-400 font-mono bg-slate-800 px-2 py-0.5 rounded inline-flex items-center gap-1 mt-1">
                             Pass: <span className="text-yellow-400">{visiblePasswords[student.id] ? (student.password || 'N/A') : '••••••'}</span>
                             <button
@@ -382,6 +460,182 @@ export default function RosterManager({ classId, onStudentAdded }) {
             >
               {givingReward ? 'Giving...' : 'Give Reward'}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Avatar & Rewards Inspector Modal (Teacher) */}
+      {inspectStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/85 backdrop-blur-sm" role="dialog" aria-modal="true" onClick={() => setInspectStudent(null)}>
+          <div className="bg-slate-800 border-2 border-yellow-500 rounded-2xl max-w-2xl w-full p-6 shadow-2xl max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between pb-4 border-b border-slate-700 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-yellow-500/20 border border-yellow-500/40 flex items-center justify-center text-yellow-400">
+                  <User className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-white">{inspectStudent.name}'s Avatar & Rewards</h3>
+                  <p className="text-xs text-slate-400">View and adjust student cosmetic gear, owned items, and coin rewards.</p>
+                </div>
+              </div>
+              <button onClick={() => setInspectStudent(null)} className="text-slate-400 hover:text-white p-1" aria-label="Close">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left: Avatar Preview & Stats */}
+              <div className="flex flex-col items-center justify-center p-4 bg-slate-900/60 rounded-2xl border border-slate-700">
+                <Avatar3D
+                  avatar={inspectAvatar}
+                  level={LEVELS.reduce((acc, l) => (inspectStudent.xp || 0) >= l.xpRequired ? l : acc, LEVELS[0]).level}
+                  size="lg"
+                  animate={true}
+                />
+                <div className="w-full mt-4 space-y-3">
+                  <div className="flex justify-between items-center bg-slate-800 p-2.5 rounded-xl border border-slate-700 text-xs">
+                    <span className="text-slate-400 font-bold uppercase">Total XP:</span>
+                    <span className="text-green-400 font-black">{inspectStudent.xp || 0} XP</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-slate-800 p-2.5 rounded-xl border border-slate-700 text-xs">
+                    <label htmlFor="inspect-coins-input" className="text-slate-400 font-bold uppercase">Coin Balance:</label>
+                    <div className="flex items-center gap-1">
+                      <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
+                      <input
+                        id="inspect-coins-input"
+                        type="number"
+                        min="0"
+                        value={inspectCoins}
+                        onChange={e => setInspectCoins(e.target.value)}
+                        className="w-20 px-2 py-0.5 bg-slate-700 text-yellow-400 font-black rounded border border-slate-600 text-right outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="bg-slate-800 p-2.5 rounded-xl border border-slate-700 text-xs">
+                    <span className="text-slate-400 font-bold uppercase block mb-1">Owned Items ({inspectOwnedItems.length}):</span>
+                    <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto pr-1">
+                      {inspectOwnedItems.map(itemId => (
+                        <span key={itemId} className="px-2 py-0.5 bg-slate-700 rounded-md text-[10px] text-slate-300 font-mono">
+                          {itemId}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Equipment Slots & Grant Tool */}
+              <div className="space-y-4">
+                <h4 className="text-xs font-black uppercase tracking-wider text-yellow-400">Equipped Gear</h4>
+                {/* Skin Color */}
+                <div>
+                  <label className="block text-xs text-slate-400 font-bold uppercase mb-1">Skin Tone</label>
+                  <select
+                    value={inspectAvatar.color}
+                    onChange={e => setInspectAvatar(prev => ({ ...prev, color: e.target.value }))}
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-xl text-white text-xs font-bold outline-none"
+                  >
+                    {AVATAR_ITEMS.colors.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Headgear / Hat */}
+                <div>
+                  <label className="block text-xs text-slate-400 font-bold uppercase mb-1">Headgear / Hat</label>
+                  <select
+                    value={inspectAvatar.hat}
+                    onChange={e => setInspectAvatar(prev => ({ ...prev, hat: e.target.value }))}
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-xl text-white text-xs font-bold outline-none"
+                  >
+                    {AVATAR_ITEMS.hats.map(h => (
+                      <option key={h.id} value={h.id}>{h.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Effect / Accessory */}
+                <div>
+                  <label className="block text-xs text-slate-400 font-bold uppercase mb-1">Effect / Accessory</label>
+                  <select
+                    value={inspectAvatar.accessory}
+                    onChange={e => setInspectAvatar(prev => ({ ...prev, accessory: e.target.value }))}
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-xl text-white text-xs font-bold outline-none"
+                  >
+                    {AVATAR_ITEMS.accessories.map(a => (
+                      <option key={a.id} value={a.id}>{a.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Expression / Face */}
+                <div>
+                  <label className="block text-xs text-slate-400 font-bold uppercase mb-1">Face Expression</label>
+                  <select
+                    value={inspectAvatar.face}
+                    onChange={e => setInspectAvatar(prev => ({ ...prev, face: e.target.value }))}
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-xl text-white text-xs font-bold outline-none"
+                  >
+                    {AVATAR_ITEMS.faces.map(f => (
+                      <option key={f.id} value={f.id}>{f.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Grant Item Tool */}
+                <div className="pt-2 border-t border-slate-700">
+                  <label className="block text-xs text-slate-400 font-bold uppercase mb-1">Grant Free Cosmetic to Student</label>
+                  <div className="flex gap-2">
+                    <select
+                      value={itemToGrant}
+                      onChange={e => setItemToGrant(e.target.value)}
+                      className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-xl text-white text-xs outline-none"
+                    >
+                      <option value="">-- Choose item to unlock --</option>
+                      <optgroup label="Skins">
+                        {AVATAR_ITEMS.colors.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </optgroup>
+                      <optgroup label="Hats">
+                        {AVATAR_ITEMS.hats.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
+                      </optgroup>
+                      <optgroup label="Effects & Accessories">
+                        {AVATAR_ITEMS.accessories.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                      </optgroup>
+                      <optgroup label="Expressions">
+                        {AVATAR_ITEMS.faces.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                      </optgroup>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={handleGrantItem}
+                      disabled={!itemToGrant}
+                      className="px-3 py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 text-xs font-bold rounded-xl disabled:opacity-40 transition-colors"
+                    >
+                      Grant
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-6 border-t border-slate-700 mt-6">
+              <button
+                type="button"
+                onClick={() => setInspectStudent(null)}
+                className="flex-1 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-bold text-sm transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveStudentAvatar}
+                disabled={savingAvatar}
+                className="flex-1 py-2.5 bg-green-500 hover:bg-green-400 text-slate-950 rounded-xl font-black text-sm shadow transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" /> {savingAvatar ? 'Saving...' : 'Save Avatar & Rewards'}
+              </button>
+            </div>
           </div>
         </div>
       )}

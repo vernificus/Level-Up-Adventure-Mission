@@ -61,8 +61,8 @@ export const ACHIEVEMENTS = [
   { id: 'completionist', title: 'Completionist', desc: 'Complete all 6 regular activities', icon: '🏆', xpReward: 250 },
 ];
 
-// Team Guilds
-export const GUILDS = [
+// Team Guilds - Palette of up to 10 guilds with customizable names, colors, mottos, and bot pictures
+export const DEFAULT_10_GUILDS = [
   {
     id: 'dragons',
     name: 'Fire Dragons',
@@ -72,7 +72,8 @@ export const GUILDS = [
     emoji: '🐉',
     motto: 'Burn bright, learn fast!',
     symbol: 'Flame & Claws',
-    exclusiveItem: 'dragon_horns'
+    exclusiveItem: 'dragon_horns',
+    botPictureUrl: '',
   },
   {
     id: 'wolves',
@@ -83,7 +84,8 @@ export const GUILDS = [
     emoji: '🐺',
     motto: 'Together we hunt knowledge!',
     symbol: 'Moon & Fang',
-    exclusiveItem: 'wolf_cowl'
+    exclusiveItem: 'wolf_cowl',
+    botPictureUrl: '',
   },
   {
     id: 'phoenix',
@@ -94,7 +96,8 @@ export const GUILDS = [
     emoji: '🦅',
     motto: 'Rise from every challenge!',
     symbol: 'Sun & Feather',
-    exclusiveItem: 'phoenix_crest'
+    exclusiveItem: 'phoenix_crest',
+    botPictureUrl: '',
   },
   {
     id: 'sharks',
@@ -105,7 +108,167 @@ export const GUILDS = [
     emoji: '🦈',
     motto: 'Dive deep into learning!',
     symbol: 'Tide & Fin',
-    exclusiveItem: 'shark_fin'
+    exclusiveItem: 'shark_fin',
+    botPictureUrl: '',
+  },
+  {
+    id: 'titans',
+    name: 'Iron Titans',
+    color: 'bg-slate-600',
+    borderColor: 'border-slate-400',
+    gradient: 'from-slate-600 to-zinc-500',
+    emoji: '🤖',
+    motto: 'Unbreakable code, unstoppable bots!',
+    symbol: 'Gear & Anvil',
+    exclusiveItem: 'cape',
+    botPictureUrl: '',
+  },
+  {
+    id: 'falcons',
+    name: 'Cyber Falcons',
+    color: 'bg-cyan-600',
+    borderColor: 'border-cyan-400',
+    gradient: 'from-cyan-600 to-blue-500',
+    emoji: '⚡',
+    motto: 'Swift as lightning, sharp as lasers!',
+    symbol: 'Lightning & Talon',
+    exclusiveItem: 'lightning',
+    botPictureUrl: '',
+  },
+  {
+    id: 'vipers',
+    name: 'Quantum Vipers',
+    color: 'bg-emerald-600',
+    borderColor: 'border-emerald-400',
+    gradient: 'from-emerald-600 to-teal-500',
+    emoji: '🐍',
+    motto: 'Precision strikes, silent victories!',
+    symbol: 'Serpent & Helix',
+    exclusiveItem: 'glasses',
+    botPictureUrl: '',
+  },
+  {
+    id: 'griffins',
+    name: 'Solar Griffins',
+    color: 'bg-amber-600',
+    borderColor: 'border-amber-400',
+    gradient: 'from-amber-600 to-yellow-500',
+    emoji: '🦁',
+    motto: 'Courage under the sun, honor in victory!',
+    symbol: 'Wing & Shield',
+    exclusiveItem: 'shield',
+    botPictureUrl: '',
+  },
+  {
+    id: 'bears',
+    name: 'Cosmic Bears',
+    color: 'bg-indigo-600',
+    borderColor: 'border-indigo-400',
+    gradient: 'from-indigo-600 to-purple-500',
+    emoji: '🐻',
+    motto: 'Strength across the galaxy!',
+    symbol: 'Constellation & Paw',
+    exclusiveItem: 'star',
+    botPictureUrl: '',
+  },
+  {
+    id: 'owls',
+    name: 'Astro Owls',
+    color: 'bg-teal-600',
+    borderColor: 'border-teal-400',
+    gradient: 'from-teal-600 to-emerald-500',
+    emoji: '🦉',
+    motto: 'Wisdom through observation, mastery through data!',
+    symbol: 'Eye & Feather',
+    exclusiveItem: 'wizard',
+    botPictureUrl: '',
+  },
+];
+
+// Default base guilds (top 4, backward-compatible with legacy classes)
+export const GUILDS = DEFAULT_10_GUILDS.slice(0, 4);
+
+// Default STEM Supplies & Tiered Guild Rewards
+export const DEFAULT_STEM_SUPPLIES = [
+  {
+    id: 'stem_tier1',
+    name: 'Tier 1 STEM Supply Kit',
+    tier: 1,
+    requiredGuildLevel: 1,
+    costCoins: 40,
+    desc: 'Basic structural beams, shafts, and standard hardware connectors for your guild robot.',
+    icon: '⚙️',
+    category: 'supplies',
+  },
+  {
+    id: 'stem_vex_pitch_1',
+    name: 'Extra VEX Pitch Access (15 Mins)',
+    tier: 1,
+    requiredGuildLevel: 1,
+    costCoins: 60,
+    desc: 'Extra 15 minutes of reserved field testing time on the official VEX competition pitch.',
+    icon: '⏱️',
+    category: 'perk',
+  },
+  {
+    id: 'stem_tier2',
+    name: 'Tier 2 STEM Supply Pack',
+    tier: 2,
+    requiredGuildLevel: 3,
+    costCoins: 90,
+    desc: 'High-strength gears, sprocket chains, and specialized motor mounting brackets.',
+    icon: '🔧',
+    category: 'supplies',
+  },
+  {
+    id: 'stem_vex_pitch_2',
+    name: 'Extra VEX Pitch Access (30 Mins)',
+    tier: 2,
+    requiredGuildLevel: 3,
+    costCoins: 120,
+    desc: '30-minute priority block on the VEX field for autonomous coding calibration.',
+    icon: '🤖',
+    category: 'perk',
+  },
+  {
+    id: 'stem_tier3',
+    name: 'Tier 3 Advanced STEM Kit',
+    tier: 3,
+    requiredGuildLevel: 5,
+    costCoins: 160,
+    desc: 'Precision optical sensors, ultrasonic rangefinders, and high-torque gearing sets.',
+    icon: '📡',
+    category: 'supplies',
+  },
+  {
+    id: 'stem_3d_print',
+    name: 'Custom 3D Print Priority Pass',
+    tier: 3,
+    requiredGuildLevel: 5,
+    costCoins: 180,
+    desc: 'Front-of-the-line queue pass for 3D printing custom robot components or attachments.',
+    icon: '🖨️',
+    category: 'perk',
+  },
+  {
+    id: 'stem_tier4',
+    name: 'Tier 4 Master STEM Depot',
+    tier: 4,
+    requiredGuildLevel: 7,
+    costCoins: 240,
+    desc: 'Advanced pneumatic pistons, dual-intake rollers, and omni-directional drive wheels.',
+    icon: '🚀',
+    category: 'supplies',
+  },
+  {
+    id: 'stem_tier5',
+    name: 'Tier 5 Mythic Engineering Cache',
+    tier: 5,
+    requiredGuildLevel: 9,
+    costCoins: 350,
+    desc: 'Pro-grade competition alloy framing, high-speed flywheels, and custom guild vinyl decals.',
+    icon: '💎',
+    category: 'supplies',
   },
 ];
 

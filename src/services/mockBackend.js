@@ -1,4 +1,4 @@
-import { GUILDS, GUILD_LEVELS, GUILD_CHALLENGES, getGuildLevelInfo } from "../data/gameData";
+import { GUILDS, DEFAULT_10_GUILDS, DEFAULT_STEM_SUPPLIES, GUILD_LEVELS, GUILD_CHALLENGES, BOSS_CHALLENGES, getGuildLevelInfo } from "../data/gameData";
 
 // Simulates a backend with a 500ms delay to mimic network latency
 const DELAY = 500;
@@ -259,11 +259,20 @@ export const mockBackend = {
     return false;
   },
 
-  async importTemplateActivitiesToClass(classId, activitiesToImport, categoryNames = {}, categorySubtitles = {}) {
+  async importTemplateActivitiesToClass(classId, activitiesToImport, categoryNames = {}, categorySubtitles = {}, mode = 'merge') {
     await wait(DELAY);
     const db = getDB();
     const cls = db.classes.find(c => c.id === classId);
     if (cls) {
+      if (mode === 'overwrite') {
+        cls.activities = activitiesToImport;
+        cls.categoryNames = categoryNames;
+        cls.categorySubtitles = categorySubtitles;
+        cls.categoryOrder = activitiesToImport.map(p => p.id);
+        saveDB(db);
+        return { success: true, activities: activitiesToImport, categoryNames, categorySubtitles };
+      }
+
       let currentActivities = cls.activities || [];
       const updatedActivities = currentActivities.map(path => {
         const matchingImportPath = activitiesToImport.find(p => p.id === path.id);
@@ -288,8 +297,9 @@ export const mockBackend = {
       cls.activities = updatedActivities;
       cls.categoryNames = { ...(cls.categoryNames || {}), ...categoryNames };
       cls.categorySubtitles = { ...(cls.categorySubtitles || {}), ...categorySubtitles };
+      cls.categoryOrder = [...new Set([...(cls.categoryOrder || []), ...updatedActivities.map(p => p.id)])];
       saveDB(db);
-      return { success: true };
+      return { success: true, activities: updatedActivities, categoryNames: cls.categoryNames, categorySubtitles: cls.categorySubtitles };
     }
     throw new Error('Class not found');
   },
@@ -358,16 +368,21 @@ export const mockBackend = {
   async getGuildLeaderboard(classId) {
     await wait(DELAY);
     const db = getDB();
+    const cls = db.classes.find(c => c.id === classId);
+    const activeGuilds = cls?.guilds && cls.guilds.length > 0 ? cls.guilds : GUILDS;
     const students = (db.students || []).filter(s => s.classId === classId);
     const guildStats = {};
 
-    GUILDS.forEach(g => {
+    activeGuilds.forEach(g => {
       guildStats[g.id] = {
         id: g.id,
         name: g.name,
         color: g.color,
+        borderColor: g.borderColor || 'border-slate-500',
+        gradient: g.gradient || 'from-slate-600 to-slate-700',
         emoji: g.emoji,
-        motto: g.motto,
+        motto: g.motto || '',
+        botPictureUrl: g.botPictureUrl || '',
         totalXp: 0,
         memberCount: 0,
         members: [],
@@ -523,12 +538,14 @@ export const mockBackend = {
   async autoBalanceGuilds(classId, mode = 'unassigned') {
     await wait(DELAY);
     const db = getDB();
+    const cls = db.classes.find(c => c.id === classId);
+    const activeGuilds = cls?.guilds && cls.guilds.length > 0 ? cls.guilds : GUILDS;
     const students = (db.students || []).filter(s => s.classId === classId);
     const targetStudents = mode === 'all' ? [...students] : students.filter(s => !s.guild);
     if (targetStudents.length === 0) return { updatedCount: 0 };
 
     const guildCounts = {};
-    GUILDS.forEach(g => {
+    activeGuilds.forEach(g => {
       guildCounts[g.id] = mode === 'all' ? 0 : students.filter(s => s.guild === g.id).length;
     });
 
@@ -536,7 +553,7 @@ export const mockBackend = {
     targetStudents.forEach(student => {
       const targetGuild = Object.keys(guildCounts).reduce((minId, currentId) => {
         return guildCounts[currentId] < guildCounts[minId] ? currentId : minId;
-      }, GUILDS[0].id);
+      }, activeGuilds[0].id);
 
       guildCounts[targetGuild]++;
       student.guild = targetGuild;
@@ -564,5 +581,184 @@ export const mockBackend = {
     });
     saveDB(db);
     return students.length;
+  },
+
+  async updateClassGuilds(classId, guilds) {
+    await wait(DELAY);
+    const db = getDB();
+    const cls = db.classes.find(c => c.id === classId);
+    if (cls) {
+      cls.guilds = guilds;
+      saveDB(db);
+      return { success: true };
+    }
+    throw new Error('Class not found');
+  },
+
+  async updateGuildBotPicture(classId, guildId, botPictureUrl) {
+    await wait(DELAY);
+    const db = getDB();
+    const cls = db.classes.find(c => c.id === classId);
+    if (cls) {
+      const guilds = cls.guilds && cls.guilds.length > 0 ? [...cls.guilds] : [...GUILDS];
+      cls.guilds = guilds.map(g => g.id === guildId ? { ...g, botPictureUrl } : g);
+      saveDB(db);
+      return { success: true, botPictureUrl };
+    }
+    throw new Error('Class not found');
+  },
+
+  async getStemShopItems(classId) {
+    await wait(DELAY);
+    const db = getDB();
+    const cls = db.classes.find(c => c.id === classId);
+    return cls?.stemSupplies && cls.stemSupplies.length > 0 ? cls.stemSupplies : DEFAULT_STEM_SUPPLIES;
+  },
+
+  async updateStemShopItems(classId, stemSupplies) {
+    await wait(DELAY);
+    const db = getDB();
+    const cls = db.classes.find(c => c.id === classId);
+    if (cls) {
+      cls.stemSupplies = stemSupplies;
+      saveDB(db);
+      return { success: true };
+    }
+    throw new Error('Class not found');
+  },
+
+  async buyStemSupply(classId, studentId, itemId) {
+    await wait(DELAY);
+    const db = getDB();
+    const cls = db.classes.find(c => c.id === classId);
+    const student = db.students.find(s => s.id === studentId);
+    if (!student) throw new Error("Student not found");
+    if (!student.guild) throw new Error("Join a guild before purchasing STEM supplies!");
+
+    const items = cls?.stemSupplies && cls.stemSupplies.length > 0 ? cls.stemSupplies : DEFAULT_STEM_SUPPLIES;
+    const item = items.find(i => i.id === itemId);
+    if (!item) throw new Error("Item not found");
+
+    if ((student.coins || 0) < item.costCoins) {
+      throw new Error(`Not enough coins! You have ${student.coins || 0} coins, but this item costs ${item.costCoins} coins.`);
+    }
+
+    student.coins = (student.coins || 0) - item.costCoins;
+    if (!db.stem_purchases) db.stem_purchases = [];
+
+    const activeGuilds = cls?.guilds && cls.guilds.length > 0 ? cls.guilds : GUILDS;
+    const guildInfo = activeGuilds.find(g => g.id === student.guild);
+
+    const purchase = {
+      id: 'pur_' + Date.now(),
+      classId,
+      studentId,
+      studentName: student.name,
+      guildId: student.guild,
+      guildName: guildInfo?.name || student.guild,
+      guildEmoji: guildInfo?.emoji || '🛡️',
+      itemId: item.id,
+      itemName: item.name,
+      tier: item.tier || 1,
+      costCoins: item.costCoins,
+      icon: item.icon || '⚙️',
+      timestamp: new Date().toISOString(),
+      fulfilled: false,
+      fulfilledAt: null,
+    };
+    db.stem_purchases.push(purchase);
+    saveDB(db);
+    return { success: true, purchaseId: purchase.id, newCoins: student.coins, item, purchase };
+  },
+
+  async getStemPurchases(classId) {
+    await wait(DELAY);
+    const db = getDB();
+    const purchases = (db.stem_purchases || []).filter(p => p.classId === classId);
+    purchases.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    return purchases;
+  },
+
+  async markStemPurchaseFulfilled(purchaseId, fulfilled = true) {
+    await wait(DELAY);
+    const db = getDB();
+    const p = (db.stem_purchases || []).find(x => x.id === purchaseId);
+    if (p) {
+      p.fulfilled = fulfilled;
+      p.fulfilledAt = fulfilled ? new Date().toISOString() : null;
+      saveDB(db);
+      return { success: true };
+    }
+    throw new Error('Purchase not found');
+  },
+
+  async getOrgStemPurchases(organizationId) {
+    await wait(DELAY);
+    const db = getDB();
+    return db.stem_purchases || [];
+  },
+
+  async setClassCustomBoss(classId, bossData) {
+    await wait(DELAY);
+    const db = getDB();
+    const cls = db.classes.find(c => c.id === classId);
+    if (cls) {
+      cls.customBoss = bossData;
+      saveDB(db);
+      return { success: true };
+    }
+    throw new Error('Class not found');
+  },
+
+  async clearClassCustomBoss(classId) {
+    await wait(DELAY);
+    const db = getDB();
+    const cls = db.classes.find(c => c.id === classId);
+    if (cls) {
+      cls.customBoss = null;
+      saveDB(db);
+      return { success: true };
+    }
+    throw new Error('Class not found');
+  },
+
+  async setOrgWeeklyBoss(organizationId, bossData) {
+    await wait(DELAY);
+    const db = getDB();
+    const org = (db.organizations || []).find(o => o.id === organizationId);
+    if (org) {
+      org.activeBoss = bossData;
+      saveDB(db);
+      return { success: true };
+    }
+    return { success: true };
+  },
+
+  async clearOrgWeeklyBoss(organizationId) {
+    await wait(DELAY);
+    const db = getDB();
+    const org = (db.organizations || []).find(o => o.id === organizationId);
+    if (org) {
+      org.activeBoss = null;
+      saveDB(db);
+      return { success: true };
+    }
+    return { success: true };
+  },
+
+  async getActiveBoss(classId, organizationId) {
+    await wait(DELAY);
+    const db = getDB();
+    if (classId) {
+      const cls = db.classes.find(c => c.id === classId);
+      if (cls?.customBoss) return { ...cls.customBoss, source: 'class' };
+    }
+    if (organizationId) {
+      const org = (db.organizations || []).find(o => o.id === organizationId);
+      if (org?.activeBoss) return { ...org.activeBoss, source: 'org' };
+    }
+    const today = new Date();
+    const weekOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 604800000);
+    return { ...BOSS_CHALLENGES[weekOfYear % BOSS_CHALLENGES.length], source: 'default' };
   }
 };

@@ -1634,10 +1634,13 @@ export const realBackend = {
 
       const updatePromises = classIds.map(classId => {
         const classRef = doc(db, "classes", classId);
+        const templatePaths = templateData.activities || [];
+        const templateOrder = templateData.categoryOrder || templatePaths.map(p => p.id);
         return updateDoc(classRef, {
-          activities: templateData.activities || [],
+          activities: templatePaths,
           categoryNames: templateData.categoryNames || {},
           categorySubtitles: templateData.categorySubtitles || {},
+          categoryOrder: templateOrder,
           appliedTemplateId: templateId,
           appliedTemplateTitle: templateData.title,
           updatedAt: serverTimestamp()

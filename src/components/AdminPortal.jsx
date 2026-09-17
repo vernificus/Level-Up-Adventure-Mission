@@ -288,8 +288,14 @@ export default function AdminPortal() {
     setTemplateTitle('');
     setTemplateDesc('');
     setTemplatePaths(DEFAULT_PATHS);
-    setTemplateCategoryNames({});
-    setTemplateCategorySubtitles({});
+    const initialNames = {};
+    const initialSubtitles = {};
+    DEFAULT_PATHS.forEach(p => {
+      initialNames[p.id] = p.title;
+      initialSubtitles[p.id] = p.subtitle || '';
+    });
+    setTemplateCategoryNames(initialNames);
+    setTemplateCategorySubtitles(initialSubtitles);
     setShowTemplateEditor(true);
   };
 
@@ -297,9 +303,16 @@ export default function AdminPortal() {
     setEditingTemplate(tmp);
     setTemplateTitle(tmp.title || '');
     setTemplateDesc(tmp.description || '');
-    setTemplatePaths(tmp.activities && tmp.activities.length > 0 ? tmp.activities : DEFAULT_PATHS);
-    setTemplateCategoryNames(tmp.categoryNames || {});
-    setTemplateCategorySubtitles(tmp.categorySubtitles || {});
+    const paths = tmp.activities && tmp.activities.length > 0 ? tmp.activities : DEFAULT_PATHS;
+    setTemplatePaths(paths);
+    const names = { ...(tmp.categoryNames || {}) };
+    const subs = { ...(tmp.categorySubtitles || {}) };
+    paths.forEach(p => {
+      if (!names[p.id]) names[p.id] = p.title;
+      if (subs[p.id] === undefined) subs[p.id] = p.subtitle || '';
+    });
+    setTemplateCategoryNames(names);
+    setTemplateCategorySubtitles(subs);
     setShowTemplateEditor(true);
   };
 
@@ -308,9 +321,16 @@ export default function AdminPortal() {
     setTemplateTitle(`${tmp.title || 'Choice Board Template'} (Copy)`);
     setTemplateDesc(tmp.description || '');
     // Deep clone activities to prevent accidental reference mutation
-    setTemplatePaths(tmp.activities && tmp.activities.length > 0 ? JSON.parse(JSON.stringify(tmp.activities)) : DEFAULT_PATHS);
-    setTemplateCategoryNames(tmp.categoryNames ? { ...tmp.categoryNames } : {});
-    setTemplateCategorySubtitles(tmp.categorySubtitles ? { ...tmp.categorySubtitles } : {});
+    const paths = tmp.activities && tmp.activities.length > 0 ? JSON.parse(JSON.stringify(tmp.activities)) : DEFAULT_PATHS;
+    setTemplatePaths(paths);
+    const names = { ...(tmp.categoryNames || {}) };
+    const subs = { ...(tmp.categorySubtitles || {}) };
+    paths.forEach(p => {
+      if (!names[p.id]) names[p.id] = p.title;
+      if (subs[p.id] === undefined) subs[p.id] = p.subtitle || '';
+    });
+    setTemplateCategoryNames(names);
+    setTemplateCategorySubtitles(subs);
     setShowTemplateEditor(true);
     notifySuccess(`Created a copy draft of "${tmp.title}". Make any changes and click "Save Template" to finalize.`);
   };
@@ -324,13 +344,29 @@ export default function AdminPortal() {
       alert('Please select an Organization first.');
       return;
     }
+    if (!templatePaths || templatePaths.length === 0) {
+      alert('Please include at least 1 category in the template.');
+      return;
+    }
+
+    const finalNames = {};
+    const finalSubtitles = {};
+    templatePaths.forEach(p => {
+      finalNames[p.id] = templateCategoryNames[p.id] || p.title;
+      finalSubtitles[p.id] = templateCategorySubtitles[p.id] !== undefined ? templateCategorySubtitles[p.id] : (p.subtitle || '');
+    });
 
     const templateData = {
       title: templateTitle.trim(),
       description: templateDesc.trim(),
-      activities: templatePaths,
-      categoryNames: templateCategoryNames,
-      categorySubtitles: templateCategorySubtitles,
+      activities: templatePaths.map(p => ({
+        ...p,
+        title: finalNames[p.id] || p.title,
+        subtitle: finalSubtitles[p.id] !== undefined ? finalSubtitles[p.id] : (p.subtitle || '')
+      })),
+      categoryNames: finalNames,
+      categorySubtitles: finalSubtitles,
+      categoryOrder: templatePaths.map(p => p.id),
       createdBy: user.name || user.email || 'Admin'
     };
 
@@ -1544,16 +1580,20 @@ export default function AdminPortal() {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h4 className="text-sm font-bold text-yellow-400 uppercase tracking-wider">Template Categories & Subtitles</h4>
-                    <p className="text-xs text-slate-400">Configure custom category titles, subtitles, or add new categories for this choice board template.</p>
+                    <p className="text-xs text-slate-400">Configure custom category titles, subtitles, remove unneeded categories (1 to 6), or add new categories for this choice board template.</p>
                   </div>
                   {templatePaths.length < 6 && (
                     <button
                       type="button"
                       onClick={() => {
-                        const nextIndex = templatePaths.length + 1;
-                        const newPathId = `path${nextIndex}`;
-                        const newTitle = `Category ${nextIndex}`;
-                        const newColor = PATH_COLORS[(nextIndex - 1) % PATH_COLORS.length];
+                        const existingIds = new Set(templatePaths.map(p => p.id));
+                        let counter = 1;
+                        while (existingIds.has(`path${counter}`)) {
+                          counter++;
+                        }
+                        const newPathId = `path${counter}`;
+                        const newTitle = `Category ${counter}`;
+                        const newColor = PATH_COLORS[(templatePaths.length) % PATH_COLORS.length];
 
                         const newPathObj = {
                           id: newPathId,
@@ -1583,18 +1623,23 @@ export default function AdminPortal() {
                       <div key={path.id} className="p-3 bg-slate-900 rounded-lg border border-slate-800 space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-mono font-bold text-yellow-400">Path #{idx + 1} ({path.id})</span>
-                          {idx >= 3 && (
+                          {templatePaths.length > 1 ? (
                             <button
                               type="button"
                               onClick={() => {
+                                const catName = templateCategoryNames[path.id] || path.title || `Category ${idx + 1}`;
+                                if (!window.confirm(`Remove category "${catName}"? Any activities in this category will be removed from this template.`)) return;
                                 setTemplatePaths(prev => prev.filter(p => p.id !== path.id));
                                 setTemplateCategoryNames(prev => { const next = { ...prev }; delete next[path.id]; return next; });
                                 setTemplateCategorySubtitles(prev => { const next = { ...prev }; delete next[path.id]; return next; });
                               }}
-                              className="text-xs text-red-400 hover:text-red-300"
+                              className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors"
+                              title="Remove category"
                             >
-                              Remove
+                              <Trash2 className="w-3 h-3" /> Remove
                             </button>
+                          ) : (
+                            <span className="text-[10px] text-slate-500 italic">Min. 1 category</span>
                           )}
                         </div>
                         <div>

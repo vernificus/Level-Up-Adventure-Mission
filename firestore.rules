@@ -13,17 +13,23 @@ service cloud.firestore {
 
     function isAdmin() {
       return isAuthenticated() && (
-        (request.auth.token.email != null && request.auth.token.email.lower() == 'matthew.harbert@lcps.org') ||
+        (request.auth.token.email != null && (
+          request.auth.token.email.lower() == 'matthew.harbert@lcps.org' ||
+          request.auth.token.email.lower() == 'propellevelup@lcps.org'
+        )) ||
         (exists(/databases/$(database)/documents/teachers/$(request.auth.uid)) &&
-         get(/databases/$(database)/documents/teachers/$(request.auth.uid)).data.role == 'admin')
+         get(/databases/$(database)/documents/teachers/$(request.auth.uid)).data.get('role', '') == 'admin')
       );
     }
 
-    function isTeacherOfClass(classId) {
-      // Get the class document to check the teacherId or coTeacherIds
+    function isClassTeacherOrCoTeacher(classId) {
       let classData = get(/databases/$(database)/documents/classes/$(classId)).data;
       return classData.teacherId == request.auth.uid
-        || (classData.coTeacherIds != null && request.auth.uid in classData.coTeacherIds);
+        || ('coTeacherIds' in classData && classData.coTeacherIds is list && request.auth.uid in classData.coTeacherIds);
+    }
+
+    function isTeacherOfClass(classId) {
+      return isAdmin() || isClassTeacherOrCoTeacher(classId);
     }
 
     // =========================================================
@@ -47,12 +53,14 @@ service cloud.firestore {
 
       // Teachers, co-teachers, and admins can update anything.
       // Students (unauthenticated or not owner) can ONLY update 'studentCount'.
-      allow update: if (isAuthenticated() && (resource.data.teacherId == request.auth.uid
-                    || (resource.data.coTeacherIds != null && request.auth.uid in resource.data.coTeacherIds)
-                    || isAdmin())) ||
+      allow update: if (isAuthenticated() && (
+                      isAdmin()
+                      || resource.data.teacherId == request.auth.uid
+                      || ('coTeacherIds' in resource.data && resource.data.coTeacherIds is list && request.auth.uid in resource.data.coTeacherIds)
+                    )) ||
                     (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['studentCount']));
 
-      allow delete: if isAuthenticated() && (resource.data.teacherId == request.auth.uid || isAdmin());
+      allow delete: if isAuthenticated() && (isAdmin() || resource.data.teacherId == request.auth.uid);
     }
 
     // STUDENTS
@@ -70,7 +78,7 @@ service cloud.firestore {
     match /submissions/{submissionId} {
       allow create: if true;
       allow read: if true;
-      // Teachers and co-teachers can review submissions
+      // Teachers, co-teachers, and admins can review submissions
       allow update: if isAuthenticated() && isTeacherOfClass(resource.data.classId);
     }
 
@@ -87,6 +95,13 @@ service cloud.firestore {
       allow update: if isAuthenticated() && isTeacherOfClass(classId);
     }
 
+    // STEM PURCHASES
+    match /stem_purchases/{purchaseId} {
+      allow read: if true;
+      allow create: if true; // Students purchase items
+      allow update: if isAuthenticated(); // Teachers and admins fulfill purchases
+    }
+
     // ACTIVITY LIBRARY
     match /activity_library/{activityId} {
       // Authenticated teachers can read all library activities
@@ -96,7 +111,7 @@ service cloud.firestore {
       allow create: if isAuthenticated();
 
       // The author or system admins can update or delete library activities
-      allow update, delete: if isAuthenticated() && (resource.data.authorId == request.auth.uid || isAdmin());
+      allow update, delete: if isAuthenticated() && (isAdmin() || resource.data.authorId == request.auth.uid);
     }
 
     // ORGANIZATIONS
@@ -114,4 +129,5 @@ service cloud.firestore {
     }
   }
 }
+
 

@@ -22,3 +22,10 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_LEVEL_UP_CHOICE_BOARD_GAME }}'
           channelId: live
           projectId: level-up-choice-board-game
+
+      - name: Deploy Firestore Rules
+        run: |
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_LEVEL_UP_CHOICE_BOARD_GAME }}' > sa.json
+          GOOGLE_APPLICATION_CREDENTIALS=sa.json npx firebase-tools deploy --only firestore:rules --project level-up-choice-board-game
+          rm -f sa.json
+

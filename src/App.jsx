@@ -1454,6 +1454,60 @@ function GameContent({ emulatedClassId } = {}) {
   );
 }
 
+// ============== ERROR BOUNDARY ==============
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("Caught error in ErrorBoundary:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
+          <div className="max-w-md w-full bg-slate-900 border-2 border-red-500/80 rounded-3xl p-6 shadow-2xl text-center space-y-4">
+            <div className="w-14 h-14 bg-red-500/20 text-red-400 rounded-2xl mx-auto flex items-center justify-center text-2xl font-black">
+              ⚠️
+            </div>
+            <h2 className="text-xl font-black uppercase text-white">Something went wrong</h2>
+            <p className="text-xs text-slate-400">
+              An unexpected display issue occurred. Don't worry, your progress and data are safe!
+            </p>
+            <div className="pt-2 flex gap-3 justify-center">
+              <button
+                onClick={() => {
+                  this.setState({ hasError: false, error: null });
+                  window.location.reload();
+                }}
+                className="px-5 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider transition-all shadow"
+              >
+                Reload App
+              </button>
+              <button
+                onClick={() => {
+                  this.setState({ hasError: false, error: null });
+                }}
+                className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs uppercase tracking-wider transition-all border border-slate-700"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // ============== MAIN APP ROUTER ==============
 function AppContent() {
   const { user, loading } = useAuth();
@@ -1480,6 +1534,8 @@ function AppContent() {
         setActiveViewMode('admin');
       } else if (user.role === 'teacher' && !activeViewMode) {
         setActiveViewMode('teacher');
+      } else if (user.role === 'student') {
+        setActiveViewMode('student');
       }
     } else {
       setActiveViewMode(null);
@@ -1492,12 +1548,15 @@ function AppContent() {
     return <LoginScreen />;
   }
 
-  const currentMode = activeViewMode || (user.role === 'admin' ? 'admin' : user.role === 'teacher' ? 'teacher' : 'student');
   const isElevatedUser = user.role === 'admin' || user.role === 'teacher';
+  // Enforce role security: students can NEVER access admin or teacher mode
+  const currentMode = !isElevatedUser
+    ? 'student'
+    : (activeViewMode || (user.role === 'admin' ? 'admin' : 'teacher'));
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col">
-      {/* Sticky Navigation View Switcher Bar */}
+      {/* Sticky Navigation View Switcher Bar (only for Admins/Teachers) */}
       {isElevatedUser && (
         <header className="bg-slate-950/95 backdrop-blur border-b border-slate-800 px-4 py-2 flex flex-wrap items-center justify-between gap-3 shadow-lg sticky top-0 z-50">
           <div className="flex items-center gap-3">
@@ -1569,40 +1628,43 @@ function AppContent() {
           />
         ) : (
           <div>
-            <div className="bg-purple-950/90 border-b border-purple-800/60 p-3 px-6 flex flex-wrap items-center justify-between gap-3 text-xs text-purple-200 shadow-md">
-              <div className="flex items-center gap-3 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <Gamepad2 className="w-4 h-4 text-purple-400" />
-                  <span className="font-bold text-white uppercase tracking-wider">Student Emulation Mode</span>
-                </div>
-                {emulationClasses.length > 1 && (
+            {/* Student Emulation Banner ONLY visible to Teachers/Admins emulating students */}
+            {isElevatedUser && (
+              <div className="bg-purple-950/90 border-b border-purple-800/60 p-3 px-6 flex flex-wrap items-center justify-between gap-3 text-xs text-purple-200 shadow-md">
+                <div className="flex items-center gap-3 flex-wrap">
                   <div className="flex items-center gap-2">
-                    <span className="text-purple-300 text-xs">Previewing Class:</span>
-                    <select
-                      value={emulatedClassId || ''}
-                      onChange={e => setEmulatedClassId(e.target.value)}
-                      className="px-2 py-1 bg-slate-900 border border-purple-700/60 rounded text-xs text-white outline-none focus:border-yellow-400"
-                    >
-                      {emulationClasses.map(c => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </select>
+                    <Gamepad2 className="w-4 h-4 text-purple-400" />
+                    <span className="font-bold text-white uppercase tracking-wider">Student Emulation Mode</span>
                   </div>
-                )}
-                {emulationClasses.length === 1 && (
-                  <span className="text-purple-300 text-xs">
-                    Class: <strong className="text-white">{emulationClasses[0].name}</strong>
-                  </span>
-                )}
+                  {emulationClasses.length > 1 && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-purple-300 text-xs">Previewing Class:</span>
+                      <select
+                        value={emulatedClassId || ''}
+                        onChange={e => setEmulatedClassId(e.target.value)}
+                        className="px-2 py-1 bg-slate-900 border border-purple-700/60 rounded text-xs text-white outline-none focus:border-yellow-400"
+                      >
+                        {emulationClasses.map(c => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  {emulationClasses.length === 1 && (
+                    <span className="text-purple-300 text-xs">
+                      Class: <strong className="text-white">{emulationClasses[0].name}</strong>
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => setActiveViewMode(user.role === 'admin' ? 'admin' : 'teacher')}
+                  className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg transition-colors border border-purple-400/40"
+                >
+                  Exit Emulation
+                </button>
               </div>
-              <button
-                onClick={() => setActiveViewMode(user.role === 'admin' ? 'admin' : 'teacher')}
-                className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg transition-colors border border-purple-400/40"
-              >
-                Exit Emulation
-              </button>
-            </div>
-            <GameContent emulatedClassId={emulatedClassId} />
+            )}
+            <GameContent emulatedClassId={isElevatedUser ? emulatedClassId : null} />
           </div>
         )}
       </div>
@@ -1612,8 +1674,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

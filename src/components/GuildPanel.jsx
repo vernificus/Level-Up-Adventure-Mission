@@ -365,12 +365,12 @@ export default function GuildPanel({
 
       {/* Main Guild Widget on Dashboard */}
       <section
-        className={`mb-6 p-5 rounded-3xl bg-gradient-to-br ${guild.gradient || 'from-slate-700 to-slate-800'} border-2 border-white/20 shadow-xl text-white relative overflow-hidden`}
-        aria-label={`Your guild: ${guild.name}`}
+        className={`mb-6 p-5 rounded-3xl bg-gradient-to-br ${guild?.gradient || 'from-slate-700 to-slate-800'} border-2 border-white/20 shadow-xl text-white relative overflow-hidden`}
+        aria-label={`Your guild: ${guild?.name || 'Guild'}`}
       >
         {/* Subtle background crest */}
         <div className="absolute right-2 -bottom-4 text-8xl opacity-15 pointer-events-none select-none">
-          {guild.emoji}
+          {guild?.emoji || '🛡️'}
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 relative z-10">
@@ -380,7 +380,7 @@ export default function GuildPanel({
               <div className="relative group">
                 <img
                   src={activeBotPicture}
-                  alt={`${guild.name} robot`}
+                  alt={`${guild?.name || 'Guild'} robot`}
                   className="w-16 h-16 rounded-2xl object-cover border-2 border-yellow-400 shadow-xl"
                 />
                 <span className="absolute -bottom-1 -right-1 bg-slate-950 text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md border border-yellow-500/60 text-yellow-300">
@@ -389,18 +389,18 @@ export default function GuildPanel({
               </div>
             ) : (
               <div className="w-14 h-14 rounded-2xl bg-black/25 backdrop-blur-sm border border-white/30 flex items-center justify-center text-3xl shadow-inner">
-                {guild.emoji}
+                {guild?.emoji || '🛡️'}
               </div>
             )}
 
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-black text-xl text-white tracking-wide">{guild.name}</h3>
+                <h3 className="font-black text-xl text-white tracking-wide">{guild?.name || 'Guild'}</h3>
                 <span className="text-[11px] font-black uppercase px-2.5 py-0.5 rounded-full bg-black/30 border border-white/30">
                   Level {levelInfo.level} • {levelInfo.name}
                 </span>
               </div>
-              <p className="text-xs opacity-90 italic mt-0.5">"{guild.motto}"</p>
+              <p className="text-xs opacity-90 italic mt-0.5">"{guild?.motto || ''}"</p>
             </div>
           </div>
 
@@ -496,7 +496,7 @@ export default function GuildPanel({
                     <div className="relative group flex-shrink-0">
                       <img
                         src={activeBotPicture}
-                        alt={`${guild.name} robot`}
+                        alt={`${guild?.name || 'Guild'} robot`}
                         className="w-20 h-20 rounded-2xl object-cover border-2 border-yellow-400 shadow-2xl bg-black/40"
                       />
                       <button
@@ -511,7 +511,7 @@ export default function GuildPanel({
                   ) : (
                     <div className="relative flex-shrink-0">
                       <div className="w-18 h-18 rounded-2xl bg-black/40 border-2 border-white/30 flex items-center justify-center text-4xl shadow-xl p-3">
-                        {guild.emoji}
+                        {guild?.emoji || '🛡️'}
                       </div>
                       <button
                         onClick={handleOpenBotPicModal}
@@ -525,12 +525,12 @@ export default function GuildPanel({
 
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-2xl font-black uppercase italic text-white">{guild.name}</h3>
+                      <h3 className="text-2xl font-black uppercase italic text-white">{guild?.name || 'Guild'}</h3>
                       <span className="text-xs font-black uppercase px-3 py-1 rounded-full bg-yellow-500 text-slate-950 shadow">
                         Level {levelInfo.level} • {levelInfo.name}
                       </span>
                     </div>
-                    <p className="text-slate-300 text-xs mt-0.5 italic">"{guild.motto}"</p>
+                    <p className="text-slate-300 text-xs mt-0.5 italic">"{guild?.motto || ''}"</p>
                     {guildHall?.description && (
                       <p className="text-yellow-300 text-xs font-semibold mt-1">"{guildHall.description}"</p>
                     )}
@@ -757,7 +757,7 @@ export default function GuildPanel({
                               </div>
                             </div>
                             <span className="text-[11px] font-bold text-slate-500">
-                              {lvl.xpRequired.toLocaleString()} XP
+                              {(lvl.minXp ?? lvl.xpRequired ?? 0).toLocaleString()} XP
                             </span>
                           </div>
                         );
@@ -1100,14 +1100,15 @@ export default function GuildPanel({
                   <h4 className="text-sm font-black text-white">Class Guild Rankings ({availableGuilds.length} Guilds)</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {[...availableGuilds]
-                      .sort((a, b) => (guildLeaderboard[b.id]?.totalXp || 0) - (guildLeaderboard[a.id]?.totalXp || 0))
+                      .filter(Boolean)
+                      .sort((a, b) => (guildLeaderboard?.[b?.id]?.totalXp || 0) - (guildLeaderboard?.[a?.id]?.totalXp || 0))
                       .map((g, idx) => {
-                        const stats = guildLeaderboard[g.id];
+                        const stats = guildLeaderboard?.[g.id];
                         const gLevel = getGuildLevelInfo(stats?.totalXp || 0);
                         const isMyGuild = g.id === currentGuild;
                         return (
                           <div
-                            key={g.id}
+                            key={g.id || idx}
                             className={`p-4 rounded-2xl border-2 transition-all ${
                               isMyGuild
                                 ? `${g.color || 'bg-slate-700'} bg-opacity-30 border-yellow-400 shadow-lg`
@@ -1119,7 +1120,7 @@ export default function GuildPanel({
                                 <span className="text-xl">{idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}</span>
                                 <span className="text-2xl">{g.emoji || '🛡️'}</span>
                                 <div>
-                                  <h5 className="font-black text-white text-sm">{g.name}</h5>
+                                  <h5 className="font-black text-white text-sm">{g.name || 'Guild'}</h5>
                                   <span className="text-[10px] font-bold text-slate-400">Level {gLevel.level} • {gLevel.name}</span>
                                 </div>
                               </div>

@@ -274,16 +274,16 @@ export const DEFAULT_STEM_SUPPLIES = [
 
 // Guild Progression Levels (1 - 10)
 export const GUILD_LEVELS = [
-  { level: 1, name: 'Novice Clan', minXp: 0, perk: 'Basic Guild Hall & Emblems', perkIcon: '🛡️', themeUnlock: 'default' },
-  { level: 2, name: 'Iron Vanguard', minXp: 1000, perk: '+5% Coin Surge on Quests', perkIcon: '🪙', themeUnlock: 'flames' },
-  { level: 3, name: 'Bronze Sentinels', minXp: 2500, perk: 'Daily Guild High-Five Boost (+15 XP)', perkIcon: '⚡', themeUnlock: 'stars' },
-  { level: 4, name: 'Silver Legion', minXp: 5000, perk: 'Team Mystery Box Luck Surge', perkIcon: '🎁', themeUnlock: 'forest' },
-  { level: 5, name: 'Gold Crusaders', minXp: 8000, perk: 'Exclusive Guild Avatar Cosmetics', perkIcon: '👑', themeUnlock: 'ocean' },
-  { level: 6, name: 'Platinum Titans', minXp: 12000, perk: 'Guild Crest Aura & Banner Flair', perkIcon: '✨', themeUnlock: 'crystal' },
-  { level: 7, name: 'Emerald Phoenixes', minXp: 17000, perk: '+10% Collaboration Activity XP', perkIcon: '🤝', themeUnlock: 'volcano' },
-  { level: 8, name: 'Ruby Conquerors', minXp: 23000, perk: 'Weekly Team Bonus Mystery Drop', perkIcon: '💎', themeUnlock: 'cyber' },
-  { level: 9, name: 'Diamond Apex', minXp: 30000, perk: 'Celestial Castle Hall Theme', perkIcon: '🏰', themeUnlock: 'celestial' },
-  { level: 10, name: 'Mythic Immortals', minXp: 40000, perk: 'Legendary Guild Crown & Immortal Banner', perkIcon: '🌟', themeUnlock: 'mythic' },
+  { level: 1, name: 'Novice Clan', minXp: 0, xpRequired: 0, perk: 'Basic Guild Hall & Emblems', perkIcon: '🛡️', themeUnlock: 'default' },
+  { level: 2, name: 'Iron Vanguard', minXp: 1000, xpRequired: 1000, perk: '+5% Coin Surge on Quests', perkIcon: '🪙', themeUnlock: 'flames' },
+  { level: 3, name: 'Bronze Sentinels', minXp: 2500, xpRequired: 2500, perk: 'Daily Guild High-Five Boost (+15 XP)', perkIcon: '⚡', themeUnlock: 'stars' },
+  { level: 4, name: 'Silver Legion', minXp: 5000, xpRequired: 5000, perk: 'Team Mystery Box Luck Surge', perkIcon: '🎁', themeUnlock: 'forest' },
+  { level: 5, name: 'Gold Crusaders', minXp: 8000, xpRequired: 8000, perk: 'Exclusive Guild Avatar Cosmetics', perkIcon: '👑', themeUnlock: 'ocean' },
+  { level: 6, name: 'Platinum Titans', minXp: 12000, xpRequired: 12000, perk: 'Guild Crest Aura & Banner Flair', perkIcon: '✨', themeUnlock: 'crystal' },
+  { level: 7, name: 'Emerald Phoenixes', minXp: 17000, xpRequired: 17000, perk: '+10% Collaboration Activity XP', perkIcon: '🤝', themeUnlock: 'volcano' },
+  { level: 8, name: 'Ruby Conquerors', minXp: 23000, xpRequired: 23000, perk: 'Weekly Team Bonus Mystery Drop', perkIcon: '💎', themeUnlock: 'cyber' },
+  { level: 9, name: 'Diamond Apex', minXp: 30000, xpRequired: 30000, perk: 'Celestial Castle Hall Theme', perkIcon: '🏰', themeUnlock: 'celestial' },
+  { level: 10, name: 'Mythic Immortals', minXp: 40000, xpRequired: 40000, perk: 'Legendary Guild Crown & Immortal Banner', perkIcon: '🌟', themeUnlock: 'mythic' },
 ];
 
 export function getGuildLevelInfo(totalXp = 0) {
@@ -291,7 +291,8 @@ export function getGuildLevelInfo(totalXp = 0) {
   let next = GUILD_LEVELS[1] || null;
 
   for (let i = GUILD_LEVELS.length - 1; i >= 0; i--) {
-    if (totalXp >= GUILD_LEVELS[i].minXp) {
+    const lvlXp = GUILD_LEVELS[i].minXp ?? GUILD_LEVELS[i].xpRequired ?? 0;
+    if (totalXp >= lvlXp) {
       current = GUILD_LEVELS[i];
       next = GUILD_LEVELS[i + 1] || null;
       break;
@@ -301,10 +302,12 @@ export function getGuildLevelInfo(totalXp = 0) {
   let progress = 100;
   let xpNeeded = 0;
   if (next) {
-    const range = next.minXp - current.minXp;
-    const earned = totalXp - current.minXp;
+    const nextXp = next.minXp ?? next.xpRequired ?? 0;
+    const currentXp = current.minXp ?? current.xpRequired ?? 0;
+    const range = Math.max(1, nextXp - currentXp);
+    const earned = totalXp - currentXp;
     progress = Math.min(100, Math.max(0, Math.round((earned / range) * 100)));
-    xpNeeded = next.minXp - totalXp;
+    xpNeeded = Math.max(0, nextXp - totalXp);
   }
 
   return {
@@ -313,7 +316,7 @@ export function getGuildLevelInfo(totalXp = 0) {
     perk: current.perk,
     perkIcon: current.perkIcon,
     currentXp: totalXp,
-    nextLevelXp: next ? next.minXp : totalXp,
+    nextLevelXp: next ? (next.minXp ?? next.xpRequired ?? totalXp) : totalXp,
     xpNeeded,
     progress,
     isMax: !next,

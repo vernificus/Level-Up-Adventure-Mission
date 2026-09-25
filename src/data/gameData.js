@@ -61,8 +61,8 @@ export const ACHIEVEMENTS = [
   { id: 'completionist', title: 'Completionist', desc: 'Complete all 6 regular activities', icon: '🏆', xpReward: 250 },
 ];
 
-// Team Guilds - Palette of up to 10 guilds with customizable names, colors, mottos, and bot pictures
-export const DEFAULT_10_GUILDS = [
+// Team Guilds - Palette of up to 15 guilds with customizable names, colors, mottos, and bot pictures
+export const DEFAULT_15_GUILDS = [
   {
     id: 'dragons',
     name: 'Fire Dragons',
@@ -183,10 +183,73 @@ export const DEFAULT_10_GUILDS = [
     exclusiveItem: 'wizard',
     botPictureUrl: '',
   },
+  {
+    id: 'cheetahs',
+    name: 'Nebula Cheetahs',
+    color: 'bg-orange-600',
+    borderColor: 'border-orange-500',
+    gradient: 'from-orange-600 to-amber-500',
+    emoji: '🐆',
+    motto: 'Accelerating beyond the speed of thought!',
+    symbol: 'Comet & Paw',
+    exclusiveItem: 'lightning',
+    botPictureUrl: '',
+  },
+  {
+    id: 'krakens',
+    name: 'Abyss Krakens',
+    color: 'bg-sky-600',
+    borderColor: 'border-sky-400',
+    gradient: 'from-sky-600 to-indigo-600',
+    emoji: '🦑',
+    motto: 'Unleash unstoppable curiosity from the depths!',
+    symbol: 'Tentacle & Vortex',
+    exclusiveItem: 'shark_fin',
+    botPictureUrl: '',
+  },
+  {
+    id: 'foxes',
+    name: 'Solar Foxes',
+    color: 'bg-rose-600',
+    borderColor: 'border-rose-400',
+    gradient: 'from-rose-600 to-orange-500',
+    emoji: '🦊',
+    motto: 'Clever strategies, radiant triumphs!',
+    symbol: 'Flame & Mask',
+    exclusiveItem: 'star',
+    botPictureUrl: '',
+  },
+  {
+    id: 'mantis',
+    name: 'Cyber Mantis',
+    color: 'bg-lime-600',
+    borderColor: 'border-lime-400',
+    gradient: 'from-lime-600 to-emerald-500',
+    emoji: '🦗',
+    motto: 'Sharp focus, lightning innovation!',
+    symbol: 'Blade & Circuit',
+    exclusiveItem: 'glasses',
+    botPictureUrl: '',
+  },
+  {
+    id: 'pegasus',
+    name: 'Astral Pegasus',
+    color: 'bg-fuchsia-600',
+    borderColor: 'border-fuchsia-400',
+    gradient: 'from-fuchsia-600 to-purple-600',
+    emoji: '🦄',
+    motto: 'Soaring past limits into infinite skies!',
+    symbol: 'Wing & Star',
+    exclusiveItem: 'cape',
+    botPictureUrl: '',
+  },
 ];
 
+// Backward-compatible alias
+export const DEFAULT_10_GUILDS = DEFAULT_15_GUILDS;
+
 // Default base guilds (top 4, backward-compatible with legacy classes)
-export const GUILDS = DEFAULT_10_GUILDS.slice(0, 4);
+export const GUILDS = DEFAULT_15_GUILDS.slice(0, 4);
 
 // Default STEM Supplies & Tiered Guild Rewards
 export const DEFAULT_STEM_SUPPLIES = [

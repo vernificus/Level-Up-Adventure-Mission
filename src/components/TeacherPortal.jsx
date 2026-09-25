@@ -8,7 +8,7 @@ import {
   Camera, Upload, Package, ShoppingBag, Swords, Check, Settings, Image as ImageIcon, Award
 } from 'lucide-react';
 import {
-  LEVELS, ACHIEVEMENTS, GUILDS, DEFAULT_10_GUILDS, GUILD_TROPHIES,
+  LEVELS, ACHIEVEMENTS, GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, GUILD_TROPHIES,
   GUILD_LEVELS, getGuildLevelInfo, LEARNING_PATHS, MAX_CATEGORIES,
   PATH_COLORS, DEFAULT_STEM_SUPPLIES, BOSS_CHALLENGES
 } from '../data/gameData';
@@ -1700,7 +1700,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
   const [awardingTrophy, setAwardingTrophy] = useState(false);
   const [guildHalls, setGuildHalls] = useState({});
 
-  // Guild Customizer State (2 to 10 Guilds)
+  // Guild Customizer State (2 to 15 Guilds)
   const [activeGuilds, setActiveGuilds] = useState(
     selectedClass?.guilds && selectedClass.guilds.length > 0 ? selectedClass.guilds : GUILDS
   );
@@ -1739,6 +1739,11 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
     { name: 'Rose / Pink', color: 'bg-pink-600', gradient: 'from-pink-600 to-rose-500', border: 'border-pink-400' },
     { name: 'Teal / Astro', color: 'bg-teal-600', gradient: 'from-teal-600 to-emerald-500', border: 'border-teal-400' },
     { name: 'Indigo / Cosmic', color: 'bg-indigo-600', gradient: 'from-indigo-600 to-purple-500', border: 'border-indigo-400' },
+    { name: 'Orange / Nebula', color: 'bg-orange-600', gradient: 'from-orange-600 to-amber-500', border: 'border-orange-400' },
+    { name: 'Sky / Abyss', color: 'bg-sky-600', gradient: 'from-sky-600 to-indigo-500', border: 'border-sky-400' },
+    { name: 'Lime / Cyber', color: 'bg-lime-600', gradient: 'from-lime-600 to-emerald-500', border: 'border-lime-400' },
+    { name: 'Fuchsia / Astral', color: 'bg-fuchsia-600', gradient: 'from-fuchsia-600 to-purple-500', border: 'border-fuchsia-400' },
+    { name: 'Violet / Mystic', color: 'bg-violet-600', gradient: 'from-violet-600 to-pink-500', border: 'border-violet-400' },
   ];
 
   useEffect(() => {
@@ -1889,8 +1894,8 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
       alert('You must have at least 2 guilds in a class.');
       return;
     }
-    if (activeGuilds.length > 10) {
-      alert('You cannot have more than 10 guilds in a class.');
+    if (activeGuilds.length > 15) {
+      alert('You cannot have more than 15 guilds in a class.');
       return;
     }
     setSavingGuilds(true);
@@ -1922,8 +1927,8 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
   };
 
   const handleAddPresetGuild = (preset) => {
-    if (activeGuilds.length >= 10) {
-      alert('Maximum of 10 guilds reached.');
+    if (activeGuilds.length >= 15) {
+      alert('Maximum of 15 guilds reached.');
       return;
     }
     setActiveGuilds(prev => [...prev, { ...preset, botPictureUrl: '' }]);
@@ -1931,8 +1936,8 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
   };
 
   const handleAddCustomGuild = () => {
-    if (activeGuilds.length >= 10) {
-      alert('Maximum of 10 guilds reached.');
+    if (activeGuilds.length >= 15) {
+      alert('Maximum of 15 guilds reached.');
       return;
     }
     const newId = 'guild_' + Date.now();
@@ -2063,7 +2068,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
             subTab === 'setup' ? 'bg-purple-600 text-white font-black shadow' : 'bg-slate-800 text-slate-300 hover:text-white'
           }`}
         >
-          <Settings className="w-4 h-4" /> Guild Customizer ({activeGuilds.length}/10)
+          <Settings className="w-4 h-4" /> Guild Customizer ({activeGuilds.length}/15)
         </button>
 
         <button
@@ -2273,7 +2278,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
         </div>
       )}
 
-      {/* SUB-TAB 2: GUILD CUSTOMIZER (UP TO 10 GUILDS & BOT PHOTOS) */}
+      {/* SUB-TAB 2: GUILD CUSTOMIZER (UP TO 15 GUILDS & BOT PHOTOS) */}
       {subTab === 'setup' && (
         <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -2281,22 +2286,22 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
               <div className="flex items-center gap-2">
                 <h3 className="text-xl font-black text-white">Class Guild Customizer</h3>
                 <span className="text-xs font-black uppercase px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                  {activeGuilds.length} / 10 Guilds Active
+                  {activeGuilds.length} / 15 Guilds Active
                 </span>
               </div>
               <p className="text-slate-400 text-xs mt-1">
-                Customize guild names, robot photos, team colors, and add up to 10 guilds per class.
+                Customize guild names, robot photos, team colors, and add up to 15 guilds per class.
               </p>
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              {activeGuilds.length < 10 && (
+              {activeGuilds.length < 15 && (
                 <button
                   type="button"
                   onClick={() => setShowAddGuildModal(true)}
                   className="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow transition-colors min-h-[44px]"
                 >
-                  <Plus className="w-4 h-4" /> Add Guild ({10 - activeGuilds.length} slots left)
+                  <Plus className="w-4 h-4" /> Add Guild ({15 - activeGuilds.length} slots left)
                 </button>
               )}
 
@@ -2463,13 +2468,13 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                 </div>
 
                 <p className="text-xs text-slate-300">
-                  Select a themed preset or create a custom guild for this class. You can have up to 10 guilds.
+                  Select a themed preset or create a custom guild for this class. You can have up to 15 guilds.
                 </p>
 
                 <div className="space-y-2">
                   <h4 className="text-xs font-black uppercase tracking-wider text-purple-400">Available Themed Presets</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {DEFAULT_10_GUILDS.filter(p => !activeGuilds.some(g => g.id === p.id)).map(preset => (
+                    {DEFAULT_15_GUILDS.filter(p => !activeGuilds.some(g => g.id === p.id)).map(preset => (
                       <button
                         key={preset.id}
                         onClick={() => handleAddPresetGuild(preset)}

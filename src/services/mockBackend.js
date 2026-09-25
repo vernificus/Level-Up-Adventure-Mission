@@ -1,4 +1,4 @@
-import { GUILDS, DEFAULT_10_GUILDS, DEFAULT_STEM_SUPPLIES, GUILD_LEVELS, GUILD_CHALLENGES, BOSS_CHALLENGES, getGuildLevelInfo } from "../data/gameData";
+import { GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, DEFAULT_STEM_SUPPLIES, GUILD_LEVELS, GUILD_CHALLENGES, BOSS_CHALLENGES, getGuildLevelInfo } from "../data/gameData";
 
 // Simulates a backend with a 500ms delay to mimic network latency
 const DELAY = 500;

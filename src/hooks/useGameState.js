@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { LEVELS, ACHIEVEMENTS, DAILY_QUESTS, MYSTERY_REWARDS, LEARNING_PATHS as DEFAULT_PATHS, PATH_COLORS, GUILDS, DEFAULT_10_GUILDS } from '../data/gameData';
+import { LEVELS, ACHIEVEMENTS, DAILY_QUESTS, MYSTERY_REWARDS, LEARNING_PATHS as DEFAULT_PATHS, PATH_COLORS, GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS } from '../data/gameData';
 import { realBackend as backend } from '../services/realBackend';
 import { useAuth } from '../context/AuthContext';
 
@@ -590,7 +590,7 @@ export function useGameState(overrideClassId) {
     submissions,
     learningPaths, // Export this
     categoriesPerRow, // Export this
-    classGuilds, // Export this (supports up to 10 guilds)
+    classGuilds, // Export this (supports up to 15 guilds)
     spendCoins, // Helper to spend coins on STEM supplies
     getCurrentLevel,
     getNextLevelXp,

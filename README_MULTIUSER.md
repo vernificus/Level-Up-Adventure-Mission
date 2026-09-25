@@ -22,7 +22,7 @@ The Firebase configuration is located in `src/services/firebase.js`. It is curre
 2. Sign up or log into your account.
 3. Use the **+** button to create a class.
 4. Share the **Class Code** with your students.
-5. Click on a class to review pending submissions, manage 2–10 guilds, customize bot photos, audit student STEM supply orders, and edit the choice board.
+5. Click on a class to review pending submissions, manage 2–15 guilds, customize bot photos, audit student STEM supply orders, and edit the choice board.
 6. Click **"Levels & Gold Guide"** on the dashboard bar to review student level XP and gold economy at any time.
 
 ### For Students

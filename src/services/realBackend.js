@@ -19,7 +19,7 @@ import {
   onSnapshot
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
-import { GUILDS, DEFAULT_10_GUILDS, DEFAULT_STEM_SUPPLIES, GUILD_LEVELS, GUILD_CHALLENGES, BOSS_CHALLENGES, getGuildLevelInfo } from "../data/gameData";
+import { GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, DEFAULT_STEM_SUPPLIES, GUILD_LEVELS, GUILD_CHALLENGES, BOSS_CHALLENGES, getGuildLevelInfo } from "../data/gameData";
 
 export const realBackend = {
   // ================= TEACHER AUTH =================
@@ -880,7 +880,7 @@ export const realBackend = {
       const students = await this.getStudents(classId);
       const guildStats = {};
 
-      // Initialize all active guilds (supports up to 10 customizable guilds)
+      // Initialize all active guilds (supports up to 15 customizable guilds)
       activeGuilds.forEach(g => {
         guildStats[g.id] = {
           id: g.id,

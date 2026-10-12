@@ -1514,23 +1514,48 @@ function AppContent() {
   const [activeViewMode, setActiveViewMode] = useState(null); // 'admin' | 'teacher' | 'student'
   const [emulationClasses, setEmulationClasses] = useState([]);
   const [emulatedClassId, setEmulatedClassId] = useState(null);
+  const [adminTargetClassId, setAdminTargetClassId] = useState(null);
+
+  const isSuperAdmin = user && (
+    user.role === 'admin' ||
+    user.role === 'super_admin' ||
+    user.role === 'super admin' ||
+    user.email?.toLowerCase() === 'matthew.harbert@lcps.org' ||
+    user.email?.toLowerCase() === 'propellevelup@lcps.org'
+  );
 
   // Load teacher's or admin's classes for student emulation
   useEffect(() => {
-    if (user && (user.role === 'teacher' || user.role === 'admin')) {
-      backend.getClasses(user.id).then(clsList => {
-        if (clsList && clsList.length > 0) {
-          setEmulationClasses(clsList);
-          setEmulatedClassId(prev => prev || clsList[0].id);
+    if (user && (user.role === 'teacher' || isSuperAdmin)) {
+      const loadEmu = async () => {
+        try {
+          let clsList = [];
+          if (isSuperAdmin) {
+            if (user.organizationId) {
+              clsList = await backend.getAllClassesByOrg(user.organizationId);
+            }
+            if (!clsList || clsList.length === 0) {
+              clsList = await backend.getAllClasses();
+            }
+          } else {
+            clsList = await backend.getClasses(user.id);
+          }
+          if (clsList && clsList.length > 0) {
+            setEmulationClasses(clsList);
+            setEmulatedClassId(prev => prev || clsList[0].id);
+          }
+        } catch (e) {
+          console.error("Error loading emulation classes", e);
         }
-      }).catch(e => console.error("Error loading emulation classes", e));
+      };
+      loadEmu();
     }
-  }, [user]);
+  }, [user, isSuperAdmin]);
 
   // Set default view mode when user logs in or role changes
   useEffect(() => {
     if (user) {
-      if (user.role === 'admin' && !activeViewMode) {
+      if (isSuperAdmin && !activeViewMode) {
         setActiveViewMode('admin');
       } else if (user.role === 'teacher' && !activeViewMode) {
         setActiveViewMode('teacher');
@@ -1540,7 +1565,7 @@ function AppContent() {
     } else {
       setActiveViewMode(null);
     }
-  }, [user]);
+  }, [user, isSuperAdmin]);
 
   if (loading) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white" role="status" aria-live="polite">Loading...</div>;
 
@@ -1548,11 +1573,11 @@ function AppContent() {
     return <LoginScreen />;
   }
 
-  const isElevatedUser = user.role === 'admin' || user.role === 'teacher';
+  const isElevatedUser = isSuperAdmin || user.role === 'teacher';
   // Enforce role security: students can NEVER access admin or teacher mode
   const currentMode = !isElevatedUser
     ? 'student'
-    : (activeViewMode || (user.role === 'admin' ? 'admin' : 'teacher'));
+    : (activeViewMode || (isSuperAdmin ? 'admin' : 'teacher'));
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col">
@@ -1560,9 +1585,9 @@ function AppContent() {
       {isElevatedUser && (
         <header className="bg-slate-950/95 backdrop-blur border-b border-slate-800 px-4 py-2 flex flex-wrap items-center justify-between gap-3 shadow-lg sticky top-0 z-50">
           <div className="flex items-center gap-3">
-            {user.role === 'admin' ? (
+            {isSuperAdmin ? (
               <span className="px-2.5 py-1 bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 text-xs font-black uppercase rounded-lg tracking-wider flex items-center gap-1.5">
-                <Crown className="w-3.5 h-3.5" /> System Admin
+                <Crown className="w-3.5 h-3.5" /> Super Admin
               </span>
             ) : (
               <span className="px-2.5 py-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs font-black uppercase rounded-lg tracking-wider flex items-center gap-1.5">
@@ -1576,7 +1601,7 @@ function AppContent() {
 
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs text-slate-500 font-bold uppercase tracking-wider mr-1 hidden md:inline">Mode:</span>
-            {user.role === 'admin' && (
+            {isSuperAdmin && (
               <button
                 onClick={() => setActiveViewMode('admin')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
@@ -1618,13 +1643,20 @@ function AppContent() {
       <div className="flex-1">
         {currentMode === 'admin' ? (
           <AdminPortal
-            onSwitchToTeacher={() => setActiveViewMode('teacher')}
+            onSwitchToTeacher={(targetClass) => {
+              if (targetClass?.id) {
+                setAdminTargetClassId(targetClass.id);
+              }
+              setActiveViewMode('teacher');
+            }}
             onSwitchToStudent={() => setActiveViewMode('student')}
           />
         ) : currentMode === 'teacher' ? (
           <TeacherPortal
             onSwitchToAdmin={() => setActiveViewMode('admin')}
             onSwitchToStudent={() => setActiveViewMode('student')}
+            initialClassId={adminTargetClassId}
+            onClearInitialClassId={() => setAdminTargetClassId(null)}
           />
         ) : (
           <div>

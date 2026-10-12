@@ -5,7 +5,7 @@ import {
   Users, Plus, LogOut, BookOpen, ClipboardList, CheckCircle2,
   XCircle, Clock, ChevronRight, GraduationCap, Copy, Trash2, Edit, RefreshCw, RotateCcw, Link, Save, Gift,
   Share2, UserPlus, X, Mail, MessageSquare, Sparkles, Star, Trophy, ChevronDown, ChevronUp, BarChart3, Eye, Zap, Building2, Layers, Shield, ShieldCheck,
-  Camera, Upload, Package, ShoppingBag, Swords, Check, Settings, Image as ImageIcon, Award
+  Camera, Upload, Package, ShoppingBag, Swords, Check, Settings, Image as ImageIcon, Award, Crown, Pencil, User
 } from 'lucide-react';
 import {
   LEVELS, ACHIEVEMENTS, GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, GUILD_TROPHIES,
@@ -22,10 +22,33 @@ import LegalModal from './LegalModal';
 import LevelEconomyGuideModal from './LevelEconomyGuideModal';
 
 
-export default function TeacherPortal() {
+export default function TeacherPortal({
+  onSwitchToAdmin,
+  onSwitchToStudent,
+  initialClassId,
+  onClearInitialClassId
+}) {
   const { user, logout } = useAuth();
+  const isAdmin = user && (
+    user.role === 'admin' ||
+    user.role === 'super_admin' ||
+    user.role === 'super admin' ||
+    user.email?.toLowerCase() === 'matthew.harbert@lcps.org' ||
+    user.email?.toLowerCase() === 'propellevelup@lcps.org'
+  );
+
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState(null);
+  const [adminOrgs, setAdminOrgs] = useState([]);
+  const [adminOrgFilter, setAdminOrgFilter] = useState(() => {
+    return sessionStorage.getItem('lvlup_admin_selected_org') || user?.organizationId || 'all';
+  });
+
+  // Rename class state
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [renamingClass, setRenamingClass] = useState(null);
+  const [renameInput, setRenameInput] = useState('');
+  const [savingRename, setSavingRename] = useState(false);
   const [submissions, setSubmissions] = useState([]);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -232,8 +255,31 @@ export default function TeacherPortal() {
   };
 
   useEffect(() => {
-    loadClasses();
-  }, [user.id]);
+    if (isAdmin) {
+      backend.getOrganizations().then(orgs => {
+        setAdminOrgs(orgs || []);
+      }).catch(e => console.error("Error loading organizations:", e));
+    }
+    loadClasses(adminOrgFilter);
+  }, [user?.id, isAdmin]);
+
+  useEffect(() => {
+    if (initialClassId) {
+      const match = classes.find(c => c.id === initialClassId);
+      if (match) {
+        setSelectedClass(match);
+        if (onClearInitialClassId) onClearInitialClassId();
+      } else {
+        backend.getClass(initialClassId).then(cls => {
+          if (cls) {
+            setSelectedClass(cls);
+            setClasses(prev => prev.some(c => c.id === cls.id) ? prev : [cls, ...prev]);
+            if (onClearInitialClassId) onClearInitialClassId();
+          }
+        });
+      }
+    }
+  }, [initialClassId, classes]);
 
   useEffect(() => {
     let unsubscribe;
@@ -256,9 +302,50 @@ export default function TeacherPortal() {
     };
   }, [selectedClass]);
 
-  const loadClasses = async () => {
-    const data = await backend.getClasses(user.id);
-    setClasses(data);
+  const loadClasses = async (targetOrg = adminOrgFilter) => {
+    setLoading(true);
+    try {
+      let data = [];
+      if (isAdmin) {
+        if (targetOrg === 'personal') {
+          data = await backend.getClasses(user.id);
+        } else if (targetOrg === 'all') {
+          data = await backend.getAllClasses();
+        } else if (targetOrg) {
+          data = await backend.getAllClassesByOrg(targetOrg);
+        } else {
+          data = await backend.getClasses(user.id);
+        }
+      } else {
+        data = await backend.getClasses(user.id);
+      }
+      setClasses(data);
+
+      if (initialClassId) {
+        const found = data.find(c => c.id === initialClassId);
+        if (found) {
+          setSelectedClass(found);
+          if (onClearInitialClassId) onClearInitialClassId();
+        } else {
+          backend.getClass(initialClassId).then(cls => {
+            if (cls) {
+              setSelectedClass(cls);
+              setClasses(prev => prev.some(c => c.id === cls.id) ? prev : [cls, ...prev]);
+              if (onClearInitialClassId) onClearInitialClassId();
+            }
+          });
+        }
+      } else if (selectedClass) {
+        const refreshed = data.find(c => c.id === selectedClass.id);
+        if (refreshed) {
+          setSelectedClass(refreshed);
+        }
+      }
+    } catch (err) {
+      console.error("Error loading classes:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCreateClass = async (e) => {
@@ -266,10 +353,13 @@ export default function TeacherPortal() {
     if (!newClassName.trim()) return;
 
     try {
-      await backend.createClass(user.id, newClassName);
+      const orgForClass = (isAdmin && adminOrgFilter !== 'all' && adminOrgFilter !== 'personal')
+        ? adminOrgFilter
+        : (user.organizationId || null);
+      await backend.createClass(user.id, newClassName.trim(), orgForClass);
       setNewClassName('');
       setCreatingClass(false);
-      loadClasses();
+      loadClasses(adminOrgFilter);
     } catch (error) {
       console.error(error);
       alert('Failed to create class: ' + error.message + '\n\nMake sure Firestore is enabled and Security Rules allow writes.');
@@ -282,10 +372,42 @@ export default function TeacherPortal() {
       try {
         await backend.deleteClass(classId);
         if (selectedClass?.id === classId) setSelectedClass(null);
-        loadClasses();
+        loadClasses(adminOrgFilter);
       } catch (error) {
         alert('Error deleting class: ' + error.message);
       }
+    }
+  };
+
+  const handleStartRenameClass = (cls) => {
+    setRenamingClass(cls);
+    setRenameInput(cls.name || '');
+    setShowRenameModal(true);
+  };
+
+  const handleSaveRenameClass = async (e) => {
+    e.preventDefault();
+    if (!renamingClass || !renameInput.trim()) return;
+
+    setSavingRename(true);
+    try {
+      const trimmed = renameInput.trim();
+      await backend.updateClassName(renamingClass.id, trimmed);
+
+      // Update in local state
+      setClasses(prev => prev.map(c => c.id === renamingClass.id ? { ...c, name: trimmed } : c));
+      if (selectedClass?.id === renamingClass.id) {
+        setSelectedClass(prev => ({ ...prev, name: trimmed }));
+      }
+
+      setShowRenameModal(false);
+      setRenamingClass(null);
+      setRenameInput('');
+    } catch (err) {
+      console.error("Error renaming class:", err);
+      alert("Failed to rename class: " + err.message);
+    } finally {
+      setSavingRename(false);
     }
   };
 
@@ -295,11 +417,10 @@ export default function TeacherPortal() {
   };
 
   const handleRefresh = () => {
-    loadClasses();
+    loadClasses(adminOrgFilter);
     if (selectedClass) {
-        // Trigger reload by resetting selectedClass briefly or just calling fetch
-        // Since we have realtime subscriptions for submissions, we mostly need to refresh students/metadata
-        backend.getStudents(selectedClass.id).then(setStudents);
+      backend.getStudents(selectedClass.id).then(setStudents);
+      backend.getCoTeachers(selectedClass.id).then(setCoTeachers);
     }
   };
 
@@ -533,24 +654,73 @@ export default function TeacherPortal() {
                     {user.organizationName}
                   </span>
                 )}
+                {isAdmin && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 rounded-lg text-xs font-bold">
+                    <Crown className="w-3.5 h-3.5 text-yellow-400" />
+                    Super Admin Access
+                  </span>
+                )}
               </div>
               <p className="text-slate-400">Welcome, {user.name}</p>
             </div>
           </div>
-          <button
-            onClick={logout}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition-colors"
-          >
-            <LogOut className="w-5 h-5" aria-hidden="true" /> Logout
-          </button>
+          <div className="flex items-center gap-3">
+            {isAdmin && onSwitchToAdmin && (
+              <button
+                onClick={onSwitchToAdmin}
+                className="flex items-center gap-2 px-3.5 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 border border-yellow-500/40 rounded-lg text-xs font-bold transition-all shadow-md"
+              >
+                <Crown className="w-4 h-4 text-yellow-400" />
+                <span>Admin Dashboard</span>
+              </button>
+            )}
+            <button
+              onClick={logout}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition-colors text-xs font-semibold"
+            >
+              <LogOut className="w-5 h-5" aria-hidden="true" /> Logout
+            </button>
+          </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
 
           {/* Sidebar: Class List */}
           <div className="lg:col-span-1 space-y-4">
+            {/* Super Admin Organization Filter */}
+            {isAdmin && (
+              <div className="bg-slate-900 border border-yellow-500/30 rounded-xl p-3 shadow-md space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-yellow-400 uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
+                    <Crown className="w-3.5 h-3.5" /> Organization Filter
+                  </span>
+                  <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded font-mono font-bold">
+                    {classes.length} {classes.length === 1 ? 'class' : 'classes'}
+                  </span>
+                </div>
+                <select
+                  value={adminOrgFilter}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setAdminOrgFilter(val);
+                    sessionStorage.setItem('lvlup_admin_selected_org', val);
+                    loadClasses(val);
+                  }}
+                  className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white font-medium outline-none focus:border-yellow-400 transition-colors"
+                >
+                  <option value="all">🌐 All Organizations ({adminOrgs.length})</option>
+                  {adminOrgs.map(o => (
+                    <option key={o.id} value={o.id}>🏫 {o.name} ({o.code})</option>
+                  ))}
+                  <option value="personal">🌟 My Personal Classes Only</option>
+                </select>
+              </div>
+            )}
+
             <div className="flex items-center justify-between mb-2">
-              <h2 className="font-bold text-slate-400 uppercase text-xs tracking-widest">Your Classes</h2>
+              <h2 className="font-bold text-slate-400 uppercase text-xs tracking-widest">
+                {isAdmin ? 'Organization Classes' : 'Your Classes'}
+              </h2>
               <button
                 onClick={() => setCreatingClass(true)}
                 className="text-green-400 hover:text-green-300"
@@ -590,19 +760,39 @@ export default function TeacherPortal() {
                   onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setSelectedClass(cls)}
                   className={`w-full p-4 rounded-xl text-left transition-all cursor-pointer relative group ${selectedClass?.id === cls.id ? 'bg-green-600 text-white shadow-lg shadow-green-900/50' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
                 >
-                  <div className="font-bold text-lg pr-6">{cls.name}</div>
+                  <div className="font-bold text-lg pr-14 truncate">{cls.name}</div>
+                  {cls.teacherName && cls.teacherId !== user.id && (
+                    <div className="text-xs text-yellow-300/90 font-medium flex items-center gap-1 mt-0.5">
+                      <User className="w-3 h-3 text-yellow-400" />
+                      <span>Teacher: {cls.teacherName}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center mt-2 text-sm opacity-80">
                     <span className="flex items-center gap-1"><Users className="w-4 h-4" aria-hidden="true" /> {cls.studentCount || 0} Students</span>
                     <span className="font-mono bg-black/20 px-2 rounded text-xs">Code: {cls.code}</span>
                   </div>
 
-                  <button
-                    onClick={(e) => handleDeleteClass(cls.id, e)}
-                    className="absolute top-2 right-2 p-2 text-red-300 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                    aria-label={`Delete class ${cls.name}`}
-                  >
-                    <Trash2 className="w-4 h-4" aria-hidden="true" />
-                  </button>
+                  <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStartRenameClass(cls);
+                      }}
+                      className="p-1.5 text-slate-300 hover:text-white hover:bg-black/20 rounded"
+                      title="Rename class"
+                      aria-label={`Rename class ${cls.name}`}
+                    >
+                      <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
+                    </button>
+                    <button
+                      onClick={(e) => handleDeleteClass(cls.id, e)}
+                      className="p-1.5 text-red-300 hover:text-white hover:bg-red-900/40 rounded"
+                      title="Delete class"
+                      aria-label={`Delete class ${cls.name}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                    </button>
+                  </div>
                 </div>
               ))}
               {classes.length === 0 && !creatingClass && (
@@ -617,10 +807,43 @@ export default function TeacherPortal() {
           <div className="lg:col-span-3">
             {selectedClass ? (
               <div>
+                {/* Super Admin Oversight Banner */}
+                {isAdmin && (
+                  <div className="bg-gradient-to-r from-yellow-950/40 via-slate-900 to-slate-900 border border-yellow-500/30 rounded-xl p-3 mb-4 flex flex-wrap items-center justify-between gap-3 shadow-md">
+                    <div className="flex items-center gap-2 text-xs text-yellow-300">
+                      <Crown className="w-4 h-4 text-yellow-400 shrink-0" />
+                      <span>
+                        <strong>Super Admin Oversight:</strong> Managing <strong className="text-white">{selectedClass.name}</strong>
+                        {selectedClass.teacherName ? ` (Teacher: ${selectedClass.teacherName})` : ''} as a Super Admin with full teacher privileges.
+                      </span>
+                    </div>
+                    {onSwitchToAdmin && (
+                      <button
+                        onClick={onSwitchToAdmin}
+                        className="px-3 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 border border-yellow-500/40 rounded-lg text-xs font-bold transition-all flex items-center gap-1"
+                      >
+                        <span>Admin Dashboard</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 <div className="bg-slate-800 p-6 rounded-2xl mb-6 border border-slate-700">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h2 className="text-2xl font-black text-white">{selectedClass.name}</h2>
+                      <div className="flex items-center gap-2.5">
+                        <h2 className="text-2xl font-black text-white">{selectedClass.name}</h2>
+                        <button
+                          onClick={() => handleStartRenameClass(selectedClass)}
+                          className="px-2.5 py-1 text-slate-400 hover:text-white hover:bg-slate-700/60 rounded-lg transition-colors flex items-center gap-1 text-xs font-semibold bg-slate-800/80 border border-slate-700"
+                          title="Rename class"
+                          aria-label={`Rename class ${selectedClass.name}`}
+                        >
+                          <Pencil className="w-3.5 h-3.5 text-yellow-400" />
+                          <span>Rename Class</span>
+                        </button>
+                      </div>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-slate-400 text-sm">Class Code:</span>
                         <code className="text-xl font-mono font-bold text-green-400 tracking-widest">{selectedClass.code}</code>
@@ -1675,6 +1898,75 @@ export default function TeacherPortal() {
           onClose={() => setLegalModalOpen(false)}
           initialTab={legalTab}
         />
+
+        {/* ================= MODAL: RENAME CLASS ================= */}
+        {showRenameModal && renamingClass && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl animate-in fade-in duration-200">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    <Pencil className="w-5 h-5 text-yellow-400" /> Rename Class
+                  </h3>
+                  <p className="text-slate-400 text-xs mt-1">
+                    Updating name for <strong className="text-slate-300">{renamingClass.name}</strong> (Code: {renamingClass.code})
+                  </p>
+                </div>
+                <button
+                  onClick={() => { setShowRenameModal(false); setRenamingClass(null); }}
+                  className="text-slate-400 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveRenameClass} className="space-y-4">
+                <div>
+                  <label htmlFor="teacher-rename-input" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                    New Class Name *
+                  </label>
+                  <input
+                    id="teacher-rename-input"
+                    type="text"
+                    value={renameInput}
+                    onChange={(e) => setRenameInput(e.target.value)}
+                    placeholder="e.g. 5th Grade Science & Robotics"
+                    required
+                    autoFocus
+                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm outline-none focus:border-yellow-400"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => { setShowRenameModal(false); setRenamingClass(null); }}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-semibold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingRename || !renameInput.trim()}
+                    className="px-5 py-2 bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-slate-950 rounded-xl text-sm font-bold flex items-center gap-2"
+                  >
+                    {savingRename ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span>Save Changes</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         <LevelEconomyGuideModal
           isOpen={showGuideModal}

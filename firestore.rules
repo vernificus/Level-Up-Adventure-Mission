@@ -18,7 +18,9 @@ service cloud.firestore {
           request.auth.token.email.lower() == 'propellevelup@lcps.org'
         )) ||
         (exists(/databases/$(database)/documents/teachers/$(request.auth.uid)) &&
-         get(/databases/$(database)/documents/teachers/$(request.auth.uid)).data.get('role', '') == 'admin')
+         (get(/databases/$(database)/documents/teachers/$(request.auth.uid)).data.get('role', '') == 'admin' ||
+          get(/databases/$(database)/documents/teachers/$(request.auth.uid)).data.get('role', '') == 'super_admin' ||
+          get(/databases/$(database)/documents/teachers/$(request.auth.uid)).data.get('role', '') == 'super admin'))
       );
     }
 

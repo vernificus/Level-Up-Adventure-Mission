@@ -5,14 +5,14 @@ import {
   Building2, Users, BookOpen, Plus, Search, LogOut, CheckCircle2,
   XCircle, Edit, Trash2, ShieldCheck, ChevronRight, Share2, Filter,
   CheckSquare, Square, RefreshCw, AlertCircle, Layers, Sparkles, Shield, Copy,
-  Swords, Package, ShoppingBag, Check
+  Swords, Package, ShoppingBag, Check, Pencil, Eye, X, Crown, User
 } from 'lucide-react';
 import ActivityEditor from './ActivityEditor';
 import LegalModal from './LegalModal';
 import { LEARNING_PATHS as DEFAULT_PATHS, PATH_COLORS, BOSS_CHALLENGES } from '../data/gameData';
 
 
-export default function AdminPortal() {
+export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
   const { user, logout } = useAuth();
 
   const [activeTab, setActiveTab] = useState('organizations'); // 'organizations', 'teachers', 'templates'
@@ -82,6 +82,19 @@ export default function AdminPortal() {
   const [orgPurchases, setOrgPurchases] = useState([]);
   const [loadingOrgPurchases, setLoadingOrgPurchases] = useState(false);
   const [stemFilterStatus, setStemFilterStatus] = useState('all');
+
+  // Classes Oversight State
+  const [classSearch, setClassSearch] = useState('');
+  const [classOrgFilter, setClassOrgFilter] = useState('');
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [renamingClass, setRenamingClass] = useState(null);
+  const [renameInput, setRenameInput] = useState('');
+  const [savingRename, setSavingRename] = useState(false);
+
+  const [showCreateClassModal, setShowCreateClassModal] = useState(false);
+  const [newClassNameForOrg, setNewClassNameForOrg] = useState('');
+  const [targetTeacherForNewClass, setTargetTeacherForNewClass] = useState('');
+  const [creatingClassInOrg, setCreatingClassInOrg] = useState(false);
 
   useEffect(() => {
     loadAllData();
@@ -163,10 +176,86 @@ export default function AdminPortal() {
 
   const loadClassesForOrg = async (orgId) => {
     try {
-      const cls = await backend.getAllClassesByOrg(orgId);
-      setAllClasses(cls);
+      let cls = [];
+      if (orgId === 'all') {
+        cls = await backend.getAllClasses();
+      } else if (orgId) {
+        cls = await backend.getAllClassesByOrg(orgId);
+      }
+      setAllClasses(cls || []);
     } catch (err) {
       console.error('Error fetching org classes:', err);
+    }
+  };
+
+  const handleViewClassAsTeacher = (cls) => {
+    sessionStorage.setItem('lvlup_admin_selected_org', cls.organizationId || selectedOrgId);
+    if (onSwitchToTeacher) {
+      onSwitchToTeacher(cls);
+    }
+  };
+
+  const handleStartRenameClass = (cls) => {
+    setRenamingClass(cls);
+    setRenameInput(cls.name || '');
+    setShowRenameModal(true);
+  };
+
+  const handleSaveRenameClass = async (e) => {
+    e.preventDefault();
+    if (!renamingClass || !renameInput.trim()) return;
+
+    setSavingRename(true);
+    try {
+      const trimmed = renameInput.trim();
+      await backend.updateClassName(renamingClass.id, trimmed);
+      notifySuccess(`Renamed class to "${trimmed}"`);
+      setShowRenameModal(false);
+      setRenamingClass(null);
+      setRenameInput('');
+      loadClassesForOrg(classOrgFilter || selectedOrgId || 'all');
+    } catch (err) {
+      console.error("Error renaming class:", err);
+      setError("Failed to rename class: " + err.message);
+    } finally {
+      setSavingRename(false);
+    }
+  };
+
+  const handleDeleteClass = async (cls) => {
+    if (!window.confirm(`Are you sure you want to delete class "${cls.name}" (Code: ${cls.code})?\n\nThis cannot be undone and will delete the class roster and submissions.`)) return;
+    try {
+      await backend.deleteClass(cls.id);
+      notifySuccess(`Deleted class "${cls.name}"`);
+      loadClassesForOrg(classOrgFilter || selectedOrgId || 'all');
+      loadAllData();
+    } catch (err) {
+      setError("Failed to delete class: " + err.message);
+    }
+  };
+
+  const handleCreateClassInOrg = async (e) => {
+    e.preventDefault();
+    if (!newClassNameForOrg.trim()) return;
+    const targetOrg = classOrgFilter && classOrgFilter !== 'all' ? classOrgFilter : selectedOrgId;
+    if (!targetOrg) {
+      alert("Please select an organization first.");
+      return;
+    }
+    setCreatingClassInOrg(true);
+    try {
+      const teacherId = targetTeacherForNewClass || user?.id;
+      await backend.createClass(teacherId, newClassNameForOrg.trim(), targetOrg);
+      notifySuccess(`Created class "${newClassNameForOrg.trim()}"`);
+      setShowCreateClassModal(false);
+      setNewClassNameForOrg('');
+      setTargetTeacherForNewClass('');
+      loadClassesForOrg(targetOrg);
+      loadAllData();
+    } catch (err) {
+      setError("Failed to create class: " + err.message);
+    } finally {
+      setCreatingClassInOrg(false);
     }
   };
 
@@ -638,6 +727,29 @@ export default function AdminPortal() {
             <Swords className="w-4 h-4" />
             <span>Weekly Boss & STEM Audit</span>
           </button>
+
+          <button
+            onClick={() => {
+              setActiveTab('classes');
+              if (!classOrgFilter) setClassOrgFilter(selectedOrgId || 'all');
+              loadClassesForOrg(classOrgFilter || selectedOrgId || 'all');
+            }}
+            className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold transition-all text-sm ${
+              activeTab === 'classes'
+                ? 'bg-yellow-500 text-slate-950 shadow-lg shadow-yellow-500/10'
+                : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>Classes & Oversight</span>
+            {allClasses.length > 0 && (
+              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                activeTab === 'classes' ? 'bg-slate-950 text-yellow-400' : 'bg-slate-800 text-slate-300'
+              }`}>
+                {allClasses.length}
+              </span>
+            )}
+          </button>
         </div>
 
         {/* TAB 1: ORGANIZATIONS MANAGEMENT */}
@@ -695,14 +807,35 @@ export default function AdminPortal() {
                           <span className="block text-slate-400">Teachers</span>
                           <span className="text-base font-bold text-white">{org.teacherCount || 0}</span>
                         </div>
-                        <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-center">
-                          <span className="block text-slate-400">Classes</span>
-                          <span className="text-base font-bold text-white">{org.classCount || 0}</span>
+                        <div
+                          onClick={() => {
+                            setSelectedOrgId(org.id);
+                            setClassOrgFilter(org.id);
+                            loadClassesForOrg(org.id);
+                            setActiveTab('classes');
+                          }}
+                          className="bg-slate-950 hover:bg-slate-900 p-2.5 rounded-lg border border-slate-800 hover:border-yellow-500/50 cursor-pointer text-center transition-colors group/stat"
+                          title="Click to view and manage classes"
+                        >
+                          <span className="block text-slate-400 group-hover/stat:text-yellow-400 transition-colors">Classes</span>
+                          <span className="text-base font-bold text-white group-hover/stat:text-yellow-400 transition-colors">{org.classCount || 0}</span>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-slate-800">
+                      <button
+                        onClick={() => {
+                          setSelectedOrgId(org.id);
+                          setClassOrgFilter(org.id);
+                          loadClassesForOrg(org.id);
+                          setActiveTab('classes');
+                        }}
+                        className="px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                        title="View classes as teacher and manage"
+                      >
+                        <BookOpen className="w-3.5 h-3.5" /> Classes ({org.classCount || 0})
+                      </button>
                       <button
                         onClick={() => {
                           setEditingOrg(org);
@@ -1351,6 +1484,189 @@ export default function AdminPortal() {
           </div>
         )}
 
+        {/* TAB 5: CLASSES & OVERSIGHT */}
+        {activeTab === 'classes' && (
+          <div className="space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-900 p-6 border border-slate-800 rounded-2xl">
+              <div>
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <BookOpen className="w-6 h-6 text-yellow-400" />
+                  Classrooms & Organization Oversight
+                </h2>
+                <p className="text-slate-400 text-sm mt-1">
+                  View and manage any class across your organizations as if you were the teacher. Inspect live submissions, update choice boards, manage rosters, or rename classes.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400 font-semibold">Filter Org:</span>
+                  <select
+                    value={classOrgFilter || selectedOrgId}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setClassOrgFilter(val);
+                      if (val !== 'all') setSelectedOrgId(val);
+                      loadClassesForOrg(val);
+                    }}
+                    className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs font-bold focus:border-yellow-500 focus:outline-none"
+                  >
+                    <option value="all">🌐 All Organizations</option>
+                    {organizations.map(o => (
+                      <option key={o.id} value={o.id}>{o.name} ({o.code})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setTargetTeacherForNewClass(user?.id || '');
+                    setNewClassNameForOrg('');
+                    setShowCreateClassModal(true);
+                  }}
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold rounded-xl text-xs transition-all shadow-md"
+                >
+                  <Plus className="w-4 h-4" /> Create Class
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => loadClassesForOrg(classOrgFilter || selectedOrgId || 'all')}
+                  className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors border border-slate-700"
+                  title="Refresh classes"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Search and Filters */}
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="relative flex-1 min-w-[260px] max-w-md">
+                <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search classes by name, teacher, or class code..."
+                  value={classSearch}
+                  onChange={e => setClassSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs placeholder:text-slate-500 focus:border-yellow-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-4 text-xs text-slate-400">
+                <span>Total Classes: <strong className="text-white font-bold">{allClasses.length}</strong></span>
+                <span>•</span>
+                <span>Total Enrolled Students: <strong className="text-white font-bold">{allClasses.reduce((acc, c) => acc + (c.studentCount || 0), 0)}</strong></span>
+              </div>
+            </div>
+
+            {/* Classes Grid */}
+            {allClasses.length === 0 ? (
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center">
+                <BookOpen className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+                <h3 className="text-lg font-bold text-white">No Classes Found</h3>
+                <p className="text-slate-400 text-sm mt-1 max-w-md mx-auto">
+                  {classSearch ? 'No classes match your search query.' : 'There are no classes created for this organization yet. Click "+ Create Class" to add one.'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {allClasses
+                  .filter(c => {
+                    const q = classSearch.toLowerCase().trim();
+                    if (!q) return true;
+                    return (c.name || '').toLowerCase().includes(q) ||
+                           (c.teacherName || '').toLowerCase().includes(q) ||
+                           (c.code || '').toLowerCase().includes(q);
+                  })
+                  .map(cls => (
+                    <div
+                      key={cls.id}
+                      className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl p-6 transition-all shadow-lg flex flex-col justify-between group"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-2 mb-3">
+                          <span className="font-mono bg-black/40 text-green-400 px-2.5 py-1 rounded text-xs font-bold border border-green-500/20 flex items-center gap-1.5">
+                            Code: {cls.code}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(cls.code);
+                                notifySuccess(`Copied class code ${cls.code}`);
+                              }}
+                              className="text-slate-500 hover:text-white"
+                              title="Copy code"
+                            >
+                              <Copy className="w-3 h-3" />
+                            </button>
+                          </span>
+                          <span className="text-xs text-slate-400 flex items-center gap-1 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
+                            <Users className="w-3.5 h-3.5 text-purple-400" />
+                            <strong>{cls.studentCount || 0}</strong> Students
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-xl font-bold text-white group-hover:text-yellow-400 transition-colors truncate">
+                            {cls.name}
+                          </h3>
+                          <button
+                            onClick={() => handleStartRenameClass(cls)}
+                            className="p-1 text-slate-500 hover:text-yellow-400 rounded transition-colors opacity-0 group-hover:opacity-100"
+                            title="Rename class"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        <div className="mt-3 space-y-1.5 text-xs text-slate-400 border-t border-slate-800/80 pt-3">
+                          <div className="flex items-center gap-1.5 text-slate-300">
+                            <span className="text-slate-500">Teacher:</span>
+                            <strong className="text-white font-medium">{cls.teacherName || 'Teacher'}</strong>
+                          </div>
+                          {cls.organizationId && (
+                            <div className="flex items-center gap-1.5 text-slate-400">
+                              <span className="text-slate-500">Org:</span>
+                              <span>{organizations.find(o => o.id === cls.organizationId)?.name || 'Assigned Org'}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 mt-6 pt-4 border-t border-slate-800">
+                        <button
+                          onClick={() => handleViewClassAsTeacher(cls)}
+                          className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-green-950/30 transition-all"
+                          title="Open class in Teacher Portal with full teacher controls"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>View as Teacher</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleStartRenameClass(cls)}
+                          className="px-2.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1 border border-slate-700 transition-colors"
+                          title="Change class name"
+                        >
+                          <Edit className="w-3.5 h-3.5 text-yellow-400" />
+                          <span className="hidden sm:inline">Rename</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteClass(cls)}
+                          className="p-2 bg-red-950/40 hover:bg-red-900/60 text-red-300 rounded-xl text-xs font-semibold flex items-center justify-center border border-red-900/30 transition-colors"
+                          title="Delete class"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
 
       {/* ================= MODAL: CREATE / EDIT ORGANIZATION ================= */}
@@ -1834,6 +2150,161 @@ export default function AdminPortal() {
                 {assigningLoading ? 'Deploying...' : <><Share2 className="w-4 h-4" /> Deploy Choice Board</>}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: RENAME CLASS ================= */}
+      {showRenameModal && renamingClass && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Pencil className="w-5 h-5 text-yellow-400" /> Rename Class
+                </h3>
+                <p className="text-slate-400 text-xs mt-1">
+                  Updating name for <strong className="text-slate-300">{renamingClass.name}</strong> (Code: {renamingClass.code})
+                </p>
+              </div>
+              <button
+                onClick={() => { setShowRenameModal(false); setRenamingClass(null); }}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveRenameClass} className="space-y-4">
+              <div>
+                <label htmlFor="admin-rename-input" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                  New Class Name *
+                </label>
+                <input
+                  id="admin-rename-input"
+                  type="text"
+                  value={renameInput}
+                  onChange={(e) => setRenameInput(e.target.value)}
+                  placeholder="e.g. 5th Grade Science & Robotics"
+                  required
+                  autoFocus
+                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm outline-none focus:border-yellow-400"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setShowRenameModal(false); setRenamingClass(null); }}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingRename || !renameInput.trim()}
+                  className="px-5 py-2 bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-slate-950 rounded-xl text-sm font-bold flex items-center gap-2"
+                >
+                  {savingRename ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Save Changes</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: CREATE CLASS FOR ORGANIZATION ================= */}
+      {showCreateClassModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Plus className="w-5 h-5 text-yellow-400" /> Create Class for Organization
+                </h3>
+                <p className="text-slate-400 text-xs mt-1">
+                  Add a new class to {organizations.find(o => o.id === (classOrgFilter || selectedOrgId))?.name || 'this organization'}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowCreateClassModal(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateClassInOrg} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                  Class Name *
+                </label>
+                <input
+                  type="text"
+                  value={newClassNameForOrg}
+                  onChange={(e) => setNewClassNameForOrg(e.target.value)}
+                  placeholder="e.g. 5th Grade STEAM Explorers"
+                  required
+                  autoFocus
+                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm outline-none focus:border-yellow-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                  Assigned Teacher (Optional)
+                </label>
+                <select
+                  value={targetTeacherForNewClass}
+                  onChange={e => setTargetTeacherForNewClass(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs outline-none focus:border-yellow-400"
+                >
+                  <option value={user?.id || ''}>Current Admin ({user?.name || user?.email})</option>
+                  {teachers
+                    .filter(t => !classOrgFilter || classOrgFilter === 'all' || t.organizationId === (classOrgFilter || selectedOrgId))
+                    .map(t => (
+                      <option key={t.id} value={t.id}>{t.name} ({t.email})</option>
+                    ))}
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateClassModal(false)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingClassInOrg || !newClassNameForOrg.trim()}
+                  className="px-5 py-2 bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-slate-950 rounded-xl text-sm font-bold flex items-center gap-2"
+                >
+                  {creatingClassInOrg ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Creating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Create Class</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

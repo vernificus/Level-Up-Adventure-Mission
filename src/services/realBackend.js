@@ -307,7 +307,19 @@ export const realBackend = {
     try {
       const docSnap = await getDoc(doc(db, "classes", classId));
       if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() };
+        const data = docSnap.data();
+        let teacherName = data.teacherName || "Teacher";
+        if (!data.teacherName && data.teacherId) {
+          try {
+            const tDoc = await getDoc(doc(db, "teachers", data.teacherId));
+            if (tDoc.exists()) {
+              teacherName = tDoc.data().name || tDoc.data().email || "Teacher";
+            }
+          } catch (e) {
+            // ignore
+          }
+        }
+        return { id: docSnap.id, ...data, teacherName };
       }
       return null;
     } catch (error) {
@@ -319,12 +331,22 @@ export const realBackend = {
   async updateClass(classId, updates) {
     try {
       const classRef = doc(db, "classes", classId);
-      await updateDoc(classRef, updates);
+      await updateDoc(classRef, {
+        ...updates,
+        updatedAt: serverTimestamp()
+      });
       return { id: classId, ...updates };
     } catch (error) {
       console.error("Error updating class:", error);
       throw error;
     }
+  },
+
+  async updateClassName(classId, newName) {
+    if (!newName || !newName.trim()) {
+      throw new Error("Class name cannot be empty");
+    }
+    return await this.updateClass(classId, { name: newName.trim() });
   },
 
   async deleteClass(classId) {
@@ -447,7 +469,7 @@ export const realBackend = {
           const tData = teacherDoc.data();
           userOrgId = tData.organizationId || null;
           userOrgName = tData.organizationName || '';
-          isUserAdmin = tData.role === 'admin';
+          isUserAdmin = tData.role === 'admin' || tData.role === 'super_admin' || tData.role === 'super admin' || user.email?.toLowerCase() === 'matthew.harbert@lcps.org';
         }
       } catch (e) {
         console.warn("Could not load user profile from teachers collection:", e);
@@ -521,7 +543,7 @@ export const realBackend = {
           if (teacherDoc.exists()) {
             const tData = teacherDoc.data();
             userOrgId = tData.organizationId || null;
-            isUserAdmin = tData.role === 'admin';
+            isUserAdmin = tData.role === 'admin' || tData.role === 'super_admin' || tData.role === 'super admin';
           }
         } catch (e) {
           console.warn("Could not load user profile in getPublicActivities:", e);
@@ -1600,21 +1622,54 @@ export const realBackend = {
 
   async getAllClassesByOrg(orgId) {
     try {
+      const classesMap = new Map();
+      const teachers = await this.getTeachersByOrganization(orgId);
+      const teachersMap = new Map(teachers.map(t => [t.id, t.name || t.email]));
+
       // 1. Get classes explicitly tagged with organizationId == orgId
       const orgQuery = query(collection(db, "classes"), where("organizationId", "==", orgId));
       const orgSnapshot = await getDocs(orgQuery);
-      const classesMap = new Map();
-      orgSnapshot.forEach(d => classesMap.set(d.id, { id: d.id, ...d.data() }));
+      orgSnapshot.forEach(d => {
+        const data = d.data();
+        classesMap.set(d.id, {
+          id: d.id,
+          ...data,
+          organizationId: orgId,
+          teacherName: data.teacherName || teachersMap.get(data.teacherId) || 'Teacher'
+        });
+      });
 
       // 2. Also query teachers in this org and include their classes
-      const teachers = await this.getTeachersByOrganization(orgId);
       const teacherIds = teachers.map(t => t.id);
-
       for (const tId of teacherIds) {
         const teacherClasses = await this.getClasses(tId);
         for (const cls of teacherClasses) {
           if (!classesMap.has(cls.id)) {
-            classesMap.set(cls.id, cls);
+            classesMap.set(cls.id, {
+              ...cls,
+              organizationId: cls.organizationId || orgId,
+              teacherName: cls.teacherName || teachersMap.get(cls.teacherId) || 'Teacher'
+            });
+          }
+        }
+      }
+
+      // 3. For any classes still missing teacherName, try to resolve from teacher doc
+      for (const [id, cls] of classesMap.entries()) {
+        if (!cls.teacherName || cls.teacherName === 'Teacher') {
+          if (teachersMap.has(cls.teacherId)) {
+            cls.teacherName = teachersMap.get(cls.teacherId);
+          } else if (cls.teacherId) {
+            try {
+              const tDoc = await getDoc(doc(db, "teachers", cls.teacherId));
+              if (tDoc.exists()) {
+                const tData = tDoc.data();
+                cls.teacherName = tData.name || tData.email || 'Teacher';
+                teachersMap.set(cls.teacherId, cls.teacherName);
+              }
+            } catch (e) {
+              // ignore
+            }
           }
         }
       }
@@ -1622,6 +1677,29 @@ export const realBackend = {
       return Array.from(classesMap.values());
     } catch (error) {
       console.error("Error getting classes by organization:", error);
+      return [];
+    }
+  },
+
+  async getClassesForOrganization(organizationId) {
+    return await this.getAllClassesByOrg(organizationId);
+  },
+
+  async getAllClasses() {
+    try {
+      const snap = await getDocs(collection(db, "classes"));
+      const teachers = await this.getAllTeachers();
+      const teachersMap = new Map(teachers.map(t => [t.id, t.name || t.email]));
+      return snap.docs.map(d => {
+        const data = d.data();
+        return {
+          id: d.id,
+          ...data,
+          teacherName: data.teacherName || teachersMap.get(data.teacherId) || 'Teacher'
+        };
+      });
+    } catch (error) {
+      console.error("Error getting all classes:", error);
       return [];
     }
   },

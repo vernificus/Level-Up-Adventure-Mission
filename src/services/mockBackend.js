@@ -115,13 +115,59 @@ export const mockBackend = {
     return newClass;
   },
 
-  async getClassByCode(code) {
+  async updateClass(classId, updates) {
     await wait(DELAY);
     const db = getDB();
-    const cls = db.classes.find(c => c.code === code);
-    if (!cls) throw new Error('Class not found');
-    const teacher = db.teachers.find(t => t.id === cls.teacherId);
-    return { ...cls, teacherName: teacher ? teacher.name : 'Unknown' };
+    const idx = db.classes.findIndex(c => c.id === classId);
+    if (idx === -1) throw new Error("Class not found");
+    db.classes[idx] = { ...db.classes[idx], ...updates };
+    saveDB(db);
+    return db.classes[idx];
+  },
+
+  async updateClassName(classId, newName) {
+    if (!newName || !newName.trim()) {
+      throw new Error("Class name cannot be empty");
+    }
+    return await this.updateClass(classId, { name: newName.trim() });
+  },
+
+  async deleteClass(classId) {
+    await wait(DELAY);
+    const db = getDB();
+    db.classes = db.classes.filter(c => c.id !== classId);
+    saveDB(db);
+    return true;
+  },
+
+  async getAllClassesByOrg(orgId) {
+    await wait(DELAY);
+    const db = getDB();
+    const teachersInOrg = (db.teachers || []).filter(t => t.organizationId === orgId);
+    const teacherIds = new Set(teachersInOrg.map(t => t.id));
+    const teachersMap = new Map((db.teachers || []).map(t => [t.id, t.name || t.email]));
+
+    return (db.classes || [])
+      .filter(c => c.organizationId === orgId || teacherIds.has(c.teacherId))
+      .map(c => ({
+        ...c,
+        organizationId: c.organizationId || orgId,
+        teacherName: c.teacherName || teachersMap.get(c.teacherId) || 'Teacher'
+      }));
+  },
+
+  async getClassesForOrganization(organizationId) {
+    return await this.getAllClassesByOrg(organizationId);
+  },
+
+  async getAllClasses() {
+    await wait(DELAY);
+    const db = getDB();
+    const teachersMap = new Map((db.teachers || []).map(t => [t.id, t.name || t.email]));
+    return (db.classes || []).map(c => ({
+      ...c,
+      teacherName: c.teacherName || teachersMap.get(c.teacherId) || 'Teacher'
+    }));
   },
 
   // ================= STUDENT AUTH =================

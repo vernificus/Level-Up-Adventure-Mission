@@ -1,4 +1,4 @@
-import { GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, DEFAULT_STEM_SUPPLIES, GUILD_LEVELS, GUILD_CHALLENGES, BOSS_CHALLENGES, getGuildLevelInfo } from "../data/gameData";
+import { GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, DEFAULT_STEM_SUPPLIES, GUILD_LEVELS, GUILD_CHALLENGES, BOSS_CHALLENGES, getGuildLevelInfo, getHighFiveCooldownStatus } from "../data/gameData";
 
 // Simulates a backend with a 500ms delay to mimic network latency
 const DELAY = 500;
@@ -539,16 +539,46 @@ export const mockBackend = {
 
   async sendGuildCheer(classId, senderId, senderName, receiverId, receiverName, guildId) {
     await wait(DELAY);
+    if (!classId || !senderId || !receiverId) throw new Error('Invalid cheer parameters');
+    if (senderId === receiverId) throw new Error('Cannot high-five yourself.');
+
     const db = getDB();
+    const cls = (db.classes || []).find(c => c.id === classId);
+    const limit = cls?.highFiveLimit || 'daily';
+
+    if (limit === 'disabled') {
+      throw new Error('Guild high-fives are currently disabled by your teacher.');
+    }
+
     const sender = (db.students || []).find(s => s.id === senderId);
     const receiver = (db.students || []).find(s => s.id === receiverId);
-    if (sender) {
-      sender.xp = (sender.xp || 0) + 10;
-      sender.guildXpContributed = (sender.guildXpContributed || 0) + 10;
+
+    if (!sender) throw new Error('Sender student profile not found');
+    const highFivesSent = sender.highFivesSent || {};
+    const lastSentIso = highFivesSent[receiverId];
+
+    const cooldown = getHighFiveCooldownStatus(lastSentIso, limit);
+    if (!cooldown.canCheer) {
+      throw new Error(
+        cooldown.reason
+          ? `High-five cooldown active: ${cooldown.reason}.`
+          : `You have already high-fived ${receiverName || 'this teammate'} ${limit === 'weekly' ? 'this week' : 'today'}.`
+      );
     }
+
+    const nowIso = new Date().toISOString();
+    sender.highFivesSent = {
+      ...highFivesSent,
+      [receiverId]: nowIso
+    };
+    sender.lastHighFiveAt = nowIso;
+    sender.xp = (sender.xp || 0) + 10;
+    sender.guildXpContributed = (sender.guildXpContributed || 0) + 10;
+
     if (receiver) {
       receiver.xp = (receiver.xp || 0) + 15;
       receiver.guildXpContributed = (receiver.guildXpContributed || 0) + 15;
+      receiver.lastHighFiveReceivedAt = nowIso;
     }
     saveDB(db);
 
@@ -556,12 +586,12 @@ export const mockBackend = {
       const hall = await this.getGuildHall(classId, guildId);
       const spiritFlame = (hall.spiritFlame || 0) + 1;
       const recentCheers = [
-        { senderName, receiverName, timestamp: new Date().toISOString() },
+        { senderName, receiverName, timestamp: nowIso },
         ...(hall.recentCheers || []).slice(0, 9)
       ];
       await this.updateGuildHall(classId, guildId, { spiritFlame, recentCheers });
     }
-    return { success: true };
+    return { success: true, senderXpEarned: 10, receiverXpEarned: 15, nowIso };
   },
 
   async claimGuildChallengeReward(classId, studentId, guildId, challengeId, rewardXp, rewardCoins) {
@@ -616,15 +646,37 @@ export const mockBackend = {
     const students = (db.students || []).filter(s => s.classId === classId && s.guild === guildId);
     students.forEach(student => {
       if (rewardType === 'xp') {
-        student.xp = (student.xp || 0) + rewardValue;
-        student.guildXpContributed = (student.guildXpContributed || 0) + rewardValue;
+        student.xp = Math.max(0, (student.xp || 0) + rewardValue);
+        student.guildXpContributed = Math.max(0, (student.guildXpContributed || 0) + rewardValue);
       } else if (rewardType === 'coins') {
-        student.coins = (student.coins || 0) + rewardValue;
+        student.coins = Math.max(0, (student.coins || 0) + rewardValue);
       } else if (rewardType === 'achievement') {
         const current = student.unlockedAchievements || [];
         if (!current.includes(rewardValue)) student.unlockedAchievements = [...current, rewardValue];
       }
     });
+    saveDB(db);
+    return students.length;
+  },
+
+  async resetGuildMembersXp(classId, guildId, { resetTotalXp = false, resetSpiritFlame = false, xpDeduction = null } = {}) {
+    await wait(DELAY);
+    const db = getDB();
+    const students = (db.students || []).filter(s => s.classId === classId && s.guild === guildId);
+    students.forEach(student => {
+      if (xpDeduction != null) {
+        student.xp = Math.max(0, (student.xp || 0) - xpDeduction);
+        student.guildXpContributed = Math.max(0, (student.guildXpContributed || 0) - xpDeduction);
+      } else {
+        student.guildXpContributed = 0;
+        if (resetTotalXp) student.xp = 0;
+      }
+    });
+
+    if (resetSpiritFlame) {
+      await this.updateGuildHall(classId, guildId, { spiritFlame: 0, recentCheers: [] });
+    }
+
     saveDB(db);
     return students.length;
   },
@@ -736,6 +788,14 @@ export const mockBackend = {
       return { success: true };
     }
     throw new Error('Purchase not found');
+  },
+
+  async deleteStemPurchase(purchaseId) {
+    await wait(DELAY);
+    const db = getDB();
+    db.stem_purchases = (db.stem_purchases || []).filter(x => x.id !== purchaseId);
+    saveDB(db);
+    return { success: true };
   },
 
   async getOrgStemPurchases(organizationId) {

@@ -726,3 +726,60 @@ export const LEARNING_PATHS = [
     ]
   }
 ];
+
+/**
+ * Checks if a high-five cooldown is currently active between sender and receiver.
+ * @param {string|Date} lastSentIso - ISO timestamp string of the last high-five sent to this target
+ * @param {string} limit - 'daily' | 'weekly' | 'disabled'
+ * @returns {{ canCheer: boolean, reason?: string, remainingHours?: number, remainingDays?: number }}
+ */
+export function getHighFiveCooldownStatus(lastSentIso, limit = 'daily') {
+  if (limit === 'disabled') {
+    return { canCheer: false, reason: 'High-fives disabled by teacher' };
+  }
+  if (!lastSentIso) {
+    return { canCheer: true };
+  }
+
+  const last = new Date(lastSentIso);
+  const now = new Date();
+  const diffMs = now.getTime() - last.getTime();
+
+  if (isNaN(diffMs)) {
+    return { canCheer: true };
+  }
+
+  if (limit === 'weekly') {
+    // 6-day cooldown ensures once-a-week frequency without clock drift issues
+    const SIX_DAYS_MS = 6 * 24 * 60 * 60 * 1000;
+    if (diffMs < SIX_DAYS_MS) {
+      const daysLeft = Math.max(1, Math.ceil((SIX_DAYS_MS - diffMs) / (24 * 60 * 60 * 1000)));
+      return {
+        canCheer: false,
+        reason: `Available in ${daysLeft}d`,
+        remainingDays: daysLeft
+      };
+    }
+    return { canCheer: true };
+  }
+
+  // Default: 'daily'
+  // Disallow if sent on the same calendar day (local date) OR within 16 hours
+  const isSameCalendarDay = (
+    last.getFullYear() === now.getFullYear() &&
+    last.getMonth() === now.getMonth() &&
+    last.getDate() === now.getDate()
+  );
+  const isWithin16Hours = diffMs < 16 * 60 * 60 * 1000;
+
+  if (isSameCalendarDay || isWithin16Hours) {
+    const hoursLeft = Math.max(1, Math.ceil((16 * 60 * 60 * 1000 - diffMs) / (60 * 60 * 1000)));
+    return {
+      canCheer: false,
+      reason: 'Available again tomorrow',
+      remainingHours: hoursLeft
+    };
+  }
+
+  return { canCheer: true };
+}

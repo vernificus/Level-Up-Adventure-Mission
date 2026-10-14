@@ -18,6 +18,8 @@ export default function RosterManager({ classId, onStudentAdded }) {
   const [inspectStudent, setInspectStudent] = useState(null);
   const [inspectAvatar, setInspectAvatar] = useState({ color: 'default', hat: 'none', accessory: 'none', face: 'happy' });
   const [inspectCoins, setInspectCoins] = useState(100);
+  const [inspectXp, setInspectXp] = useState(0);
+  const [inspectGuildXp, setInspectGuildXp] = useState(0);
   const [inspectOwnedItems, setInspectOwnedItems] = useState([]);
   const [savingAvatar, setSavingAvatar] = useState(false);
   const [itemToGrant, setItemToGrant] = useState('');
@@ -32,6 +34,8 @@ export default function RosterManager({ classId, onStudentAdded }) {
     setInspectStudent(student);
     setInspectAvatar(normAvatar);
     setInspectCoins(student.coins || 0);
+    setInspectXp(student.xp || 0);
+    setInspectGuildXp(student.guildXpContributed || 0);
     setInspectOwnedItems(student.ownedItems || ['default', 'none', 'happy']);
     setItemToGrant('');
   };
@@ -42,7 +46,9 @@ export default function RosterManager({ classId, onStudentAdded }) {
     try {
       await backend.updateStudent(inspectStudent.id, {
         avatar: inspectAvatar,
-        coins: parseInt(inspectCoins) || 0,
+        xp: Math.max(0, parseInt(inspectXp) || 0),
+        guildXpContributed: Math.max(0, parseInt(inspectGuildXp) || 0),
+        coins: Math.max(0, parseInt(inspectCoins) || 0),
         ownedItems: inspectOwnedItems
       });
       alert(`Avatar & rewards updated for ${inspectStudent.name}!`);
@@ -53,6 +59,36 @@ export default function RosterManager({ classId, onStudentAdded }) {
       alert('Error saving student avatar: ' + err.message);
     }
     setSavingAvatar(false);
+  };
+
+  const handleRemoveOwnedItem = (itemId) => {
+    const defaultBasics = ['default', 'none', 'happy'];
+    if (defaultBasics.includes(itemId)) {
+      alert('Default basic items cannot be removed.');
+      return;
+    }
+    setInspectOwnedItems(prev => prev.filter(id => id !== itemId));
+    // If currently equipped, reset that slot to default
+    setInspectAvatar(prev => {
+      const next = { ...prev };
+      if (next.color === itemId) next.color = 'default';
+      if (next.hat === itemId) next.hat = 'none';
+      if (next.accessory === itemId) next.accessory = 'none';
+      if (next.face === itemId) next.face = 'happy';
+      return next;
+    });
+  };
+
+  const handleResetCosmetics = () => {
+    if (!window.confirm(`Reset all cosmetic items for ${inspectStudent.name} back to starting defaults?`)) return;
+    setInspectOwnedItems(['default', 'none', 'happy']);
+    setInspectAvatar({ color: 'default', hat: 'none', accessory: 'none', face: 'happy' });
+  };
+
+  const handleResetExploitXp = () => {
+    if (!window.confirm(`Reset XP and Guild Contributed XP for ${inspectStudent.name} back to 0?\n\nThis removes the high-five exploit XP while keeping completed activity records.`)) return;
+    setInspectXp(0);
+    setInspectGuildXp(0);
   };
 
   const handleGrantItem = () => {
@@ -136,38 +172,68 @@ export default function RosterManager({ classId, onStudentAdded }) {
     }
   };
 
-  // Reward giving
+  // Reward giving / penalty adjustment
   const [rewardTarget, setRewardTarget] = useState(null); // student object
+  const [rewardMode, setRewardMode] = useState('grant'); // 'grant' | 'deduct'
   const [rewardType, setRewardType] = useState('xp'); // 'xp', 'coins', 'achievement'
   const [rewardAmount, setRewardAmount] = useState('');
   const [rewardAchievement, setRewardAchievement] = useState('');
+  const [deductGuildXp, setDeductGuildXp] = useState(true);
   const [givingReward, setGivingReward] = useState(false);
 
   const handleGiveReward = async () => {
     if (!rewardTarget) return;
     setGivingReward(true);
     try {
-      if (rewardType === 'xp') {
-        const amount = parseInt(rewardAmount) || 0;
-        if (amount <= 0) { alert('Enter a positive XP amount'); setGivingReward(false); return; }
-        await backend.updateStudent(rewardTarget.id, { xp: (rewardTarget.xp || 0) + amount });
-      } else if (rewardType === 'coins') {
-        const amount = parseInt(rewardAmount) || 0;
-        if (amount <= 0) { alert('Enter a positive coin amount'); setGivingReward(false); return; }
-        await backend.updateStudent(rewardTarget.id, { coins: (rewardTarget.coins || 0) + amount });
-      } else if (rewardType === 'achievement') {
-        if (!rewardAchievement) { alert('Select an achievement'); setGivingReward(false); return; }
-        const current = rewardTarget.unlockedAchievements || [];
-        if (current.includes(rewardAchievement)) { alert('Student already has this achievement'); setGivingReward(false); return; }
-        await backend.updateStudent(rewardTarget.id, { unlockedAchievements: [...current, rewardAchievement] });
+      if (rewardMode === 'grant') {
+        if (rewardType === 'xp') {
+          const amount = parseInt(rewardAmount) || 0;
+          if (amount <= 0) { alert('Enter a positive XP amount'); setGivingReward(false); return; }
+          await backend.updateStudent(rewardTarget.id, { xp: (rewardTarget.xp || 0) + amount });
+        } else if (rewardType === 'coins') {
+          const amount = parseInt(rewardAmount) || 0;
+          if (amount <= 0) { alert('Enter a positive coin amount'); setGivingReward(false); return; }
+          await backend.updateStudent(rewardTarget.id, { coins: (rewardTarget.coins || 0) + amount });
+        } else if (rewardType === 'achievement') {
+          if (!rewardAchievement) { alert('Select an achievement'); setGivingReward(false); return; }
+          const current = rewardTarget.unlockedAchievements || [];
+          if (current.includes(rewardAchievement)) { alert('Student already has this achievement'); setGivingReward(false); return; }
+          await backend.updateStudent(rewardTarget.id, { unlockedAchievements: [...current, rewardAchievement] });
+        }
+        alert(`Reward given to ${rewardTarget.name}!`);
+      } else {
+        // DEDUCT / REMOVE EXPLOIT XP & REWARDS
+        if (rewardType === 'xp') {
+          const amount = parseInt(rewardAmount) || 0;
+          if (amount <= 0) { alert('Enter a positive XP amount to deduct'); setGivingReward(false); return; }
+          const newXp = Math.max(0, (rewardTarget.xp || 0) - amount);
+          const updates = { xp: newXp };
+          if (deductGuildXp) {
+            updates.guildXpContributed = Math.max(0, (rewardTarget.guildXpContributed || 0) - amount);
+          }
+          await backend.updateStudent(rewardTarget.id, updates);
+          alert(`Deducted ${amount} XP from ${rewardTarget.name}${deductGuildXp ? ' and their guild contribution' : ''}! New XP: ${newXp}`);
+        } else if (rewardType === 'coins') {
+          const amount = parseInt(rewardAmount) || 0;
+          if (amount <= 0) { alert('Enter a positive coin amount to deduct'); setGivingReward(false); return; }
+          const newCoins = Math.max(0, (rewardTarget.coins || 0) - amount);
+          await backend.updateStudent(rewardTarget.id, { coins: newCoins });
+          alert(`Deducted ${amount} coins from ${rewardTarget.name}! New balance: ${newCoins}`);
+        } else if (rewardType === 'achievement') {
+          if (!rewardAchievement) { alert('Select an achievement to revoke'); setGivingReward(false); return; }
+          const current = rewardTarget.unlockedAchievements || [];
+          await backend.updateStudent(rewardTarget.id, {
+            unlockedAchievements: current.filter(a => a !== rewardAchievement)
+          });
+          alert(`Revoked achievement from ${rewardTarget.name}!`);
+        }
       }
-      alert(`Reward given to ${rewardTarget.name}!`);
       setRewardTarget(null);
       setRewardAmount('');
       setRewardAchievement('');
       loadStudents();
     } catch (error) {
-      alert('Error giving reward: ' + error.message);
+      alert('Error updating student: ' + error.message);
     }
     setGivingReward(false);
   };
@@ -384,42 +450,81 @@ export default function RosterManager({ classId, onStudentAdded }) {
       {rewardTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" role="dialog" aria-modal="true" onClick={() => setRewardTarget(null)}>
           <div className="bg-slate-800 border-2 border-yellow-500 rounded-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                <Gift className="w-6 h-6 text-yellow-400" aria-hidden="true" /> Give Reward
+                <Gift className={`w-6 h-6 ${rewardMode === 'grant' ? 'text-yellow-400' : 'text-red-400'}`} aria-hidden="true" />
+                {rewardMode === 'grant' ? 'Give Reward' : 'Deduct / Remove Exploit XP'}
               </h3>
               <button onClick={() => setRewardTarget(null)} className="text-slate-400 hover:text-white" aria-label="Close">
                 <X className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
 
-            <p className="text-slate-400 mb-4">Reward for: <span className="font-bold text-white">{rewardTarget.name}</span></p>
+            <p className="text-slate-400 mb-3 text-xs">
+              Student: <span className="font-bold text-white text-sm">{rewardTarget.name}</span>
+              {' • '}Current: <span className="text-green-400 font-bold">{rewardTarget.xp || 0} XP</span>
+              {' • '}<span className="text-yellow-400 font-bold">{rewardTarget.coins || 0} Coins</span>
+            </p>
+
+            {/* Mode Toggle: Grant vs Deduct */}
+            <div className="flex bg-slate-900 p-1 rounded-xl mb-4 border border-slate-700">
+              <button
+                type="button"
+                onClick={() => setRewardMode('grant')}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all ${
+                  rewardMode === 'grant' ? 'bg-green-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                + Grant Reward
+              </button>
+              <button
+                type="button"
+                onClick={() => setRewardMode('deduct')}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all ${
+                  rewardMode === 'deduct' ? 'bg-red-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                - Deduct / Remove Exploit XP
+              </button>
+            </div>
 
             <div className="flex gap-2 mb-4" role="group" aria-label="Reward type">
               <button
                 onClick={() => setRewardType('xp')}
-                className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 ${rewardType === 'xp' ? 'bg-green-600 text-white' : 'bg-slate-700 text-slate-300'}`}
+                className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 ${
+                  rewardType === 'xp'
+                    ? (rewardMode === 'grant' ? 'bg-green-600 text-white' : 'bg-red-600 text-white')
+                    : 'bg-slate-700 text-slate-300'
+                }`}
               >
                 <Zap className="w-4 h-4" aria-hidden="true" /> XP
               </button>
               <button
                 onClick={() => setRewardType('coins')}
-                className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 ${rewardType === 'coins' ? 'bg-yellow-600 text-white' : 'bg-slate-700 text-slate-300'}`}
+                className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 ${
+                  rewardType === 'coins'
+                    ? (rewardMode === 'grant' ? 'bg-yellow-600 text-white' : 'bg-amber-600 text-white')
+                    : 'bg-slate-700 text-slate-300'
+                }`}
               >
                 <Star className="w-4 h-4" aria-hidden="true" /> Coins
               </button>
               <button
                 onClick={() => setRewardType('achievement')}
-                className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 ${rewardType === 'achievement' ? 'bg-purple-600 text-white' : 'bg-slate-700 text-slate-300'}`}
+                className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 ${
+                  rewardType === 'achievement'
+                    ? (rewardMode === 'grant' ? 'bg-purple-600 text-white' : 'bg-rose-600 text-white')
+                    : 'bg-slate-700 text-slate-300'
+                }`}
               >
-                <Trophy className="w-4 h-4" aria-hidden="true" /> Trophy
+                <Trophy className="w-4 h-4" aria-hidden="true" /> Badge
               </button>
             </div>
 
             {(rewardType === 'xp' || rewardType === 'coins') && (
               <div className="mb-4">
-                <label htmlFor="reward-amount" className="block text-sm text-slate-400 mb-1">
-                  Amount of {rewardType === 'xp' ? 'XP' : 'Coins'} to give
+                <label htmlFor="reward-amount" className="block text-xs font-bold text-slate-300 mb-1">
+                  Amount of {rewardType === 'xp' ? 'XP' : 'Coins'} to {rewardMode === 'grant' ? 'give' : 'deduct / remove'}
                 </label>
                 <input
                   id="reward-amount"
@@ -427,28 +532,47 @@ export default function RosterManager({ classId, onStudentAdded }) {
                   min="1"
                   value={rewardAmount}
                   onChange={e => setRewardAmount(e.target.value)}
-                  placeholder={rewardType === 'xp' ? 'e.g. 100' : 'e.g. 50'}
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-yellow-500 outline-none"
+                  placeholder={rewardMode === 'grant' ? 'e.g. 100' : 'e.g. 11000'}
+                  className="w-full px-4 py-2.5 bg-slate-700 border border-slate-600 rounded-lg text-white font-bold focus:border-yellow-500 outline-none"
                 />
+
+                {rewardMode === 'deduct' && rewardType === 'xp' && (
+                  <label className="flex items-center gap-2 mt-2.5 text-xs text-slate-300 cursor-pointer bg-slate-900/60 p-2 rounded-lg border border-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={deductGuildXp}
+                      onChange={e => setDeductGuildXp(e.target.checked)}
+                      className="w-4 h-4 rounded text-red-500 bg-slate-800 border-slate-600"
+                    />
+                    <span>Also deduct from Guild Contributed XP (fixes guild exploit total)</span>
+                  </label>
+                )}
               </div>
             )}
 
             {rewardType === 'achievement' && (
               <div className="mb-4">
-                <label htmlFor="reward-achievement" className="block text-sm text-slate-400 mb-1">Select Achievement to unlock</label>
+                <label htmlFor="reward-achievement" className="block text-xs font-bold text-slate-300 mb-1">
+                  Select Badge to {rewardMode === 'grant' ? 'unlock' : 'revoke / remove'}
+                </label>
                 <select
                   id="reward-achievement"
                   value={rewardAchievement}
                   onChange={e => setRewardAchievement(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-yellow-500 outline-none"
+                  className="w-full px-4 py-2.5 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-yellow-500 outline-none text-xs"
                 >
-                  <option value="">-- Choose --</option>
-                  {ACHIEVEMENTS.filter(a => !(rewardTarget.unlockedAchievements || []).includes(a.id)).map(a => (
-                    <option key={a.id} value={a.id}>{a.icon} {a.title} - {a.desc}</option>
-                  ))}
+                  <option value="">-- Choose Badge --</option>
+                  {rewardMode === 'grant'
+                    ? ACHIEVEMENTS.filter(a => !(rewardTarget.unlockedAchievements || []).includes(a.id)).map(a => (
+                        <option key={a.id} value={a.id}>{a.icon} {a.title} - {a.desc}</option>
+                      ))
+                    : ACHIEVEMENTS.filter(a => (rewardTarget.unlockedAchievements || []).includes(a.id)).map(a => (
+                        <option key={a.id} value={a.id}>{a.icon} {a.title} (Currently Unlocked)</option>
+                      ))
+                  }
                 </select>
-                {ACHIEVEMENTS.filter(a => !(rewardTarget.unlockedAchievements || []).includes(a.id)).length === 0 && (
-                  <p className="text-xs text-green-400 mt-2">This student has unlocked all achievements!</p>
+                {rewardMode === 'deduct' && (rewardTarget.unlockedAchievements || []).length === 0 && (
+                  <p className="text-xs text-slate-400 mt-2">This student has no badges to remove.</p>
                 )}
               </div>
             )}
@@ -456,9 +580,15 @@ export default function RosterManager({ classId, onStudentAdded }) {
             <button
               onClick={handleGiveReward}
               disabled={givingReward}
-              className="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold rounded-lg transition-colors disabled:opacity-50"
+              className={`w-full py-3 font-black rounded-xl text-xs uppercase tracking-wider transition-colors disabled:opacity-50 shadow ${
+                rewardMode === 'grant'
+                  ? 'bg-yellow-500 hover:bg-yellow-400 text-slate-950'
+                  : 'bg-red-600 hover:bg-red-500 text-white'
+              }`}
             >
-              {givingReward ? 'Giving...' : 'Give Reward'}
+              {givingReward
+                ? (rewardMode === 'grant' ? 'Giving...' : 'Deducting...')
+                : (rewardMode === 'grant' ? 'Give Reward' : 'Confirm Deduction / Remove Exploit XP')}
             </button>
           </div>
         </div>
@@ -494,9 +624,35 @@ export default function RosterManager({ classId, onStudentAdded }) {
                 />
                 <div className="w-full mt-4 space-y-3">
                   <div className="flex justify-between items-center bg-slate-800 p-2.5 rounded-xl border border-slate-700 text-xs">
-                    <span className="text-slate-400 font-bold uppercase">Total XP:</span>
-                    <span className="text-green-400 font-black">{inspectStudent.xp || 0} XP</span>
+                    <label htmlFor="inspect-xp-input" className="text-slate-400 font-bold uppercase">Total XP:</label>
+                    <div className="flex items-center gap-1">
+                      <Zap className="w-3.5 h-3.5 text-green-400" />
+                      <input
+                        id="inspect-xp-input"
+                        type="number"
+                        min="0"
+                        value={inspectXp}
+                        onChange={e => setInspectXp(e.target.value)}
+                        className="w-24 px-2 py-0.5 bg-slate-700 text-green-400 font-black rounded border border-slate-600 text-right outline-none"
+                      />
+                    </div>
                   </div>
+
+                  <div className="flex justify-between items-center bg-slate-800 p-2.5 rounded-xl border border-slate-700 text-xs">
+                    <label htmlFor="inspect-guild-xp-input" className="text-slate-400 font-bold uppercase">Guild Contributed XP:</label>
+                    <div className="flex items-center gap-1">
+                      <ShieldCheck className="w-3.5 h-3.5 text-yellow-400" />
+                      <input
+                        id="inspect-guild-xp-input"
+                        type="number"
+                        min="0"
+                        value={inspectGuildXp}
+                        onChange={e => setInspectGuildXp(e.target.value)}
+                        className="w-24 px-2 py-0.5 bg-slate-700 text-yellow-400 font-black rounded border border-slate-600 text-right outline-none"
+                      />
+                    </div>
+                  </div>
+
                   <div className="flex justify-between items-center bg-slate-800 p-2.5 rounded-xl border border-slate-700 text-xs">
                     <label htmlFor="inspect-coins-input" className="text-slate-400 font-bold uppercase">Coin Balance:</label>
                     <div className="flex items-center gap-1">
@@ -511,14 +667,52 @@ export default function RosterManager({ classId, onStudentAdded }) {
                       />
                     </div>
                   </div>
+
+                  {/* Quick Exploit Reset Button */}
+                  <button
+                    type="button"
+                    onClick={handleResetExploitXp}
+                    className="w-full py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold text-xs rounded-xl border border-amber-500/40 transition-colors flex items-center justify-center gap-1.5"
+                    title="Sets XP and Guild Contributed XP to 0"
+                  >
+                    <Zap className="w-3.5 h-3.5 text-amber-400" /> Reset High-Five Exploit XP to 0
+                  </button>
+
                   <div className="bg-slate-800 p-2.5 rounded-xl border border-slate-700 text-xs">
-                    <span className="text-slate-400 font-bold uppercase block mb-1">Owned Items ({inspectOwnedItems.length}):</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-slate-400 font-bold uppercase">Owned Items ({inspectOwnedItems.length}):</span>
+                      {inspectOwnedItems.some(id => !['default', 'none', 'happy'].includes(id)) && (
+                        <button
+                          type="button"
+                          onClick={handleResetCosmetics}
+                          className="text-[10px] text-red-400 hover:text-red-300 hover:underline"
+                        >
+                          Clear Cosmetics
+                        </button>
+                      )}
+                    </div>
                     <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto pr-1">
-                      {inspectOwnedItems.map(itemId => (
-                        <span key={itemId} className="px-2 py-0.5 bg-slate-700 rounded-md text-[10px] text-slate-300 font-mono">
-                          {itemId}
-                        </span>
-                      ))}
+                      {inspectOwnedItems.map(itemId => {
+                        const isDefault = ['default', 'none', 'happy'].includes(itemId);
+                        return (
+                          <span
+                            key={itemId}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-700 rounded-md text-[10px] text-slate-300 font-mono"
+                          >
+                            {itemId}
+                            {!isDefault && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveOwnedItem(itemId)}
+                                className="text-slate-400 hover:text-red-400 ml-0.5"
+                                title={`Remove ${itemId}`}
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            )}
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>

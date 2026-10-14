@@ -5,7 +5,7 @@ import {
   Users, Plus, LogOut, BookOpen, ClipboardList, CheckCircle2,
   XCircle, Clock, ChevronRight, GraduationCap, Copy, Trash2, Edit, RefreshCw, RotateCcw, Link, Save, Gift,
   Share2, UserPlus, X, Mail, MessageSquare, Sparkles, Star, Trophy, ChevronDown, ChevronUp, BarChart3, Eye, Zap, Building2, Layers, Shield, ShieldCheck,
-  Camera, Upload, Package, ShoppingBag, Swords, Check, Settings, Image as ImageIcon, Award, Crown, Pencil, User
+  Camera, Upload, Package, ShoppingBag, Swords, Check, Settings, Image as ImageIcon, Award, Crown, Pencil, User, AlertTriangle
 } from 'lucide-react';
 import {
   LEVELS, ACHIEVEMENTS, GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, GUILD_TROPHIES,
@@ -1985,6 +1985,8 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
   const [rewardType, setRewardType] = useState('xp');
   const [rewardAmount, setRewardAmount] = useState('');
   const [rewardAchievement, setRewardAchievement] = useState('');
+  const [rewardMode, setRewardMode] = useState('grant'); // 'grant' | 'deduct'
+  const [highFiveLimit, setHighFiveLimit] = useState(selectedClass?.highFiveLimit || 'daily'); // 'daily' | 'weekly' | 'disabled'
   const [givingReward, setGivingReward] = useState(false);
   const [trophyGuild, setTrophyGuild] = useState(null);
   const [selectedTrophy, setSelectedTrophy] = useState('');
@@ -2044,6 +2046,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
     } else {
       setActiveGuilds(GUILDS);
     }
+    setHighFiveLimit(selectedClass?.highFiveLimit || 'daily');
   }, [selectedClass]);
 
   useEffect(() => {
@@ -2104,28 +2107,56 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
     }
   };
 
+  const handleUpdateHighFiveLimit = async (newLimit) => {
+    try {
+      setHighFiveLimit(newLimit);
+      await backend.updateClass(classId, { highFiveLimit: newLimit });
+      if (onClassUpdated) {
+        onClassUpdated({ ...selectedClass, highFiveLimit: newLimit });
+      }
+    } catch (err) {
+      alert('Error updating high-five limit: ' + err.message);
+    }
+  };
+
+  const handleResetGuildExploit = async (guildId, guildName) => {
+    const confirmMsg = `Reset high-five exploit XP for ALL members in "${guildName}"?\n\nThis will reset each member's XP and Guild Contributed XP to 0.\n(If you prefer to deduct a specific amount, click the Gift icon and choose "Deduct / Exploit Penalty" instead).`;
+    if (!window.confirm(confirmMsg)) return;
+    try {
+      const res = await backend.resetGuildMembersXp(classId, guildId, { resetTotalXp: true });
+      alert(`Exploit XP reset to 0 for ${res.updatedCount} members of ${guildName}!`);
+      loadGuildData();
+      if (onStudentsUpdated) onStudentsUpdated();
+    } catch (err) {
+      alert('Error resetting guild exploit XP: ' + err.message);
+    }
+  };
+
   const handleGuildReward = async () => {
     if (!rewardGuild) return;
     setGivingReward(true);
     try {
       let value;
       if (rewardType === 'xp' || rewardType === 'coins') {
-        value = parseInt(rewardAmount) || 0;
-        if (value <= 0) { alert('Enter a positive amount'); setGivingReward(false); return; }
+        const rawAmount = parseInt(rewardAmount) || 0;
+        if (rawAmount <= 0) { alert('Enter a positive amount'); setGivingReward(false); return; }
+        value = rewardMode === 'deduct' ? -rawAmount : rawAmount;
       } else {
         if (!rewardAchievement) { alert('Select an achievement'); setGivingReward(false); return; }
         value = rewardAchievement;
       }
       const count = await backend.rewardGuild(classId, rewardGuild, rewardType, value);
       const guildName = activeGuilds.find(g => g.id === rewardGuild)?.name || rewardGuild;
-      alert(`Reward given to ${count} members of ${guildName}!`);
+      const actionVerb = rewardMode === 'deduct' ? 'deducted from' : 'given to';
+      alert(`${Math.abs(value)} ${rewardType.toUpperCase()} ${actionVerb} ${count} members of ${guildName}!`);
       setRewardGuild(null);
       setRewardAmount('');
       setRewardAchievement('');
+      setRewardMode('grant');
       loadGuildData();
       if (onStudentsUpdated) onStudentsUpdated();
     } catch (error) {
-      alert('Error giving guild reward: ' + error.message);
+      alert('Error processing guild reward/penalty: ' + error.message);
     }
     setGivingReward(false);
   };
@@ -2255,6 +2286,17 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
       setStemPurchases(prev => prev.map(p => p.id === purchaseId ? { ...p, fulfilled: !currentStatus } : p));
     } catch (err) {
       alert('Error updating purchase status: ' + err.message);
+    }
+  };
+
+  const handleDeleteStemPurchase = async (purchaseId, itemName, studentName) => {
+    if (!window.confirm(`Delete STEM order "${itemName}" by ${studentName}?\n\nThis will remove the order from the guild purchase log.`)) return;
+    try {
+      await backend.deleteStemPurchase(purchaseId);
+      setStemPurchases(prev => prev.filter(p => p.id !== purchaseId));
+      alert(`Order for "${itemName}" removed.`);
+    } catch (err) {
+      alert('Error removing STEM order: ' + err.message);
     }
   };
 
@@ -2420,6 +2462,62 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
             </div>
           </div>
 
+          {/* High-Five Cooldown Policy / Exploit Limiter */}
+          <div className="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                <Zap className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-white">Teammate High-Five Policy</h4>
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                    Spam Limiter
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Controls how often students can cheer guildmates in the Members tab (+10 XP sender, +15 XP teammate). Prevents class period spam.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 bg-slate-800 p-1 rounded-xl border border-slate-700">
+              <button
+                type="button"
+                onClick={() => handleUpdateHighFiveLimit('daily')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  highFiveLimit === 'daily'
+                    ? 'bg-amber-500 text-slate-950 font-black shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Once Per Day
+              </button>
+              <button
+                type="button"
+                onClick={() => handleUpdateHighFiveLimit('weekly')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  highFiveLimit === 'weekly'
+                    ? 'bg-amber-500 text-slate-950 font-black shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Once Per Week
+              </button>
+              <button
+                type="button"
+                onClick={() => handleUpdateHighFiveLimit('disabled')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  highFiveLimit === 'disabled'
+                    ? 'bg-red-600 text-white font-black shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Disabled
+              </button>
+            </div>
+          </div>
+
           {loading ? (
             <p className="text-slate-500 text-center py-4" role="status">Loading guild data...</p>
           ) : (
@@ -2480,9 +2578,9 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
 
                       <div className="flex gap-2">
                         <button
-                          onClick={() => { setRewardGuild(guild.id); setRewardType('xp'); setRewardAmount(''); }}
+                          onClick={() => { setRewardGuild(guild.id); setRewardType('xp'); setRewardAmount(''); setRewardMode('grant'); }}
                           className="p-2.5 bg-slate-800 hover:bg-yellow-500/20 text-slate-400 hover:text-yellow-400 rounded-xl border border-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-                          title={`Give direct reward drop to ${guild.name}`}
+                          title={`Give direct reward drop or penalty to ${guild.name}`}
                           aria-label={`Give reward to ${guild.name}`}
                         >
                           <Gift className="w-4 h-4" aria-hidden="true" />
@@ -2494,6 +2592,14 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                           aria-label={`Award trophy to ${guild.name}`}
                         >
                           <Trophy className="w-4 h-4" aria-hidden="true" />
+                        </button>
+                        <button
+                          onClick={() => handleResetGuildExploit(guild.id, guild.name)}
+                          className="p-2.5 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl border border-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                          title={`Reset exploit XP for ${guild.name} (sets all member XP & Guild XP to 0)`}
+                          aria-label={`Reset exploit XP for ${guild.name}`}
+                        >
+                          <RotateCcw className="w-4 h-4 text-red-400" aria-hidden="true" />
                         </button>
                       </div>
                     </div>
@@ -2531,7 +2637,10 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                                   <p className="font-bold text-white truncate text-xs">{member.name}</p>
                                   <p className={`text-[10px] ${level.color}`}>Lv.{level.level} • {member.currentStreak || 0}d streak</p>
                                 </div>
-                                <span className="text-yellow-400 font-black text-xs">{member.xp} XP</span>
+                                <div className="text-right">
+                                  <span className="text-yellow-400 font-black text-xs block">{member.xp} XP</span>
+                                  <span className="text-[10px] text-slate-400 block font-medium">{member.guildXpContributed || 0} Guild XP</span>
+                                </div>
                               </div>
                             );
                           })}
@@ -2973,6 +3082,14 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                         </>
                       )}
                     </button>
+                    <button
+                      onClick={() => handleDeleteStemPurchase(p.id, p.itemName, p.studentName)}
+                      className="p-2.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl border border-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      title="Delete / Cancel order (Exploit Removal)"
+                      aria-label={`Delete order ${p.itemName}`}
+                    >
+                      <Trash2 className="w-4 h-4 text-red-400" />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -3138,14 +3255,47 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
 
       {/* Guild Reward Modal */}
       {rewardGuild && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" role="dialog" aria-modal="true" onClick={() => setRewardGuild(null)}>
-          <div className="bg-slate-800 border-2 border-yellow-500 rounded-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" role="dialog" aria-modal="true" onClick={() => { setRewardGuild(null); setRewardMode('grant'); }}>
+          <div className="bg-slate-800 border-2 border-yellow-500 rounded-2xl max-w-md w-full p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                <Gift className="w-6 h-6 text-yellow-400" aria-hidden="true" /> Guild Reward Drop
+                {rewardMode === 'deduct' ? (
+                  <>
+                    <AlertTriangle className="w-6 h-6 text-red-400" aria-hidden="true" /> Guild Exploit Deduction
+                  </>
+                ) : (
+                  <>
+                    <Gift className="w-6 h-6 text-yellow-400" aria-hidden="true" /> Guild Reward Drop
+                  </>
+                )}
               </h3>
-              <button onClick={() => setRewardGuild(null)} className="text-slate-400 hover:text-white" aria-label="Close">
+              <button onClick={() => { setRewardGuild(null); setRewardMode('grant'); }} className="text-slate-400 hover:text-white" aria-label="Close">
                 <X className="w-5 h-5" aria-hidden="true" />
+              </button>
+            </div>
+
+            {/* Award vs Deduct Mode Toggle */}
+            <div className="flex gap-2 mb-4 bg-slate-900/60 p-1 rounded-xl border border-slate-700">
+              <button
+                type="button"
+                onClick={() => setRewardMode('grant')}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all ${
+                  rewardMode === 'grant' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                + Award Reward
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setRewardMode('deduct');
+                  if (rewardType === 'achievement') setRewardType('xp');
+                }}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all ${
+                  rewardMode === 'deduct' ? 'bg-red-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                - Deduct / Exploit Penalty
               </button>
             </div>
 
@@ -3157,28 +3307,41 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                   <span className="text-3xl" aria-hidden="true">{guild?.emoji || '🛡️'}</span>
                   <div>
                     <p className="font-bold text-white">{guild?.name}</p>
-                    <p className="text-xs text-slate-300">{stats?.memberCount || 0} members will receive this reward</p>
+                    <p className="text-xs text-slate-300">
+                      {stats?.memberCount || 0} members will be affected
+                    </p>
                   </div>
                 </div>
               );
             })()}
 
+            {rewardMode === 'deduct' && (
+              <div className="p-3 mb-4 rounded-xl bg-red-950/40 border border-red-700/50 flex items-start gap-2.5 text-xs text-red-300">
+                <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Exploit Penalty Mode:</strong> This will subtract the specified amount from each member's total XP and contributed Guild XP (minimum 0).
+                </span>
+              </div>
+            )}
+
             <div className="flex gap-2 mb-4" role="group" aria-label="Reward type">
-              <button onClick={() => setRewardType('xp')} className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 min-h-[44px] ${rewardType === 'xp' ? 'bg-green-600 text-white' : 'bg-slate-700 text-slate-300'}`}>
+              <button onClick={() => setRewardType('xp')} className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 min-h-[44px] ${rewardType === 'xp' ? (rewardMode === 'deduct' ? 'bg-red-600 text-white' : 'bg-green-600 text-white') : 'bg-slate-700 text-slate-300'}`}>
                 <Zap className="w-4 h-4" aria-hidden="true" /> XP
               </button>
-              <button onClick={() => setRewardType('coins')} className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 min-h-[44px] ${rewardType === 'coins' ? 'bg-yellow-600 text-white' : 'bg-slate-700 text-slate-300'}`}>
+              <button onClick={() => setRewardType('coins')} className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 min-h-[44px] ${rewardType === 'coins' ? (rewardMode === 'deduct' ? 'bg-red-600 text-white' : 'bg-yellow-600 text-white') : 'bg-slate-700 text-slate-300'}`}>
                 <Star className="w-4 h-4" aria-hidden="true" /> Coins
               </button>
-              <button onClick={() => setRewardType('achievement')} className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 min-h-[44px] ${rewardType === 'achievement' ? 'bg-purple-600 text-white' : 'bg-slate-700 text-slate-300'}`}>
-                <Trophy className="w-4 h-4" aria-hidden="true" /> Trophy
-              </button>
+              {rewardMode === 'grant' && (
+                <button onClick={() => setRewardType('achievement')} className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 min-h-[44px] ${rewardType === 'achievement' ? 'bg-purple-600 text-white' : 'bg-slate-700 text-slate-300'}`}>
+                  <Trophy className="w-4 h-4" aria-hidden="true" /> Trophy
+                </button>
+              )}
             </div>
 
             {(rewardType === 'xp' || rewardType === 'coins') && (
               <div className="mb-4">
                 <label htmlFor="guild-reward-amount" className="block text-sm text-slate-400 mb-1">
-                  Amount of {rewardType === 'xp' ? 'XP' : 'Coins'} per member
+                  {rewardMode === 'deduct' ? 'Amount to DEDUCT per member' : `Amount of ${rewardType === 'xp' ? 'XP' : 'Coins'} per member`}
                 </label>
                 <input
                   id="guild-reward-amount"
@@ -3186,13 +3349,13 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                   min="1"
                   value={rewardAmount}
                   onChange={e => setRewardAmount(e.target.value)}
-                  placeholder={rewardType === 'xp' ? 'e.g. 100' : 'e.g. 50'}
+                  placeholder={rewardType === 'xp' ? 'e.g. 500' : 'e.g. 50'}
                   className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-yellow-500 outline-none min-h-[44px]"
                 />
               </div>
             )}
 
-            {rewardType === 'achievement' && (
+            {rewardType === 'achievement' && rewardMode === 'grant' && (
               <div className="mb-4">
                 <label htmlFor="guild-reward-achievement" className="block text-sm text-slate-400 mb-1">Select Achievement to unlock for all members</label>
                 <select
@@ -3212,9 +3375,17 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
             <button
               onClick={handleGuildReward}
               disabled={givingReward}
-              className="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold rounded-lg transition-colors disabled:opacity-50 min-h-[44px]"
+              className={`w-full py-3 font-bold rounded-lg transition-colors disabled:opacity-50 min-h-[44px] ${
+                rewardMode === 'deduct'
+                  ? 'bg-red-600 hover:bg-red-500 text-white'
+                  : 'bg-yellow-500 hover:bg-yellow-400 text-slate-900'
+              }`}
             >
-              {givingReward ? 'Giving...' : 'Give Reward to Entire Guild'}
+              {givingReward
+                ? 'Processing...'
+                : rewardMode === 'deduct'
+                ? 'Deduct Penalty from Entire Guild'
+                : 'Give Reward to Entire Guild'}
             </button>
           </div>
         </div>

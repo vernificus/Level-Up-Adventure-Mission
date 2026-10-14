@@ -108,7 +108,7 @@ service cloud.firestore {
     match /stem_purchases/{purchaseId} {
       allow read: if true;
       allow create: if true; // Students purchase items
-      allow update: if isAuthenticated(); // Teachers and admins fulfill purchases
+      allow update, delete: if isAuthenticated(); // Teachers and admins fulfill or remove purchases
     }
 
     // ACTIVITY LIBRARY

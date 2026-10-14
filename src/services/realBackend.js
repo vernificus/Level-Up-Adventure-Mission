@@ -19,7 +19,7 @@ import {
   onSnapshot
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
-import { GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, DEFAULT_STEM_SUPPLIES, GUILD_LEVELS, GUILD_CHALLENGES, BOSS_CHALLENGES, getGuildLevelInfo } from "../data/gameData";
+import { GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, DEFAULT_STEM_SUPPLIES, GUILD_LEVELS, GUILD_CHALLENGES, BOSS_CHALLENGES, getGuildLevelInfo, getHighFiveCooldownStatus } from "../data/gameData";
 
 export const realBackend = {
   // ================= TEACHER AUTH =================
@@ -1022,8 +1022,24 @@ export const realBackend = {
   async sendGuildCheer(classId, senderId, senderName, receiverId, receiverName, guildId) {
     try {
       if (!classId || !senderId || !receiverId) throw new Error('Invalid cheer parameters');
+      if (senderId === receiverId) throw new Error('Cannot high-five yourself.');
 
-      // 1. Grant sender +10 XP and receiver +15 XP
+      // Check class settings for limit (daily, weekly, disabled)
+      let limit = 'daily';
+      try {
+        const classRef = doc(db, "classes", classId);
+        const classDoc = await getDoc(classRef);
+        if (classDoc.exists()) {
+          limit = classDoc.data().highFiveLimit || 'daily';
+        }
+      } catch (err) {
+        console.warn("Could not fetch class high-five limit, defaulting to daily:", err);
+      }
+
+      if (limit === 'disabled') {
+        throw new Error('Guild high-fives are currently disabled by your teacher.');
+      }
+
       const senderRef = doc(db, "students", senderId);
       const receiverRef = doc(db, "students", receiverId);
 
@@ -1032,19 +1048,41 @@ export const realBackend = {
         getDoc(receiverRef)
       ]);
 
-      if (senderDoc.exists()) {
-        const sData = senderDoc.data();
-        await updateDoc(senderRef, {
-          xp: (sData.xp || 0) + 10,
-          guildXpContributed: (sData.guildXpContributed || 0) + 10
-        });
+      if (!senderDoc.exists()) throw new Error('Sender student profile not found');
+      const sData = senderDoc.data();
+      const highFivesSent = sData.highFivesSent || {};
+      const lastSentIso = highFivesSent[receiverId];
+
+      const cooldown = getHighFiveCooldownStatus(lastSentIso, limit);
+      if (!cooldown.canCheer) {
+        throw new Error(
+          cooldown.reason
+            ? `High-five cooldown active: ${cooldown.reason}.`
+            : `You have already high-fived ${receiverName || 'this teammate'} ${limit === 'weekly' ? 'this week' : 'today'}.`
+        );
       }
 
+      const nowIso = new Date().toISOString();
+      const updatedHighFivesSent = {
+        ...highFivesSent,
+        [receiverId]: nowIso
+      };
+
+      // 1. Grant sender +10 XP and update highFivesSent cooldown map
+      await updateDoc(senderRef, {
+        xp: (sData.xp || 0) + 10,
+        guildXpContributed: (sData.guildXpContributed || 0) + 10,
+        highFivesSent: updatedHighFivesSent,
+        lastHighFiveAt: nowIso
+      });
+
+      // Grant receiver +15 XP
       if (receiverDoc.exists()) {
         const rData = receiverDoc.data();
         await updateDoc(receiverRef, {
           xp: (rData.xp || 0) + 15,
-          guildXpContributed: (rData.guildXpContributed || 0) + 15
+          guildXpContributed: (rData.guildXpContributed || 0) + 15,
+          lastHighFiveReceivedAt: nowIso
         });
       }
 
@@ -1056,7 +1094,7 @@ export const realBackend = {
           {
             senderName,
             receiverName,
-            timestamp: new Date().toISOString()
+            timestamp: nowIso
           },
           ...(hall.recentCheers || []).slice(0, 9)
         ];
@@ -1067,7 +1105,7 @@ export const realBackend = {
         });
       }
 
-      return { success: true, senderXpEarned: 10, receiverXpEarned: 15 };
+      return { success: true, senderXpEarned: 10, receiverXpEarned: 15, nowIso };
     } catch (error) {
       console.error("Error sending guild cheer:", error);
       throw error;
@@ -1157,10 +1195,10 @@ export const realBackend = {
       for (const student of guildMembers) {
         const updates = {};
         if (rewardType === 'xp') {
-          updates.xp = (student.xp || 0) + rewardValue;
-          updates.guildXpContributed = (student.guildXpContributed || 0) + rewardValue;
+          updates.xp = Math.max(0, (student.xp || 0) + rewardValue);
+          updates.guildXpContributed = Math.max(0, (student.guildXpContributed || 0) + rewardValue);
         } else if (rewardType === 'coins') {
-          updates.coins = (student.coins || 0) + rewardValue;
+          updates.coins = Math.max(0, (student.coins || 0) + rewardValue);
         } else if (rewardType === 'achievement') {
           const current = student.unlockedAchievements || [];
           if (!current.includes(rewardValue)) {
@@ -1173,7 +1211,38 @@ export const realBackend = {
       }
       return guildMembers.length;
     } catch (error) {
-      console.error("Error rewarding guild:", error);
+      console.error("Error rewarding/adjusting guild:", error);
+      throw error;
+    }
+  },
+
+  // Reset or adjust exploit XP for all members of a guild
+  async resetGuildMembersXp(classId, guildId, { resetTotalXp = false, resetSpiritFlame = false, xpDeduction = null } = {}) {
+    try {
+      const students = await this.getStudents(classId);
+      const guildMembers = students.filter(s => s.guild === guildId);
+
+      for (const student of guildMembers) {
+        const updates = {};
+        if (xpDeduction != null) {
+          updates.xp = Math.max(0, (student.xp || 0) - xpDeduction);
+          updates.guildXpContributed = Math.max(0, (student.guildXpContributed || 0) - xpDeduction);
+        } else {
+          updates.guildXpContributed = 0;
+          if (resetTotalXp) {
+            updates.xp = 0;
+          }
+        }
+        await updateDoc(doc(db, "students", student.id), updates);
+      }
+
+      if (resetSpiritFlame) {
+        await this.updateGuildHall(classId, guildId, { spiritFlame: 0, recentCheers: [] });
+      }
+
+      return guildMembers.length;
+    } catch (error) {
+      console.error("Error resetting guild members XP:", error);
       throw error;
     }
   },
@@ -1945,6 +2014,17 @@ export const realBackend = {
       return { success: true };
     } catch (error) {
       console.error("Error marking purchase fulfilled:", error);
+      throw error;
+    }
+  },
+
+  async deleteStemPurchase(purchaseId) {
+    try {
+      const ref = doc(db, "stem_purchases", purchaseId);
+      await deleteDoc(ref);
+      return { success: true };
+    } catch (error) {
+      console.error("Error deleting STEM purchase:", error);
       throw error;
     }
   },

@@ -33,6 +33,7 @@ const getDefaultState = () => ({
   collaborationCount: 0,
   pathCompletions: {},
   lastActivityReset: null,
+  highFivesSent: {},
 });
 
 // Get the most recent Monday at 7:00 AM (local time)
@@ -91,6 +92,7 @@ export function useGameState(overrideClassId) {
 
   const [categoriesPerRow, setCategoriesPerRow] = useState('auto');
   const [classGuilds, setClassGuilds] = useState(GUILDS);
+  const [highFiveLimit, setHighFiveLimit] = useState('daily');
 
   const loadClassActivities = async () => {
     if (!effectiveClassId) return;
@@ -98,6 +100,10 @@ export function useGameState(overrideClassId) {
       // Fetch the class document once to get both activities and category names
       const classDoc = await backend.getClass(effectiveClassId);
       if (!classDoc) return;
+
+      if (classDoc.highFiveLimit) {
+        setHighFiveLimit(classDoc.highFiveLimit);
+      }
 
       if (classDoc.categoriesPerRow) {
         setCategoriesPerRow(classDoc.categoriesPerRow);
@@ -591,6 +597,7 @@ export function useGameState(overrideClassId) {
     learningPaths, // Export this
     categoriesPerRow, // Export this
     classGuilds, // Export this (supports up to 15 guilds)
+    highFiveLimit, // High-five cooldown frequency limit ('daily' | 'weekly' | 'disabled')
     spendCoins, // Helper to spend coins on STEM supplies
     getCurrentLevel,
     getNextLevelXp,

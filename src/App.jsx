@@ -1141,6 +1141,7 @@ function GameContent({ emulatedClassId } = {}) {
     learningPaths,
     categoriesPerRow,
     classGuilds,
+    highFiveLimit,
     spendCoins,
     getCurrentLevel,
     getNextLevelXp,
@@ -1329,6 +1330,7 @@ function GameContent({ emulatedClassId } = {}) {
           onStateUpdate={refreshClassData}
           guilds={classGuilds}
           spendCoins={spendCoins}
+          highFiveLimit={highFiveLimit}
         />
         <BossChallenge
           completedBosses={gameState.completedBossChallenges}

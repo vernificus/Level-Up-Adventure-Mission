@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { realBackend as backend } from '../services/realBackend';
 import {
   GUILDS, GUILD_LEVELS, GUILD_BANNERS, GUILD_TROPHIES,
-  GUILD_CHALLENGES, DEFAULT_STEM_SUPPLIES, getGuildLevelInfo
+  GUILD_CHALLENGES, DEFAULT_STEM_SUPPLIES, getGuildLevelInfo, getHighFiveCooldownStatus
 } from '../data/gameData';
 import {
   Shield, Users, Trophy, Flame, Sparkles, Star, Award,
@@ -22,7 +22,8 @@ export default function GuildPanel({
   gameState,
   onStateUpdate,
   guilds = GUILDS,
-  spendCoins
+  spendCoins,
+  highFiveLimit = 'daily'
 }) {
   const availableGuilds = guilds && guilds.length > 0 ? guilds : GUILDS;
 
@@ -126,8 +127,17 @@ export default function GuildPanel({
 
   const handleSendCheer = async (targetMember) => {
     if (cheeredMembers[targetMember.id]) return;
+    const lastSent = gameState?.highFivesSent?.[targetMember.id];
+    const status = getHighFiveCooldownStatus(lastSent, highFiveLimit);
+    if (!status.canCheer) {
+      alert(status.reason || 'High-five is currently on cooldown.');
+      return;
+    }
+
+    // Optimistic lock
+    setCheeredMembers(prev => ({ ...prev, [targetMember.id]: true }));
     try {
-      await backend.sendGuildCheer(
+      const res = await backend.sendGuildCheer(
         classId,
         gameState?.id,
         gameState?.name || 'Guild Member',
@@ -135,12 +145,22 @@ export default function GuildPanel({
         targetMember.name,
         currentGuild
       );
-      setCheeredMembers(prev => ({ ...prev, [targetMember.id]: true }));
+      // Persist in local gameState object so cooldown reflects immediately across re-renders
+      if (gameState) {
+        if (!gameState.highFivesSent) gameState.highFivesSent = {};
+        gameState.highFivesSent[targetMember.id] = res?.nowIso || new Date().toISOString();
+      }
       showToast(`⚡ Sent a High-Five to ${targetMember.name}! (+10 XP to you, +15 XP to ${targetMember.name})`);
       if (onStateUpdate) onStateUpdate();
       loadGuildData();
     } catch (e) {
-      alert('Error sending cheer: ' + e.message);
+      // Revert optimistic lock if backend rejected
+      setCheeredMembers(prev => {
+        const next = { ...prev };
+        delete next[targetMember.id];
+        return next;
+      });
+      alert(e.message || 'Error sending high-five');
     }
   };
 
@@ -1017,14 +1037,24 @@ export default function GuildPanel({
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="text-sm font-black text-white">Active Guild Members ({myGuildData?.memberCount || 0})</h4>
-                      <p className="text-xs text-slate-400">Send high-fives to energize your teammates and earn bonus XP!</p>
+                      <p className="text-xs text-slate-400">
+                        Send high-fives to energize your teammates and earn bonus XP!{' '}
+                        <span className="text-amber-400 font-semibold">
+                          ({highFiveLimit === 'weekly' ? 'Limit: 1 per teammate each week' : highFiveLimit === 'disabled' ? 'High-fives currently disabled by teacher' : 'Limit: 1 per teammate daily'})
+                        </span>
+                      </p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {(myGuildData?.members || []).map(m => {
                       const isMe = m.id === gameState?.id;
-                      const hasCheered = cheeredMembers[m.id];
+                      const lastSentIso = gameState?.highFivesSent?.[m.id];
+                      const cooldownStatus = getHighFiveCooldownStatus(lastSentIso, highFiveLimit);
+                      const isCheeredInSession = cheeredMembers[m.id];
+                      const hasCheered = isCheeredInSession || !cooldownStatus.canCheer;
+                      const isDisabled = hasCheered || highFiveLimit === 'disabled';
+
                       return (
                         <div
                           key={m.id}
@@ -1044,15 +1074,33 @@ export default function GuildPanel({
                             {!isMe && (
                               <button
                                 onClick={() => handleSendCheer(m)}
-                                disabled={hasCheered}
+                                disabled={isDisabled}
+                                title={
+                                  highFiveLimit === 'disabled'
+                                    ? 'High-fives disabled by teacher'
+                                    : hasCheered
+                                    ? (isCheeredInSession ? 'High-Five Sent!' : cooldownStatus.reason || 'High-Fived!')
+                                    : 'Send High-Five (+10 XP to you, +15 XP to teammate)'
+                                }
                                 className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all min-h-[44px] ${
-                                  hasCheered
-                                    ? 'bg-slate-700 text-slate-400 cursor-default'
+                                  isDisabled
+                                    ? 'bg-slate-700/80 text-slate-400 cursor-not-allowed border border-slate-600/50'
                                     : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow'
                                 }`}
                               >
-                                <Zap className="w-3.5 h-3.5" />
-                                {hasCheered ? 'High-Fived! ✓' : 'High-Five ⚡'}
+                                <Zap className="w-3.5 h-3.5 flex-shrink-0" />
+                                {highFiveLimit === 'disabled' ? (
+                                  <span>Disabled</span>
+                                ) : hasCheered ? (
+                                  <span className="flex flex-col text-[11px] leading-tight text-left">
+                                    <span>High-Fived! ✓</span>
+                                    <span className="text-[9px] font-normal text-slate-400">
+                                      {isCheeredInSession ? 'Recorded' : cooldownStatus.reason}
+                                    </span>
+                                  </span>
+                                ) : (
+                                  <span>High-Five ⚡</span>
+                                )}
                               </button>
                             )}
                           </div>

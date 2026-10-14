@@ -40,6 +40,10 @@ export default function TeacherPortal({
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState(null);
   const [adminOrgs, setAdminOrgs] = useState([]);
+  // For super admins: 'mine' (only my personal classes) vs 'org' (all organization classes)
+  const [adminViewScope, setAdminViewScope] = useState(() => {
+    return localStorage.getItem('lvlup_admin_view_scope') || 'mine';
+  });
   const [adminOrgFilter, setAdminOrgFilter] = useState(() => {
     return sessionStorage.getItem('lvlup_admin_selected_org') || user?.organizationId || 'all';
   });
@@ -260,7 +264,7 @@ export default function TeacherPortal({
         setAdminOrgs(orgs || []);
       }).catch(e => console.error("Error loading organizations:", e));
     }
-    loadClasses(adminOrgFilter);
+    loadClasses(adminViewScope, adminOrgFilter);
   }, [user?.id, isAdmin]);
 
   useEffect(() => {
@@ -272,6 +276,10 @@ export default function TeacherPortal({
       } else {
         backend.getClass(initialClassId).then(cls => {
           if (cls) {
+            if (isAdmin && cls.teacherId !== user?.id && adminViewScope === 'mine') {
+              setAdminViewScope('org');
+              localStorage.setItem('lvlup_admin_view_scope', 'org');
+            }
             setSelectedClass(cls);
             setClasses(prev => prev.some(c => c.id === cls.id) ? prev : [cls, ...prev]);
             if (onClearInitialClassId) onClearInitialClassId();
@@ -302,12 +310,12 @@ export default function TeacherPortal({
     };
   }, [selectedClass]);
 
-  const loadClasses = async (targetOrg = adminOrgFilter) => {
+  const loadClasses = async (scope = adminViewScope, targetOrg = adminOrgFilter) => {
     setLoading(true);
     try {
       let data = [];
       if (isAdmin) {
-        if (targetOrg === 'personal') {
+        if (scope === 'mine' || targetOrg === 'personal') {
           data = await backend.getClasses(user.id);
         } else if (targetOrg === 'all') {
           data = await backend.getAllClasses();
@@ -329,6 +337,10 @@ export default function TeacherPortal({
         } else {
           backend.getClass(initialClassId).then(cls => {
             if (cls) {
+              if (isAdmin && cls.teacherId !== user?.id && scope === 'mine') {
+                setAdminViewScope('org');
+                localStorage.setItem('lvlup_admin_view_scope', 'org');
+              }
               setSelectedClass(cls);
               setClasses(prev => prev.some(c => c.id === cls.id) ? prev : [cls, ...prev]);
               if (onClearInitialClassId) onClearInitialClassId();
@@ -353,13 +365,13 @@ export default function TeacherPortal({
     if (!newClassName.trim()) return;
 
     try {
-      const orgForClass = (isAdmin && adminOrgFilter !== 'all' && adminOrgFilter !== 'personal')
+      const orgForClass = (isAdmin && adminViewScope === 'org' && adminOrgFilter !== 'all' && adminOrgFilter !== 'personal')
         ? adminOrgFilter
         : (user.organizationId || null);
       await backend.createClass(user.id, newClassName.trim(), orgForClass);
       setNewClassName('');
       setCreatingClass(false);
-      loadClasses(adminOrgFilter);
+      loadClasses(adminViewScope, adminOrgFilter);
     } catch (error) {
       console.error(error);
       alert('Failed to create class: ' + error.message + '\n\nMake sure Firestore is enabled and Security Rules allow writes.');
@@ -372,7 +384,7 @@ export default function TeacherPortal({
       try {
         await backend.deleteClass(classId);
         if (selectedClass?.id === classId) setSelectedClass(null);
-        loadClasses(adminOrgFilter);
+        loadClasses(adminViewScope, adminOrgFilter);
       } catch (error) {
         alert('Error deleting class: ' + error.message);
       }
@@ -417,7 +429,7 @@ export default function TeacherPortal({
   };
 
   const handleRefresh = () => {
-    loadClasses(adminOrgFilter);
+    loadClasses(adminViewScope, adminOrgFilter);
     if (selectedClass) {
       backend.getStudents(selectedClass.id).then(setStudents);
       backend.getCoTeachers(selectedClass.id).then(setCoTeachers);
@@ -687,39 +699,87 @@ export default function TeacherPortal({
 
           {/* Sidebar: Class List */}
           <div className="lg:col-span-1 space-y-4">
-            {/* Super Admin Organization Filter */}
+            {/* Super Admin View Scope Switcher: My Classes vs All Org Classes */}
             {isAdmin && (
-              <div className="bg-slate-900 border border-yellow-500/30 rounded-xl p-3 shadow-md space-y-1.5">
+              <div className="bg-slate-900 border border-amber-500/30 rounded-xl p-3 shadow-md space-y-2.5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-yellow-400 uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
-                    <Crown className="w-3.5 h-3.5" /> Organization Filter
+                  <span className="font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
+                    <Crown className="w-3.5 h-3.5 text-amber-400" /> Admin Scope
                   </span>
                   <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded font-mono font-bold">
                     {classes.length} {classes.length === 1 ? 'class' : 'classes'}
                   </span>
                 </div>
-                <select
-                  value={adminOrgFilter}
-                  onChange={e => {
-                    const val = e.target.value;
-                    setAdminOrgFilter(val);
-                    sessionStorage.setItem('lvlup_admin_selected_org', val);
-                    loadClasses(val);
-                  }}
-                  className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white font-medium outline-none focus:border-yellow-400 transition-colors"
-                >
-                  <option value="all">🌐 All Organizations ({adminOrgs.length})</option>
-                  {adminOrgs.map(o => (
-                    <option key={o.id} value={o.id}>🏫 {o.name} ({o.code})</option>
-                  ))}
-                  <option value="personal">🌟 My Personal Classes Only</option>
-                </select>
+
+                {/* Scope Toggle: My Classes vs All Org Classes */}
+                <div className="grid grid-cols-2 p-1 bg-slate-950 rounded-lg border border-slate-800 gap-1 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (adminViewScope !== 'mine') {
+                        setAdminViewScope('mine');
+                        localStorage.setItem('lvlup_admin_view_scope', 'mine');
+                        loadClasses('mine', adminOrgFilter);
+                      }
+                    }}
+                    className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md font-bold transition-all ${
+                      adminViewScope === 'mine'
+                        ? 'bg-amber-500 text-slate-950 shadow-sm'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                    }`}
+                  >
+                    <User className="w-3.5 h-3.5" />
+                    <span>My Classes</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (adminViewScope !== 'org') {
+                        setAdminViewScope('org');
+                        localStorage.setItem('lvlup_admin_view_scope', 'org');
+                        loadClasses('org', adminOrgFilter);
+                      }
+                    }}
+                    className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md font-bold transition-all ${
+                      adminViewScope === 'org'
+                        ? 'bg-amber-500 text-slate-950 shadow-sm'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                    }`}
+                  >
+                    <Building2 className="w-3.5 h-3.5" />
+                    <span>All Org</span>
+                  </button>
+                </div>
+
+                {/* Sub-filter when Org scope is active */}
+                {adminViewScope === 'org' && (
+                  <div className="space-y-1 pt-1 border-t border-slate-800/80">
+                    <label className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">
+                      Organization Filter
+                    </label>
+                    <select
+                      value={adminOrgFilter}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setAdminOrgFilter(val);
+                        sessionStorage.setItem('lvlup_admin_selected_org', val);
+                        loadClasses('org', val);
+                      }}
+                      className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white font-medium outline-none focus:border-amber-400 transition-colors"
+                    >
+                      <option value="all">🌐 All Organizations ({adminOrgs.length})</option>
+                      {adminOrgs.map(o => (
+                        <option key={o.id} value={o.id}>🏫 {o.name} ({o.code})</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
             )}
 
             <div className="flex items-center justify-between mb-2">
               <h2 className="font-bold text-slate-400 uppercase text-xs tracking-widest">
-                {isAdmin ? 'Organization Classes' : 'Your Classes'}
+                {isAdmin ? (adminViewScope === 'mine' ? 'My Personal Classes' : 'Organization Classes') : 'Your Classes'}
               </h2>
               <button
                 onClick={() => setCreatingClass(true)}
@@ -796,8 +856,19 @@ export default function TeacherPortal({
                 </div>
               ))}
               {classes.length === 0 && !creatingClass && (
-                <div className="text-center py-8 text-slate-500 border-2 border-dashed border-slate-700 rounded-xl">
-                  No classes yet.<br/>Click + to create one.
+                <div className="text-center py-8 text-slate-500 border-2 border-dashed border-slate-700 rounded-xl px-4 text-xs">
+                  {isAdmin && adminViewScope === 'mine' ? (
+                    <>
+                      <p className="font-semibold text-slate-400 mb-1">No personal classes yet.</p>
+                      <p className="text-slate-500">
+                        Click <strong className="text-green-400">+</strong> above to create your own class, or switch to <strong className="text-amber-400">All Org</strong> to oversee all school classes.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      No classes yet.<br/>Click + to create one.
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -813,8 +884,16 @@ export default function TeacherPortal({
                     <div className="flex items-center gap-2 text-xs text-yellow-300">
                       <Crown className="w-4 h-4 text-yellow-400 shrink-0" />
                       <span>
-                        <strong>Super Admin Oversight:</strong> Managing <strong className="text-white">{selectedClass.name}</strong>
-                        {selectedClass.teacherName ? ` (Teacher: ${selectedClass.teacherName})` : ''} as a Super Admin with full teacher privileges.
+                        {selectedClass.teacherId === user.id ? (
+                          <>
+                            <strong>Your Personal Class:</strong> Managing <strong className="text-white">{selectedClass.name}</strong> with full teacher privileges.
+                          </>
+                        ) : (
+                          <>
+                            <strong>Super Admin Oversight:</strong> Managing <strong className="text-white">{selectedClass.name}</strong>
+                            {selectedClass.teacherName ? ` (Teacher: ${selectedClass.teacherName})` : ''} as a Super Admin with full teacher privileges.
+                          </>
+                        )}
                       </span>
                     </div>
                     {onSwitchToAdmin && (

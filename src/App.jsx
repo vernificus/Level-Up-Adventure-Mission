@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Gamepad2, Mic, BarChart3, Palette, CheckCircle2, Trophy, Rocket, Info, X, PlayCircle,
-  Star, Gift, Swords, Users, User, Sparkles, Zap, Shield, ShieldCheck, Crown, Target,
+  Star, Gift, Swords, Users, User, Sparkles, Zap, Shield, ShieldCheck, Crown, Target, Building2,
   Upload, Link, Link2, Clock, CheckCheck, XCircle, ClipboardList, Lock, Eye, FileText, LogOut,
   MessageSquare, Pencil, BookOpen, Award
 } from 'lucide-react';
@@ -1517,6 +1517,9 @@ function AppContent() {
   const [emulationClasses, setEmulationClasses] = useState([]);
   const [emulatedClassId, setEmulatedClassId] = useState(null);
   const [adminTargetClassId, setAdminTargetClassId] = useState(null);
+  const [adminViewScope, setAdminViewScope] = useState(() => {
+    return localStorage.getItem('lvlup_admin_view_scope') || 'mine';
+  });
 
   const isSuperAdmin = user && (
     user.role === 'admin' ||
@@ -1533,18 +1536,25 @@ function AppContent() {
         try {
           let clsList = [];
           if (isSuperAdmin) {
-            if (user.organizationId) {
-              clsList = await backend.getAllClassesByOrg(user.organizationId);
-            }
-            if (!clsList || clsList.length === 0) {
-              clsList = await backend.getAllClasses();
+            if (adminViewScope === 'mine') {
+              clsList = await backend.getClasses(user.id);
+            } else {
+              if (user.organizationId) {
+                clsList = await backend.getAllClassesByOrg(user.organizationId);
+              }
+              if (!clsList || clsList.length === 0) {
+                clsList = await backend.getAllClasses();
+              }
             }
           } else {
             clsList = await backend.getClasses(user.id);
           }
           if (clsList && clsList.length > 0) {
             setEmulationClasses(clsList);
-            setEmulatedClassId(prev => prev || clsList[0].id);
+            setEmulatedClassId(prev => (clsList.some(c => c.id === prev) ? prev : clsList[0].id));
+          } else {
+            setEmulationClasses([]);
+            setEmulatedClassId(null);
           }
         } catch (e) {
           console.error("Error loading emulation classes", e);
@@ -1552,7 +1562,7 @@ function AppContent() {
       };
       loadEmu();
     }
-  }, [user, isSuperAdmin]);
+  }, [user, isSuperAdmin, adminViewScope]);
 
   // Set default view mode when user logs in or role changes
   useEffect(() => {
@@ -1670,6 +1680,45 @@ function AppContent() {
                     <Gamepad2 className="w-4 h-4 text-purple-400" />
                     <span className="font-bold text-white uppercase tracking-wider">Student Emulation Mode</span>
                   </div>
+
+                  {/* Super admin toggle: My Classes vs Org Classes */}
+                  {isSuperAdmin && (
+                    <div className="flex items-center bg-slate-900 border border-purple-700/60 rounded-lg p-0.5 text-[11px] gap-0.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = 'mine';
+                          setAdminViewScope(next);
+                          localStorage.setItem('lvlup_admin_view_scope', next);
+                        }}
+                        className={`flex items-center gap-1 px-2 py-0.5 rounded font-bold transition-all ${
+                          adminViewScope === 'mine'
+                            ? 'bg-amber-500 text-slate-950 shadow-sm'
+                            : 'text-purple-300 hover:text-white'
+                        }`}
+                      >
+                        <User className="w-3 h-3" />
+                        <span>My Classes</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = 'org';
+                          setAdminViewScope(next);
+                          localStorage.setItem('lvlup_admin_view_scope', next);
+                        }}
+                        className={`flex items-center gap-1 px-2 py-0.5 rounded font-bold transition-all ${
+                          adminViewScope === 'org'
+                            ? 'bg-amber-500 text-slate-950 shadow-sm'
+                            : 'text-purple-300 hover:text-white'
+                        }`}
+                      >
+                        <Building2 className="w-3 h-3" />
+                        <span>All Org</span>
+                      </button>
+                    </div>
+                  )}
+
                   {emulationClasses.length > 1 && (
                     <div className="flex items-center gap-2">
                       <span className="text-purple-300 text-xs">Previewing Class:</span>
@@ -1689,9 +1738,16 @@ function AppContent() {
                       Class: <strong className="text-white">{emulationClasses[0].name}</strong>
                     </span>
                   )}
+                  {emulationClasses.length === 0 && (
+                    <span className="text-purple-300 text-xs italic">
+                      {isSuperAdmin && adminViewScope === 'mine'
+                        ? 'No personal classes found (switch to "All Org" or create one in Teacher View)'
+                        : 'No classes found'}
+                    </span>
+                  )}
                 </div>
                 <button
-                  onClick={() => setActiveViewMode(user.role === 'admin' ? 'admin' : 'teacher')}
+                  onClick={() => setActiveViewMode(isSuperAdmin ? 'admin' : 'teacher')}
                   className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg transition-colors border border-purple-400/40"
                 >
                   Exit Emulation

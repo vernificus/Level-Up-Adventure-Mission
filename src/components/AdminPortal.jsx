@@ -177,7 +177,9 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
   const loadClassesForOrg = async (orgId) => {
     try {
       let cls = [];
-      if (orgId === 'all') {
+      if (orgId === 'personal') {
+        cls = await backend.getClasses(user?.id);
+      } else if (orgId === 'all') {
         cls = await backend.getAllClasses();
       } else if (orgId) {
         cls = await backend.getAllClassesByOrg(orgId);
@@ -237,7 +239,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
   const handleCreateClassInOrg = async (e) => {
     e.preventDefault();
     if (!newClassNameForOrg.trim()) return;
-    const targetOrg = classOrgFilter && classOrgFilter !== 'all' ? classOrgFilter : selectedOrgId;
+    const targetOrg = classOrgFilter && classOrgFilter !== 'all' && classOrgFilter !== 'personal' ? classOrgFilter : selectedOrgId;
     if (!targetOrg) {
       alert("Please select an organization first.");
       return;
@@ -250,7 +252,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
       setShowCreateClassModal(false);
       setNewClassNameForOrg('');
       setTargetTeacherForNewClass('');
-      loadClassesForOrg(targetOrg);
+      loadClassesForOrg(classOrgFilter || targetOrg);
       loadAllData();
     } catch (err) {
       setError("Failed to create class: " + err.message);
@@ -1506,12 +1508,13 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                     onChange={e => {
                       const val = e.target.value;
                       setClassOrgFilter(val);
-                      if (val !== 'all') setSelectedOrgId(val);
+                      if (val !== 'all' && val !== 'personal') setSelectedOrgId(val);
                       loadClassesForOrg(val);
                     }}
                     className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs font-bold focus:border-yellow-500 focus:outline-none"
                   >
                     <option value="all">🌐 All Organizations</option>
+                    <option value="personal">🌟 My Personal Classes Only</option>
                     {organizations.map(o => (
                       <option key={o.id} value={o.id}>{o.name} ({o.code})</option>
                     ))}
@@ -2271,7 +2274,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                 >
                   <option value={user?.id || ''}>Current Admin ({user?.name || user?.email})</option>
                   {teachers
-                    .filter(t => !classOrgFilter || classOrgFilter === 'all' || t.organizationId === (classOrgFilter || selectedOrgId))
+                    .filter(t => !classOrgFilter || classOrgFilter === 'all' || classOrgFilter === 'personal' || t.organizationId === (classOrgFilter || selectedOrgId))
                     .map(t => (
                       <option key={t.id} value={t.id}>{t.name} ({t.email})</option>
                     ))}

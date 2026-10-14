@@ -91,6 +91,12 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
   const [renameInput, setRenameInput] = useState('');
   const [savingRename, setSavingRename] = useState(false);
 
+  // Move Class Organization State
+  const [showMoveClassOrgModal, setShowMoveClassOrgModal] = useState(false);
+  const [movingClassForOrg, setMovingClassForOrg] = useState(null);
+  const [targetOrgIdForMove, setTargetOrgIdForMove] = useState('none');
+  const [savingMoveClassOrg, setSavingMoveClassOrg] = useState(false);
+
   const [showCreateClassModal, setShowCreateClassModal] = useState(false);
   const [newClassNameForOrg, setNewClassNameForOrg] = useState('');
   const [targetTeacherForNewClass, setTargetTeacherForNewClass] = useState('');
@@ -221,6 +227,35 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
       setError("Failed to rename class: " + err.message);
     } finally {
       setSavingRename(false);
+    }
+  };
+
+  const handleStartMoveClassOrg = (cls) => {
+    setMovingClassForOrg(cls);
+    setTargetOrgIdForMove(cls.organizationId || 'none');
+    setShowMoveClassOrgModal(true);
+  };
+
+  const handleSaveMoveClassOrg = async (e) => {
+    e.preventDefault();
+    if (!movingClassForOrg) return;
+
+    setSavingMoveClassOrg(true);
+    try {
+      await backend.updateClassOrganization(movingClassForOrg.id, targetOrgIdForMove);
+      const targetOrgName = targetOrgIdForMove === 'none'
+        ? 'Personal (No Organization)'
+        : (organizations.find(o => o.id === targetOrgIdForMove)?.name || 'New Organization');
+      notifySuccess(`Successfully moved "${movingClassForOrg.name}" to ${targetOrgName}`);
+      setShowMoveClassOrgModal(false);
+      setMovingClassForOrg(null);
+      loadClassesForOrg(classOrgFilter || selectedOrgId || 'all');
+      loadAllData();
+    } catch (err) {
+      console.error("Error moving class organization:", err);
+      setError("Failed to move class organization: " + err.message);
+    } finally {
+      setSavingMoveClassOrg(false);
     }
   };
 
@@ -1627,12 +1662,14 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                             <span className="text-slate-500">Teacher:</span>
                             <strong className="text-white font-medium">{cls.teacherName || 'Teacher'}</strong>
                           </div>
-                          {cls.organizationId && (
-                            <div className="flex items-center gap-1.5 text-slate-400">
-                              <span className="text-slate-500">Org:</span>
-                              <span>{organizations.find(o => o.id === cls.organizationId)?.name || 'Assigned Org'}</span>
-                            </div>
-                          )}
+                          <div className="flex items-center gap-1.5 text-slate-400">
+                            <span className="text-slate-500">Org:</span>
+                            {cls.organizationId ? (
+                              <span className="text-slate-300">{organizations.find(o => o.id === cls.organizationId)?.name || 'Assigned Org'}</span>
+                            ) : (
+                              <span className="text-amber-300/80 font-medium">Personal (No Org)</span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -1644,6 +1681,15 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                         >
                           <Eye className="w-3.5 h-3.5" />
                           <span>View as Teacher</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleStartMoveClassOrg(cls)}
+                          className="px-2.5 py-2 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-xl text-xs font-semibold flex items-center gap-1 border border-slate-700 transition-colors"
+                          title="Move class to another organization"
+                        >
+                          <Building2 className="w-3.5 h-3.5 text-amber-400" />
+                          <span className="hidden sm:inline">Move Org</span>
                         </button>
 
                         <button
@@ -2217,6 +2263,86 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                     <>
                       <Check className="w-4 h-4" />
                       <span>Save Changes</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+      {/* ================= MODAL: MOVE CLASS ORGANIZATION ================= */}
+      {showMoveClassOrgModal && movingClassForOrg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-amber-500/30 rounded-2xl max-w-md w-full p-6 shadow-2xl animate-in fade-in duration-200">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Building2 className="w-5 h-5 text-amber-400" /> Move Class Organization
+                </h3>
+                <p className="text-slate-400 text-xs mt-1">
+                  Reassign <strong className="text-slate-200">{movingClassForOrg.name}</strong> (Code: {movingClassForOrg.code}) to another organization.
+                </p>
+              </div>
+              <button
+                onClick={() => { setShowMoveClassOrgModal(false); setMovingClassForOrg(null); }}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveMoveClassOrg} className="space-y-4">
+              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs space-y-1">
+                <div className="text-slate-400">Current Organization:</div>
+                <div className="font-bold text-amber-300">
+                  {movingClassForOrg.organizationId
+                    ? (organizations.find(o => o.id === movingClassForOrg.organizationId)?.name || movingClassForOrg.organizationId)
+                    : '🌟 Personal Class (No Organization)'}
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="admin-target-org-select" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                  Destination Organization *
+                </label>
+                <select
+                  id="admin-target-org-select"
+                  value={targetOrgIdForMove}
+                  onChange={(e) => setTargetOrgIdForMove(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm outline-none focus:border-amber-400"
+                >
+                  <option value="none">🌟 Personal (No Organization)</option>
+                  {organizations.map(o => (
+                    <option key={o.id} value={o.id}>🏫 {o.name} ({o.code})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="p-3 bg-amber-950/20 border border-amber-500/20 rounded-xl text-[11px] text-amber-200/80 leading-relaxed">
+                Moving this class updates its registered organization without altering your overall Super Admin designation or permissions.
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setShowMoveClassOrgModal(false); setMovingClassForOrg(null); }}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingMoveClassOrg}
+                  className="px-5 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 rounded-xl text-sm font-bold flex items-center gap-2"
+                >
+                  {savingMoveClassOrg ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Moving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Building2 className="w-4 h-4" />
+                      <span>Move Class</span>
                     </>
                   )}
                 </button>

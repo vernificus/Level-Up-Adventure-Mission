@@ -53,6 +53,14 @@ export default function TeacherPortal({
   const [renamingClass, setRenamingClass] = useState(null);
   const [renameInput, setRenameInput] = useState('');
   const [savingRename, setSavingRename] = useState(false);
+
+  // Move class organization state
+  const [showMoveOrgModal, setShowMoveOrgModal] = useState(false);
+  const [movingClass, setMovingClass] = useState(null);
+  const [selectedMoveOrgId, setSelectedMoveOrgId] = useState('none');
+  const [savingMoveOrg, setSavingMoveOrg] = useState(false);
+  const [newClassOrgId, setNewClassOrgId] = useState('none');
+
   const [submissions, setSubmissions] = useState([]);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -365,8 +373,8 @@ export default function TeacherPortal({
     if (!newClassName.trim()) return;
 
     try {
-      const orgForClass = (isAdmin && adminViewScope === 'org' && adminOrgFilter !== 'all' && adminOrgFilter !== 'personal')
-        ? adminOrgFilter
+      const orgForClass = isAdmin
+        ? (newClassOrgId === 'none' ? 'none' : newClassOrgId)
         : (user.organizationId || null);
       await backend.createClass(user.id, newClassName.trim(), orgForClass);
       setNewClassName('');
@@ -375,6 +383,41 @@ export default function TeacherPortal({
     } catch (error) {
       console.error(error);
       alert('Failed to create class: ' + error.message + '\n\nMake sure Firestore is enabled and Security Rules allow writes.');
+    }
+  };
+
+  const handleStartMoveClassOrg = (cls) => {
+    setMovingClass(cls);
+    setSelectedMoveOrgId(cls.organizationId || 'none');
+    setShowMoveOrgModal(true);
+  };
+
+  const handleSaveMoveClassOrg = async (e) => {
+    e.preventDefault();
+    if (!movingClass) return;
+
+    setSavingMoveOrg(true);
+    try {
+      await backend.updateClassOrganization(movingClass.id, selectedMoveOrgId);
+      const targetOrgName = selectedMoveOrgId === 'none'
+        ? 'Personal (No Organization)'
+        : (adminOrgs.find(o => o.id === selectedMoveOrgId)?.name || 'the new organization');
+
+      const updatedOrgId = selectedMoveOrgId === 'none' ? null : selectedMoveOrgId;
+      setClasses(prev => prev.map(c => c.id === movingClass.id ? { ...c, organizationId: updatedOrgId } : c));
+      if (selectedClass?.id === movingClass.id) {
+        setSelectedClass(prev => ({ ...prev, organizationId: updatedOrgId }));
+      }
+
+      alert(`Successfully moved "${movingClass.name}" to ${targetOrgName}!`);
+      setShowMoveOrgModal(false);
+      setMovingClass(null);
+      loadClasses(adminViewScope, adminOrgFilter);
+    } catch (err) {
+      console.error("Error moving class organization:", err);
+      alert("Failed to move class organization: " + err.message);
+    } finally {
+      setSavingMoveOrg(false);
     }
   };
 
@@ -782,7 +825,10 @@ export default function TeacherPortal({
                 {isAdmin ? (adminViewScope === 'mine' ? 'My Personal Classes' : 'Organization Classes') : 'Your Classes'}
               </h2>
               <button
-                onClick={() => setCreatingClass(true)}
+                onClick={() => {
+                  setNewClassOrgId(adminViewScope === 'org' && adminOrgFilter !== 'all' && adminOrgFilter !== 'personal' ? adminOrgFilter : 'none');
+                  setCreatingClass(true);
+                }}
                 className="text-green-400 hover:text-green-300"
                 aria-label="Create new class"
               >
@@ -802,6 +848,23 @@ export default function TeacherPortal({
                   onChange={e => setNewClassName(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-700 rounded text-sm text-white mb-2"
                 />
+                {isAdmin && (
+                  <div className="mb-2">
+                    <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                      Organization
+                    </label>
+                    <select
+                      value={newClassOrgId}
+                      onChange={e => setNewClassOrgId(e.target.value)}
+                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded text-xs text-white outline-none focus:border-amber-400"
+                    >
+                      <option value="none">🌟 Personal (No Organization)</option>
+                      {adminOrgs.map(o => (
+                        <option key={o.id} value={o.id}>🏫 {o.name} ({o.code})</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <button type="submit" className="flex-1 bg-green-600 text-xs font-bold py-1 rounded">Create</button>
                   <button type="button" onClick={() => setCreatingClass(false)} className="flex-1 bg-slate-600 text-xs font-bold py-1 rounded">Cancel</button>
@@ -827,12 +890,31 @@ export default function TeacherPortal({
                       <span>Teacher: {cls.teacherName}</span>
                     </div>
                   )}
+                  {isAdmin && cls.organizationId && (
+                    <div className="text-[11px] text-amber-300/80 font-medium flex items-center gap-1 mt-0.5 truncate">
+                      <Building2 className="w-3 h-3 text-amber-400 shrink-0" />
+                      <span className="truncate">{adminOrgs.find(o => o.id === cls.organizationId)?.name || 'Assigned Org'}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center mt-2 text-sm opacity-80">
                     <span className="flex items-center gap-1"><Users className="w-4 h-4" aria-hidden="true" /> {cls.studentCount || 0} Students</span>
                     <span className="font-mono bg-black/20 px-2 rounded text-xs">Code: {cls.code}</span>
                   </div>
 
                   <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {isAdmin && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStartMoveClassOrg(cls);
+                        }}
+                        className="p-1.5 text-amber-300 hover:text-white hover:bg-black/20 rounded"
+                        title="Move to another organization"
+                        aria-label={`Move class ${cls.name} to another organization`}
+                      >
+                        <Building2 className="w-3.5 h-3.5" aria-hidden="true" />
+                      </button>
+                    )}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -911,7 +993,7 @@ export default function TeacherPortal({
                 <div className="bg-slate-800 p-6 rounded-2xl mb-6 border border-slate-700">
                   <div className="flex justify-between items-start">
                     <div>
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex items-center gap-2.5 flex-wrap">
                         <h2 className="text-2xl font-black text-white">{selectedClass.name}</h2>
                         <button
                           onClick={() => handleStartRenameClass(selectedClass)}
@@ -922,7 +1004,34 @@ export default function TeacherPortal({
                           <Pencil className="w-3.5 h-3.5 text-yellow-400" />
                           <span>Rename Class</span>
                         </button>
+                        {isAdmin && (
+                          <button
+                            onClick={() => handleStartMoveClassOrg(selectedClass)}
+                            className="px-2.5 py-1 text-amber-300 hover:text-white hover:bg-amber-950/40 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-semibold bg-slate-900/90 border border-amber-500/40"
+                            title="Move class to another organization"
+                            aria-label={`Move class ${selectedClass.name} to another organization`}
+                          >
+                            <Building2 className="w-3.5 h-3.5 text-amber-400" />
+                            <span>Move Organization</span>
+                          </button>
+                        )}
                       </div>
+                      {isAdmin && (
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Organization:</span>
+                          {selectedClass.organizationId ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                              <Building2 className="w-3 h-3 text-amber-400" />
+                              {adminOrgs.find(o => o.id === selectedClass.organizationId)?.name || 'Assigned Org'}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-slate-700/60 text-slate-300 border border-slate-600">
+                              <User className="w-3 h-3 text-slate-400" />
+                              Personal Class (No Organization)
+                            </span>
+                          )}
+                        </div>
+                      )}
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-slate-400 text-sm">Class Code:</span>
                         <code className="text-xl font-mono font-bold text-green-400 tracking-widest">{selectedClass.code}</code>
@@ -2038,6 +2147,84 @@ export default function TeacherPortal({
                       <>
                         <Check className="w-4 h-4" />
                         <span>Save Changes</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+        {/* ================= MODAL: MOVE CLASS ORGANIZATION ================= */}
+        {showMoveOrgModal && movingClass && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+            <div className="bg-slate-900 border border-amber-500/30 rounded-2xl max-w-md w-full p-6 shadow-2xl animate-in fade-in duration-200">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    <Building2 className="w-5 h-5 text-amber-400" /> Move Class Organization
+                  </h3>
+                  <p className="text-slate-400 text-xs mt-1">
+                    Reassign <strong className="text-slate-200">{movingClass.name}</strong> (Code: {movingClass.code}) to another organization.
+                  </p>
+                </div>
+                <button
+                  onClick={() => { setShowMoveOrgModal(false); setMovingClass(null); }}
+                  className="text-slate-400 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveMoveClassOrg} className="space-y-4">
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs space-y-1">
+                  <div className="text-slate-400">Current Organization:</div>
+                  <div className="font-bold text-amber-300">
+                    {movingClass.organizationId
+                      ? (adminOrgs.find(o => o.id === movingClass.organizationId)?.name || movingClass.organizationId)
+                      : '🌟 Personal Class (No Organization)'}
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="teacher-target-org-select" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                    Destination Organization *
+                  </label>
+                  <select
+                    id="teacher-target-org-select"
+                    value={selectedMoveOrgId}
+                    onChange={(e) => setSelectedMoveOrgId(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm outline-none focus:border-amber-400"
+                  >
+                    <option value="none">🌟 Personal (No Organization)</option>
+                    {adminOrgs.map(o => (
+                      <option key={o.id} value={o.id}>🏫 {o.name} ({o.code})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="p-3 bg-amber-950/20 border border-amber-500/20 rounded-xl text-[11px] text-amber-200/80 leading-relaxed">
+                  Moving this class will update its registered organization without altering your overall Super Admin designation or privileges.
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => { setShowMoveOrgModal(false); setMovingClass(null); }}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-semibold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingMoveOrg}
+                    className="px-5 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 rounded-xl text-sm font-bold flex items-center gap-2"
+                  >
+                    {savingMoveOrg ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Moving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Building2 className="w-4 h-4" />
+                        <span>Move Class</span>
                       </>
                     )}
                   </button>

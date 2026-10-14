@@ -240,7 +240,9 @@ export const realBackend = {
       }
 
       let orgId = organizationId;
-      if (!orgId) {
+      if (organizationId === 'personal' || organizationId === 'none') {
+        orgId = null;
+      } else if (!orgId && organizationId === undefined) {
         try {
           const tDoc = await getDoc(doc(db, "teachers", teacherId));
           if (tDoc.exists() && tDoc.data().organizationId) {
@@ -347,6 +349,56 @@ export const realBackend = {
       throw new Error("Class name cannot be empty");
     }
     return await this.updateClass(classId, { name: newName.trim() });
+  },
+
+  async updateClassOrganization(classId, newOrgId) {
+    try {
+      const classRef = doc(db, "classes", classId);
+      const classSnap = await getDoc(classRef);
+      if (!classSnap.exists()) {
+        throw new Error("Class not found");
+      }
+      const oldOrgId = classSnap.data().organizationId || null;
+      const targetOrgId = (!newOrgId || newOrgId === 'none' || newOrgId === 'personal') ? null : newOrgId;
+
+      await updateDoc(classRef, {
+        organizationId: targetOrgId,
+        updatedAt: serverTimestamp()
+      });
+
+      // Update class counts on organizations if changed
+      if (oldOrgId !== targetOrgId) {
+        if (oldOrgId) {
+          try {
+            const oldOrgRef = doc(db, "organizations", oldOrgId);
+            const oldSnap = await getDoc(oldOrgRef);
+            if (oldSnap.exists()) {
+              const count = Math.max(0, (oldSnap.data().classCount || 1) - 1);
+              await updateDoc(oldOrgRef, { classCount: count });
+            }
+          } catch (e) {
+            console.error("Error decrementing old org class count:", e);
+          }
+        }
+        if (targetOrgId) {
+          try {
+            const newOrgRef = doc(db, "organizations", targetOrgId);
+            const newSnap = await getDoc(newOrgRef);
+            if (newSnap.exists()) {
+              const count = (newSnap.data().classCount || 0) + 1;
+              await updateDoc(newOrgRef, { classCount: count });
+            }
+          } catch (e) {
+            console.error("Error incrementing new org class count:", e);
+          }
+        }
+      }
+
+      return { id: classId, organizationId: targetOrgId };
+    } catch (error) {
+      console.error("Error updating class organization:", error);
+      throw error;
+    }
   },
 
   async deleteClass(classId) {

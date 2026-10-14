@@ -23,9 +23,10 @@ jobs:
           channelId: live
           projectId: level-up-choice-board-game
 
-      - name: Deploy Firestore Rules
+      - name: Deploy Firestore Rules (Optional)
+        continue-on-error: true
         run: |
           echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_LEVEL_UP_CHOICE_BOARD_GAME }}' > sa.json
-          GOOGLE_APPLICATION_CREDENTIALS=sa.json npx firebase-tools deploy --only firestore:rules --project level-up-choice-board-game
+          GOOGLE_APPLICATION_CREDENTIALS=sa.json npx firebase-tools deploy --only firestore:rules --project level-up-choice-board-game || echo "Skipping firestore:rules deploy (service account lacks rules deploy permissions)"
           rm -f sa.json
 

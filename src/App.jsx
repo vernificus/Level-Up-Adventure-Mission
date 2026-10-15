@@ -3,7 +3,7 @@ import {
   Gamepad2, Mic, BarChart3, Palette, CheckCircle2, Trophy, Rocket, Info, X, PlayCircle,
   Star, Gift, Swords, Users, User, Sparkles, Zap, Shield, ShieldCheck, Crown, Target, Building2,
   Upload, Link, Link2, Clock, CheckCheck, XCircle, ClipboardList, Lock, Eye, FileText, LogOut,
-  MessageSquare, Pencil, BookOpen, Award
+  MessageSquare, Pencil, BookOpen, Award, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { useGameState } from './hooks/useGameState';
 import {
@@ -270,6 +270,7 @@ function BossChallenge({ completedBosses, onSubmit, hasPendingSubmission, active
             ) : (
               <SubmissionForm
                 activityTitle={currentBoss.name}
+                task={currentBoss}
                 onSubmit={handleSubmit}
                 onCancel={() => setShowSubmitForm(false)}
               />
@@ -281,8 +282,62 @@ function BossChallenge({ completedBosses, onSubmit, hasPendingSubmission, active
   );
 }
 
+// Render text with basic markdown-style formatting: **bold** and *italic*
+function renderFormattedText(text) {
+  if (!text) return null;
+  const parts = [];
+  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*)/g;
+  let lastIndex = 0;
+  let key = 0;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(<span key={key++}>{text.slice(lastIndex, match.index)}</span>);
+    }
+    if (match[2]) {
+      parts.push(<strong key={key++} className="font-bold text-white">{match[2]}</strong>);
+    } else if (match[3]) {
+      parts.push(<em key={key++} className="italic text-slate-200">{match[3]}</em>);
+    }
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(<span key={key++}>{text.slice(lastIndex)}</span>);
+  }
+
+  return parts.length > 0 ? parts : text;
+}
+
+// Render a single step, handling both old string format and new object format
+function renderStep(step, idx) {
+  // Backward compat: old steps are plain strings
+  const stepObj = typeof step === 'string' ? { text: step } : step;
+
+  return (
+    <li key={idx} className="flex gap-3 text-slate-300">
+      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-slate-700 text-yellow-500 flex items-center justify-center text-xs font-bold border border-slate-600">{idx + 1}</span>
+      <div className="text-sm leading-relaxed">
+        <span>{renderFormattedText(stepObj.text)}</span>
+        {stepObj.link && (
+          <a
+            href={stepObj.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 ml-1 text-blue-400 hover:text-blue-300 underline transition-colors"
+          >
+            <Link2 className="w-3 h-3" aria-hidden="true" />
+            {stepObj.linkText || stepObj.link}
+          </a>
+        )}
+      </div>
+    </li>
+  );
+}
+
 // ============== SUBMISSION FORM ==============
-function SubmissionForm({ activityTitle, onSubmit, onCancel }) {
+function SubmissionForm({ activityTitle, task, onSubmit, onCancel }) {
   const [submissionType, setSubmissionType] = useState('link');
   const [linkValue, setLinkValue] = useState('');
   const [textValue, setTextValue] = useState('');
@@ -291,7 +346,18 @@ function SubmissionForm({ activityTitle, onSubmit, onCancel }) {
   const [fileType, setFileType] = useState('');
   const [note, setNote] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showDirections, setShowDirections] = useState(true);
   const fileInputRef = useRef(null);
+
+  const validSteps = (task?.steps || []).filter(s => {
+    if (!s) return false;
+    if (typeof s === 'string') return s.trim().length > 0;
+    return s.text && s.text.trim().length > 0;
+  });
+
+  const hasDirections = Boolean(
+    task && (validSteps.length > 0 || task.desc || task.requirements || task.proTip)
+  );
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -355,8 +421,78 @@ function SubmissionForm({ activityTitle, onSubmit, onCancel }) {
 
   return (
     <div>
-      <h3 className="text-xl font-black uppercase italic mb-4 text-center">Submit Your Work</h3>
-      <p className="text-slate-400 text-sm text-center mb-6">for: {activityTitle}</p>
+      <div className="text-center mb-4">
+        <h3 className="text-xl font-black uppercase italic text-white">Submit Your Work</h3>
+        <p className="text-slate-400 text-sm">
+          for: <span className="text-yellow-400 font-bold">{activityTitle}</span>
+        </p>
+      </div>
+
+      {hasDirections && (
+        <div className="mb-5 bg-slate-900/60 border border-slate-700 rounded-xl overflow-hidden shadow-inner">
+          <button
+            type="button"
+            onClick={() => setShowDirections(prev => !prev)}
+            className="w-full px-4 py-2.5 bg-slate-800/90 hover:bg-slate-700/80 flex items-center justify-between text-left transition-colors border-b border-slate-700/60 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+            aria-expanded={showDirections}
+            aria-controls="submission-task-directions"
+          >
+            <div className="flex items-center gap-2 flex-wrap">
+              <BookOpen className="w-4 h-4 text-yellow-400" aria-hidden="true" />
+              <span className="font-bold text-sm text-white">Task Directions</span>
+              {validSteps.length > 0 && (
+                <span className="text-[11px] font-semibold bg-slate-700 text-yellow-400 px-2 py-0.5 rounded-full border border-slate-600">
+                  {validSteps.length} {validSteps.length === 1 ? 'step' : 'steps'}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
+              <span>{showDirections ? 'Hide Directions' : 'View Directions'}</span>
+              {showDirections ? (
+                <ChevronUp className="w-4 h-4 text-slate-400" aria-hidden="true" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-slate-400" aria-hidden="true" />
+              )}
+            </div>
+          </button>
+
+          {showDirections && (
+            <div id="submission-task-directions" className="p-4 space-y-3 max-h-56 overflow-y-auto">
+              {task.desc && (
+                <p className="text-sm text-slate-200 bg-slate-800/70 p-2.5 rounded-lg border border-slate-700 leading-relaxed">
+                  {renderFormattedText(task.desc)}
+                </p>
+              )}
+
+              {task.requirements && (
+                <div className="text-xs text-yellow-200 bg-yellow-950/40 border border-yellow-800/50 p-2.5 rounded-lg">
+                  <strong className="text-yellow-400">Requirements: </strong>
+                  {renderFormattedText(task.requirements)}
+                </div>
+              )}
+
+              {validSteps.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Steps to follow:</h4>
+                  <ol className="space-y-2">
+                    {validSteps.map((step, idx) => renderStep(step, idx))}
+                  </ol>
+                </div>
+              )}
+
+              {task.proTip && (
+                <div className="bg-blue-900/30 border border-blue-500/40 p-2.5 rounded-lg flex items-start gap-2">
+                  <Trophy className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                  <div className="text-xs text-blue-100">
+                    <span className="font-bold uppercase tracking-wide text-blue-400 mr-1">Pro Tip:</span>
+                    {renderFormattedText(task.proTip)}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex gap-2 mb-6" role="group" aria-label="Submission type">
         {typeButtons.map(({ type, icon: Icon, label }) => (
@@ -983,60 +1119,6 @@ function ActivityCard({ path, selectedOption, onSelect, completedActivities, pen
 }
 
 // ============== INSTRUCTION MODAL ==============
-// Render text with basic markdown-style formatting: **bold** and *italic*
-function renderFormattedText(text) {
-  if (!text) return null;
-  const parts = [];
-  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*)/g;
-  let lastIndex = 0;
-  let key = 0;
-  let match;
-
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(<span key={key++}>{text.slice(lastIndex, match.index)}</span>);
-    }
-    if (match[2]) {
-      parts.push(<strong key={key++} className="font-bold text-white">{match[2]}</strong>);
-    } else if (match[3]) {
-      parts.push(<em key={key++} className="italic text-slate-200">{match[3]}</em>);
-    }
-    lastIndex = match.index + match[0].length;
-  }
-
-  if (lastIndex < text.length) {
-    parts.push(<span key={key++}>{text.slice(lastIndex)}</span>);
-  }
-
-  return parts.length > 0 ? parts : text;
-}
-
-// Render a single step, handling both old string format and new object format
-function renderStep(step, idx) {
-  // Backward compat: old steps are plain strings
-  const stepObj = typeof step === 'string' ? { text: step } : step;
-
-  return (
-    <li key={idx} className="flex gap-3 text-slate-300">
-      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-slate-700 text-yellow-500 flex items-center justify-center text-xs font-bold border border-slate-600">{idx + 1}</span>
-      <div className="text-sm leading-relaxed">
-        <span>{renderFormattedText(stepObj.text)}</span>
-        {stepObj.link && (
-          <a
-            href={stepObj.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 ml-1 text-blue-400 hover:text-blue-300 underline transition-colors"
-          >
-            <Link2 className="w-3 h-3" aria-hidden="true" />
-            {stepObj.linkText || stepObj.link}
-          </a>
-        )}
-      </div>
-    </li>
-  );
-}
-
 function InstructionModal({ activity, path, onSubmit, onClose, dailyQuest, dailyCompleted, isPending, isCompleted }) {
   const [showSubmitForm, setShowSubmitForm] = useState(false);
 
@@ -1121,6 +1203,7 @@ function InstructionModal({ activity, path, onSubmit, onClose, dailyQuest, daily
         ) : (
           <SubmissionForm
             activityTitle={activity.title}
+            task={activity}
             onSubmit={handleSubmit}
             onCancel={() => setShowSubmitForm(false)}
           />

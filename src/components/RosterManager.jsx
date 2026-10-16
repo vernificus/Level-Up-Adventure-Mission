@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { realBackend as backend } from '../services/realBackend';
-import { UserPlus, Lock, Trash2, Save, Edit, X, Check, RotateCcw, Gift, Star, Zap, Trophy, Eye, EyeOff, Sparkles, User, ShieldCheck } from 'lucide-react';
+import { UserPlus, Lock, Trash2, Save, Edit, X, Check, RotateCcw, Gift, Star, Zap, Trophy, Eye, EyeOff, Sparkles, User, ShieldCheck, FileText } from 'lucide-react';
 import { ACHIEVEMENTS, LEVELS, AVATAR_ITEMS } from '../data/gameData';
 import Avatar3D, { AvatarColorSwatch } from './Avatar3D';
+import StudentSubmissionsModal from './StudentSubmissionsModal';
 
-export default function RosterManager({ classId, onStudentAdded }) {
+export default function RosterManager({
+  classId,
+  className = '',
+  onStudentAdded,
+  submissions: propSubmissions = [],
+  onReview
+}) {
   const [students, setStudents] = useState([]);
   const [newStudentName, setNewStudentName] = useState('');
   const [newStudentPassword, setNewStudentPassword] = useState('');
@@ -13,6 +20,20 @@ export default function RosterManager({ classId, onStudentAdded }) {
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', password: '' });
   const [visiblePasswords, setVisiblePasswords] = useState({});
+
+  // Submissions Portfolio State
+  const [internalSubmissions, setInternalSubmissions] = useState(propSubmissions || []);
+  const [inspectSubmissionsStudent, setInspectSubmissionsStudent] = useState(null);
+
+  useEffect(() => {
+    if (propSubmissions && propSubmissions.length > 0) {
+      setInternalSubmissions(propSubmissions);
+    } else if (classId) {
+      backend.getSubmissions(classId).then(subs => {
+        setInternalSubmissions(subs || []);
+      }).catch(err => console.error("Error fetching roster submissions:", err));
+    }
+  }, [classId, propSubmissions]);
 
   // Student Avatar & Rewards Inspector State
   const [inspectStudent, setInspectStudent] = useState(null);
@@ -372,6 +393,7 @@ export default function RosterManager({ classId, onStudentAdded }) {
                 ) : (
                   <>
                     <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => setInspectSubmissionsStudent(student)} className="p-1 text-slate-400 hover:text-green-400" aria-label={`View submissions from ${student.name}`} title="View student submissions"><FileText className="w-4 h-4" aria-hidden="true" /></button>
                       <button onClick={() => { setRewardTarget(student); setRewardType('xp'); setRewardAmount(''); setRewardAchievement(''); }} className="p-1 text-slate-400 hover:text-yellow-400" aria-label={`Give reward to ${student.name}`}><Gift className="w-4 h-4" aria-hidden="true" /></button>
                       <button onClick={() => handleResetActivities(student)} className="p-1 text-slate-400 hover:text-orange-400" aria-label={`Reset activities for ${student.name}`}><RotateCcw className="w-4 h-4" aria-hidden="true" /></button>
                       <button onClick={() => handleEdit(student)} className="p-1 text-slate-400 hover:text-white" aria-label={`Edit ${student.name}`}><Edit className="w-4 h-4" aria-hidden="true" /></button>
@@ -404,6 +426,33 @@ export default function RosterManager({ classId, onStudentAdded }) {
                             >
                               <Sparkles className="w-3 h-3" /> Avatar & Rewards
                             </button>
+                            {(() => {
+                              const stSubs = internalSubmissions.filter(s =>
+                                s.studentId === student.id ||
+                                (student.name && s.playerName && s.playerName.trim().toLowerCase() === student.name.trim().toLowerCase())
+                              );
+                              const pendingCount = stSubs.filter(s => s.status === 'pending').length;
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => setInspectSubmissionsStudent(student)}
+                                  className="text-[11px] bg-slate-700 hover:bg-green-500/20 text-green-400 font-semibold px-2 py-0.5 rounded border border-slate-600 hover:border-green-500 transition-colors flex items-center gap-1"
+                                  title={`View all work and assignments submitted by ${student.name}`}
+                                >
+                                  <FileText className="w-3 h-3 text-green-400" /> Submissions
+                                  {stSubs.length > 0 && (
+                                    <span className="px-1 bg-green-500/20 text-green-300 rounded font-bold text-[10px]">
+                                      {stSubs.length}
+                                    </span>
+                                  )}
+                                  {pendingCount > 0 && (
+                                    <span className="px-1 bg-amber-500 text-slate-950 font-black rounded text-[10px] animate-pulse">
+                                      {pendingCount}
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            })()}
                           </div>
                           <p className="text-xs text-slate-400 font-mono bg-slate-800 px-2 py-0.5 rounded inline-flex items-center gap-1 mt-1">
                             Pass: <span className="text-yellow-400">{visiblePasswords[student.id] ? (student.password || 'N/A') : '••••••'}</span>
@@ -432,10 +481,15 @@ export default function RosterManager({ classId, onStudentAdded }) {
                          <span className="text-slate-400 text-xs uppercase font-bold block">Level</span>
                          <p className="font-mono text-blue-400 font-bold">{Math.floor((student.xp || 0)/500)+1}</p>
                        </div>
-                       <div>
-                         <span className="text-slate-400 text-xs uppercase font-bold block">Done</span>
-                         <p className="font-mono text-purple-400 font-bold">{(student.completedActivities || []).length}</p>
-                       </div>
+                       <button
+                         type="button"
+                         onClick={() => setInspectSubmissionsStudent(student)}
+                         className="text-left group/done hover:opacity-80 transition-opacity"
+                         title="Click to view student's completed submissions"
+                       >
+                         <span className="text-slate-400 text-xs uppercase font-bold block group-hover/done:text-green-400">Done</span>
+                         <p className="font-mono text-purple-400 group-hover/done:text-green-300 font-bold">{(student.completedActivities || []).length}</p>
+                       </button>
                     </div>
                   </>
                 )}
@@ -832,6 +886,30 @@ export default function RosterManager({ classId, onStudentAdded }) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Student Submissions Portfolio Modal */}
+      {inspectSubmissionsStudent && (
+        <StudentSubmissionsModal
+          student={inspectSubmissionsStudent}
+          classId={classId}
+          className={className}
+          submissions={internalSubmissions}
+          onReview={async (subId, status, feedback) => {
+            if (onReview) {
+              await onReview(subId, status, feedback);
+            } else {
+              await backend.reviewSubmission(subId, status, feedback);
+            }
+            if (classId) {
+              const subs = await backend.getSubmissions(classId);
+              setInternalSubmissions(subs || []);
+            }
+          }}
+          onClose={() => setInspectSubmissionsStudent(null)}
+          allStudents={students}
+          onSelectStudent={setInspectSubmissionsStudent}
+        />
       )}
     </div>
   );

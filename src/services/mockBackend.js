@@ -254,7 +254,11 @@ export const mockBackend = {
   async getStudentSubmissions(studentId) {
       await wait(DELAY);
       const db = getDB();
-      return db.submissions.filter(s => s.studentId === studentId);
+      const student = db.students.find(st => st.id === studentId);
+      return db.submissions.filter(s => s.studentId === studentId).map(sub => ({
+        ...sub,
+        playerName: sub.playerName || (student ? student.name : 'Unknown')
+      }));
   },
 
   async createSubmission(studentId, classId, submissionData) {

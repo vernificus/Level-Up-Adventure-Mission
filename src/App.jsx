@@ -1600,6 +1600,7 @@ function AppContent() {
   const [emulationClasses, setEmulationClasses] = useState([]);
   const [emulatedClassId, setEmulatedClassId] = useState(null);
   const [adminTargetClassId, setAdminTargetClassId] = useState(null);
+  const [adminTargetTab, setAdminTargetTab] = useState(null);
   const [adminViewScope, setAdminViewScope] = useState(() => {
     return localStorage.getItem('lvlup_admin_view_scope') || 'mine';
   });
@@ -1738,9 +1739,12 @@ function AppContent() {
       <div className="flex-1">
         {currentMode === 'admin' ? (
           <AdminPortal
-            onSwitchToTeacher={(targetClass) => {
+            onSwitchToTeacher={(targetClass, initialTab) => {
               if (targetClass?.id) {
                 setAdminTargetClassId(targetClass.id);
+              }
+              if (initialTab) {
+                setAdminTargetTab(initialTab);
               }
               setActiveViewMode('teacher');
             }}
@@ -1751,7 +1755,11 @@ function AppContent() {
             onSwitchToAdmin={() => setActiveViewMode('admin')}
             onSwitchToStudent={() => setActiveViewMode('student')}
             initialClassId={adminTargetClassId}
-            onClearInitialClassId={() => setAdminTargetClassId(null)}
+            initialTab={adminTargetTab}
+            onClearInitialClassId={() => {
+              setAdminTargetClassId(null);
+              setAdminTargetTab(null);
+            }}
           />
         ) : (
           <div>

@@ -5,7 +5,7 @@ import {
   Building2, Users, BookOpen, Plus, Search, LogOut, CheckCircle2,
   XCircle, Edit, Trash2, ShieldCheck, ChevronRight, Share2, Filter,
   CheckSquare, Square, RefreshCw, AlertCircle, Layers, Sparkles, Shield, Copy,
-  Swords, Package, ShoppingBag, Check, Pencil, Eye, X, Crown, User
+  Swords, Package, ShoppingBag, Check, Pencil, Eye, X, Crown, User, FileText
 } from 'lucide-react';
 import ActivityEditor from './ActivityEditor';
 import LegalModal from './LegalModal';
@@ -196,10 +196,10 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
     }
   };
 
-  const handleViewClassAsTeacher = (cls) => {
+  const handleViewClassAsTeacher = (cls, initialTab) => {
     sessionStorage.setItem('lvlup_admin_selected_org', cls.organizationId || selectedOrgId);
     if (onSwitchToTeacher) {
-      onSwitchToTeacher(cls);
+      onSwitchToTeacher(cls, initialTab);
     }
   };
 
@@ -1680,7 +1680,16 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                           title="Open class in Teacher Portal with full teacher controls"
                         >
                           <Eye className="w-3.5 h-3.5" />
-                          <span>View as Teacher</span>
+                          <span>View Class</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleViewClassAsTeacher(cls, 'submissions')}
+                          className="px-3 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1 border border-blue-500/30 transition-all shadow-sm"
+                          title="Inspect student submissions for this class"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-blue-400" />
+                          <span>Submissions</span>
                         </button>
 
                         <button

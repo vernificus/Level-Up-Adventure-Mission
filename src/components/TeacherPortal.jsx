@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { realBackend as backend } from '../services/realBackend';
 import {
   Users, Plus, LogOut, BookOpen, ClipboardList, CheckCircle2,
   XCircle, Clock, ChevronRight, GraduationCap, Copy, Trash2, Edit, RefreshCw, RotateCcw, Link, Save, Gift,
   Share2, UserPlus, X, Mail, MessageSquare, Sparkles, Star, Trophy, ChevronDown, ChevronUp, BarChart3, Eye, Zap, Building2, Layers, Shield, ShieldCheck,
-  Camera, Upload, Package, ShoppingBag, Swords, Check, Settings, Image as ImageIcon, Award, Crown, Pencil, User, AlertTriangle
+  Camera, Upload, Package, ShoppingBag, Swords, Check, Settings, Image as ImageIcon, Award, Crown, Pencil, User, AlertTriangle,
+  Filter, Search, FileText, ExternalLink, Printer
 } from 'lucide-react';
 import {
   LEVELS, ACHIEVEMENTS, GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, GUILD_TROPHIES,
@@ -20,12 +21,14 @@ import RosterManager from './RosterManager';
 import ChoiceBoardExport from './ChoiceBoardExport';
 import LegalModal from './LegalModal';
 import LevelEconomyGuideModal from './LevelEconomyGuideModal';
+import StudentSubmissionsModal from './StudentSubmissionsModal';
 
 
 export default function TeacherPortal({
   onSwitchToAdmin,
   onSwitchToStudent,
   initialClassId,
+  initialTab,
   onClearInitialClassId
 }) {
   const { user, logout } = useAuth();
@@ -66,7 +69,18 @@ export default function TeacherPortal({
   const [loading, setLoading] = useState(false);
   const [creatingClass, setCreatingClass] = useState(false);
   const [newClassName, setNewClassName] = useState('');
-  const [activeTab, setActiveTab] = useState('submissions'); // 'submissions', 'students', 'activities', 'categories'
+  const [activeTab, setActiveTab] = useState(initialTab || 'submissions'); // 'submissions', 'students', 'activities', 'categories'
+  const [submissionsViewMode, setSubmissionsViewMode] = useState('queue'); // 'queue' | 'by_student'
+  const [selectedStudentFilterId, setSelectedStudentFilterId] = useState('all');
+  const [inspectingStudentSubmissions, setInspectingStudentSubmissions] = useState(null);
+  const [studentDirectorySearch, setStudentDirectorySearch] = useState('');
+  const [studentDirectoryFilter, setStudentDirectoryFilter] = useState('all'); // 'all', 'pending', 'has_submissions', 'no_submissions'
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
   const [legalModalOpen, setLegalModalOpen] = useState(false);
   const [legalTab, setLegalTab] = useState('privacy');
   const [categoryNames, setCategoryNames] = useState({});
@@ -686,9 +700,31 @@ export default function TeacherPortal({
     }
   };
 
-  // Filter submissions
-  const pending = submissions.filter(s => s.status === 'pending');
-  const reviewed = submissions.filter(s => s.status !== 'pending');
+  // Filter submissions (supports filtering by individual student)
+  const activeSubmissions = useMemo(() => {
+    if (selectedStudentFilterId === 'all') return submissions;
+    const targetStudent = students.find(s => s.id === selectedStudentFilterId);
+    return submissions.filter(s =>
+      s.studentId === selectedStudentFilterId ||
+      (targetStudent?.name && s.playerName && s.playerName.trim().toLowerCase() === targetStudent.name.trim().toLowerCase())
+    );
+  }, [submissions, selectedStudentFilterId, students]);
+
+  const pending = activeSubmissions.filter(s => s.status === 'pending');
+  const reviewed = activeSubmissions.filter(s => s.status !== 'pending');
+
+  const selectedStudentObj = useMemo(() => {
+    if (selectedStudentFilterId === 'all') return null;
+    return students.find(s => s.id === selectedStudentFilterId) || null;
+  }, [selectedStudentFilterId, students]);
+
+  const handleInspectStudentFromSubmission = (sub) => {
+    const foundStudent = students.find(s =>
+      s.id === sub.studentId ||
+      (s.name && sub.playerName && s.name.trim().toLowerCase() === sub.playerName.trim().toLowerCase())
+    ) || { id: sub.studentId, name: sub.playerName || 'Student' };
+    setInspectingStudentSubmissions(foundStudent);
+  };
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 p-8 font-sans">
@@ -1626,37 +1662,414 @@ export default function TeacherPortal({
                 )}
 
                 {activeTab === 'students' && (
-                  <div role="tabpanel" id="tabpanel-students" aria-labelledby="tab-students"><RosterManager
-                    classId={selectedClass.id}
-                    onStudentAdded={() => backend.getStudents(selectedClass.id).then(setStudents)}
-                  /></div>
+                  <div role="tabpanel" id="tabpanel-students" aria-labelledby="tab-students">
+                    <RosterManager
+                      classId={selectedClass.id}
+                      className={selectedClass.name}
+                      onStudentAdded={() => backend.getStudents(selectedClass.id).then(setStudents)}
+                      submissions={submissions}
+                      onReview={handleReview}
+                    />
+                  </div>
                 )}
 
                 {activeTab === 'submissions' && (
-                  <div role="tabpanel" id="tabpanel-submissions" aria-labelledby="tab-submissions">
+                  <div role="tabpanel" id="tabpanel-submissions" aria-labelledby="tab-submissions" className="space-y-6">
                     {loading ? (
                       <div className="text-center py-12 text-slate-500" role="status" aria-live="polite">Loading submissions...</div>
                     ) : (
                       <>
-                        <h3 className="font-bold text-slate-400 uppercase text-xs tracking-widest mb-4 flex items-center gap-2">
-                          <Clock className="w-4 h-4" aria-hidden="true" /> Pending Reviews ({pending.length})
-                        </h3>
+                        {/* ── SUBMISSIONS VIEW CONTROLS ── */}
+                        <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-slate-800/80 rounded-2xl border border-slate-700 shadow-sm">
+                          {/* View Mode Toggle: Queue vs By Student */}
+                          <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold">
+                            <button
+                              type="button"
+                              onClick={() => setSubmissionsViewMode('queue')}
+                              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg transition-all ${
+                                submissionsViewMode === 'queue'
+                                  ? 'bg-slate-800 text-white shadow-sm'
+                                  : 'text-slate-400 hover:text-white'
+                              }`}
+                            >
+                              <Clock className="w-4 h-4 text-amber-400" />
+                              <span>Activity Queue</span>
+                              {pending.length > 0 && (
+                                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-slate-950">
+                                  {pending.length}
+                                </span>
+                              )}
+                            </button>
 
-                        {pending.length === 0 ? (
-                          <div className="bg-slate-800/50 rounded-xl p-8 text-center text-slate-500 mb-8">
-                            <CheckCircle2 className="w-12 h-12 mx-auto mb-2 opacity-20" aria-hidden="true" />
-                            No pending submissions. You're all caught up!
+                            <button
+                              type="button"
+                              onClick={() => setSubmissionsViewMode('by_student')}
+                              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg transition-all ${
+                                submissionsViewMode === 'by_student'
+                                  ? 'bg-green-600 text-white shadow-sm'
+                                  : 'text-slate-400 hover:text-white'
+                              }`}
+                            >
+                              <Users className="w-4 h-4" />
+                              <span>Organized By Student</span>
+                              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300">
+                                {students.length}
+                              </span>
+                            </button>
                           </div>
-                        ) : (
-                          <div className="space-y-4 mb-8">
-                            {pending.map(sub => (
-                              <SubmissionCard key={sub.id} submission={sub} onReview={handleReview} />
-                            ))}
+
+                          {/* Quick Actions / Filter by Student */}
+                          {submissionsViewMode === 'queue' && (
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-xs text-slate-400 font-semibold flex items-center gap-1">
+                                <Filter className="w-3.5 h-3.5 text-green-400" /> Filter Student:
+                              </span>
+                              <select
+                                value={selectedStudentFilterId}
+                                onChange={(e) => setSelectedStudentFilterId(e.target.value)}
+                                className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs font-semibold focus:border-green-500 focus:outline-none max-w-[240px]"
+                                aria-label="Filter submissions by student"
+                              >
+                                <option value="all">All Students ({submissions.length} submissions)</option>
+                                {students.map(s => {
+                                  const sTotal = submissions.filter(sub =>
+                                    sub.studentId === s.id ||
+                                    (sub.playerName && sub.playerName.toLowerCase() === s.name.toLowerCase())
+                                  ).length;
+                                  const sPending = submissions.filter(sub =>
+                                    (sub.studentId === s.id || (sub.playerName && sub.playerName.toLowerCase() === s.name.toLowerCase())) &&
+                                    sub.status === 'pending'
+                                  ).length;
+                                  return (
+                                    <option key={s.id} value={s.id}>
+                                      {s.name} ({sTotal} total{sPending > 0 ? ` • ${sPending} pending` : ''})
+                                    </option>
+                                  );
+                                })}
+                              </select>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* ── FILTERED STUDENT BANNER (IF FILTERED IN QUEUE) ── */}
+                        {submissionsViewMode === 'queue' && selectedStudentObj && (
+                          <div className="bg-gradient-to-r from-slate-900 to-slate-800 border border-green-500/40 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-md">
+                            <div className="flex items-center gap-3">
+                              <div className="rounded-xl overflow-hidden bg-slate-950 p-1 border border-slate-700 flex-shrink-0">
+                                <Avatar3D
+                                  avatar={selectedStudentObj.avatar || { color: 'default', hat: 'none', accessory: 'none', face: 'happy' }}
+                                  level={(() => {
+                                    const lvl = LEVELS.reduce((acc, l) => (selectedStudentObj.xp || 0) >= l.xpRequired ? l : acc, LEVELS[0]);
+                                    return lvl.level;
+                                  })()}
+                                  size="sm"
+                                />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-bold text-white text-base">{selectedStudentObj.name}</h4>
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-green-500/20 text-green-300 border border-green-500/30">
+                                    Filtered View
+                                  </span>
+                                </div>
+                                <p className="text-xs text-slate-400 mt-0.5">
+                                  {activeSubmissions.length} Total &bull; {pending.length} Pending &bull; {reviewed.filter(s => s.status === 'approved').length} Approved
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setInspectingStudentSubmissions(selectedStudentObj)}
+                                className="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-xl text-xs font-bold transition-all shadow flex items-center gap-1.5"
+                              >
+                                <FileText className="w-3.5 h-3.5" />
+                                <span>Open Full Portfolio</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedStudentFilterId('all')}
+                                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold border border-slate-700 transition-colors"
+                              >
+                                Show All Students
+                              </button>
+                            </div>
                           </div>
                         )}
 
-                        {reviewed.length > 0 && (
-                          <ReviewedSubmissions reviewed={reviewed} onReview={handleReview} />
+                        {/* ── VIEW MODE: QUEUE ── */}
+                        {submissionsViewMode === 'queue' ? (
+                          <>
+                            <h3 className="font-bold text-slate-400 uppercase text-xs tracking-widest flex items-center gap-2">
+                              <Clock className="w-4 h-4 text-amber-400" aria-hidden="true" />
+                              Pending Reviews ({pending.length})
+                              {selectedStudentObj && <span className="text-slate-500 lowercase">for {selectedStudentObj.name}</span>}
+                            </h3>
+
+                            {pending.length === 0 ? (
+                              <div className="bg-slate-800/50 rounded-xl p-8 text-center text-slate-500 mb-8">
+                                <CheckCircle2 className="w-12 h-12 mx-auto mb-2 opacity-20 text-green-400" aria-hidden="true" />
+                                {selectedStudentObj
+                                  ? `No pending submissions for ${selectedStudentObj.name}. All caught up!`
+                                  : "No pending submissions. You're all caught up!"}
+                              </div>
+                            ) : (
+                              <div className="space-y-4 mb-8">
+                                {pending.map(sub => (
+                                  <SubmissionCard
+                                    key={sub.id}
+                                    submission={sub}
+                                    onReview={handleReview}
+                                    onInspectStudent={handleInspectStudentFromSubmission}
+                                  />
+                                ))}
+                              </div>
+                            )}
+
+                            {reviewed.length > 0 ? (
+                              <ReviewedSubmissions
+                                reviewed={reviewed}
+                                onReview={handleReview}
+                                onInspectStudent={handleInspectStudentFromSubmission}
+                              />
+                            ) : selectedStudentObj && (
+                              <div className="bg-slate-800/30 rounded-xl p-6 text-center text-slate-500 border border-slate-800">
+                                No reviewed submissions found for {selectedStudentObj.name} yet.
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          /* ── VIEW MODE: ORGANIZED BY STUDENT DIRECTORY ── */
+                          <div className="space-y-5">
+                            {/* Student Directory Controls */}
+                            <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-800/80 p-4 rounded-xl border border-slate-700">
+                              <div className="relative flex-1 min-w-[240px] max-w-md">
+                                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                                <input
+                                  type="text"
+                                  placeholder="Search students in this class..."
+                                  value={studentDirectorySearch}
+                                  onChange={e => setStudentDirectorySearch(e.target.value)}
+                                  className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs placeholder:text-slate-500 focus:border-green-500 focus:outline-none"
+                                />
+                                {studentDirectorySearch && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setStudentDirectorySearch('')}
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs"
+                                  >
+                                    ✕
+                                  </button>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-2 flex-wrap text-xs">
+                                {(() => {
+                                  const pendingCount = students.filter(st => {
+                                    return submissions.some(s =>
+                                      (s.studentId === st.id || (st.name && s.playerName && s.playerName.trim().toLowerCase() === st.name.trim().toLowerCase())) &&
+                                      s.status === 'pending'
+                                    );
+                                  }).length;
+
+                                  const withSubsCount = students.filter(st => {
+                                    return submissions.some(s =>
+                                      s.studentId === st.id ||
+                                      (st.name && s.playerName && s.playerName.trim().toLowerCase() === st.name.trim().toLowerCase())
+                                    );
+                                  }).length;
+
+                                  const noSubsCount = students.length - withSubsCount;
+
+                                  return [
+                                    { id: 'all', label: `All (${students.length})` },
+                                    { id: 'pending', label: `Needs Review (${pendingCount})`, isAlert: pendingCount > 0 },
+                                    { id: 'has_submissions', label: `With Submissions (${withSubsCount})` },
+                                    { id: 'no_submissions', label: `No Submissions (${noSubsCount})` }
+                                  ].map(pill => (
+                                    <button
+                                      key={pill.id}
+                                      type="button"
+                                      onClick={() => setStudentDirectoryFilter(pill.id)}
+                                      className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                                        studentDirectoryFilter === pill.id
+                                          ? 'bg-green-600 text-white shadow-sm'
+                                          : pill.isAlert
+                                          ? 'bg-amber-500/10 text-amber-300 border border-amber-500/40 hover:bg-amber-500/20'
+                                          : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-700/60'
+                                      }`}
+                                    >
+                                      {pill.label}
+                                    </button>
+                                  ));
+                                })()}
+                              </div>
+                            </div>
+
+                            {/* Student Cards Directory Grid */}
+                            {(() => {
+                              const filteredList = students
+                                .filter(st => {
+                                  // Directory search
+                                  if (studentDirectorySearch.trim()) {
+                                    const q = studentDirectorySearch.toLowerCase().trim();
+                                    if (!st.name?.toLowerCase().includes(q)) return false;
+                                  }
+
+                                  const stSubs = submissions.filter(s =>
+                                    s.studentId === st.id ||
+                                    (st.name && s.playerName && s.playerName.trim().toLowerCase() === st.name.trim().toLowerCase())
+                                  );
+
+                                  if (studentDirectoryFilter === 'pending') {
+                                    return stSubs.some(s => s.status === 'pending');
+                                  }
+                                  if (studentDirectoryFilter === 'has_submissions') {
+                                    return stSubs.length > 0;
+                                  }
+                                  if (studentDirectoryFilter === 'no_submissions') {
+                                    return stSubs.length === 0;
+                                  }
+                                  return true;
+                                });
+
+                              if (filteredList.length === 0) {
+                                return (
+                                  <div className="bg-slate-800/40 border border-dashed border-slate-800 rounded-2xl p-12 text-center">
+                                    <Users className="w-12 h-12 text-slate-600 mx-auto mb-3 opacity-40" />
+                                    <h4 className="text-base font-bold text-white mb-1">No Students Found</h4>
+                                    <p className="text-xs text-slate-400">No students match your directory filter or search term.</p>
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                  {filteredList.map(st => {
+                                    const stSubs = submissions.filter(s =>
+                                      s.studentId === st.id ||
+                                      (st.name && s.playerName && s.playerName.trim().toLowerCase() === st.name.trim().toLowerCase())
+                                    );
+                                    const stPending = stSubs.filter(s => s.status === 'pending');
+                                    const stApproved = stSubs.filter(s => s.status === 'approved');
+                                    const stRejected = stSubs.filter(s => s.status === 'rejected');
+                                    const stXp = stApproved.reduce((acc, s) => acc + (parseInt(s.xp) || 0), 0);
+
+                                    const lvl = LEVELS.reduce((acc, l) => (st.xp || 0) >= l.xpRequired ? l : acc, LEVELS[0]);
+                                    const sortedSubs = [...stSubs].sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0));
+                                    const latestSub = sortedSubs[0];
+
+                                    return (
+                                      <div
+                                        key={st.id}
+                                        className={`bg-slate-800 rounded-2xl p-5 border transition-all shadow-md flex flex-col justify-between group hover:border-slate-600 ${
+                                          stPending.length > 0 ? 'border-amber-500/50 bg-gradient-to-br from-slate-800 to-amber-950/20' : 'border-slate-700/80'
+                                        }`}
+                                      >
+                                        <div>
+                                          <div className="flex items-start justify-between gap-3 mb-3">
+                                            <div className="flex items-center gap-3">
+                                              <button
+                                                type="button"
+                                                onClick={() => setInspectingStudentSubmissions(st)}
+                                                className="rounded-xl overflow-hidden bg-slate-950 p-1 border border-slate-700 flex-shrink-0 hover:ring-2 hover:ring-green-400 transition-all cursor-pointer"
+                                                title={`View ${st.name}'s submission portfolio`}
+                                              >
+                                                <Avatar3D
+                                                  avatar={st.avatar || { color: 'default', hat: 'none', accessory: 'none', face: 'happy' }}
+                                                  level={lvl.level}
+                                                  size="sm"
+                                                />
+                                              </button>
+                                              <div>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => setInspectingStudentSubmissions(st)}
+                                                  className="font-bold text-white text-base leading-tight hover:text-green-400 transition-colors text-left"
+                                                >
+                                                  {st.name}
+                                                </button>
+                                                <p className={`text-xs font-semibold ${lvl.color}`}>
+                                                  Lvl {lvl.level} - {lvl.title}
+                                                </p>
+                                              </div>
+                                            </div>
+
+                                            {stPending.length > 0 ? (
+                                              <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-full text-[10px] font-black uppercase tracking-wider animate-pulse flex items-center gap-1">
+                                                <Clock className="w-3 h-3" /> {stPending.length} Pending
+                                              </span>
+                                            ) : stSubs.length > 0 ? (
+                                              <span className="px-2 py-0.5 bg-emerald-950 text-emerald-300 border border-emerald-800/40 rounded-full text-[10px] font-bold">
+                                                {stApproved.length} Approved
+                                              </span>
+                                            ) : (
+                                              <span className="px-2 py-0.5 bg-slate-900 text-slate-500 rounded-full text-[10px]">
+                                                No work yet
+                                              </span>
+                                            )}
+                                          </div>
+
+                                          {/* Metrics Breakdown */}
+                                          <div className="grid grid-cols-3 gap-2 my-3 p-2.5 bg-slate-900/70 rounded-xl border border-slate-800 text-center text-xs">
+                                            <div>
+                                              <span className="text-[10px] text-slate-400 uppercase font-bold block">Total</span>
+                                              <strong className="text-white font-mono text-sm">{stSubs.length}</strong>
+                                            </div>
+                                            <div>
+                                              <span className="text-[10px] text-emerald-400 uppercase font-bold block">Approved</span>
+                                              <strong className="text-emerald-300 font-mono text-sm">{stApproved.length}</strong>
+                                            </div>
+                                            <div>
+                                              <span className="text-[10px] text-yellow-400 uppercase font-bold block">XP Won</span>
+                                              <strong className="text-yellow-400 font-mono text-sm">+{stXp}</strong>
+                                            </div>
+                                          </div>
+
+                                          {/* Most recent submission */}
+                                          <div className="text-[11px] text-slate-400 mb-4 truncate">
+                                            {latestSub ? (
+                                              <span title={`Latest: ${latestSub.activityTitle}`}>
+                                                <strong className="text-slate-300">Latest:</strong> {latestSub.activityTitle} ({new Date(latestSub.submittedAt || Date.now()).toLocaleDateString()})
+                                              </span>
+                                            ) : (
+                                              <span className="text-slate-500 italic">No submissions submitted yet.</span>
+                                            )}
+                                          </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2 pt-2 border-t border-slate-700/60">
+                                          <button
+                                            type="button"
+                                            onClick={() => setInspectingStudentSubmissions(st)}
+                                            className="flex-1 py-2 px-3 bg-green-600 hover:bg-green-500 text-white rounded-xl text-xs font-bold transition-all shadow flex items-center justify-center gap-1.5"
+                                          >
+                                            <FileText className="w-3.5 h-3.5" />
+                                            <span>View Submissions ({stSubs.length})</span>
+                                          </button>
+                                          {stSubs.length > 0 && (
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setSelectedStudentFilterId(st.id);
+                                                setSubmissionsViewMode('queue');
+                                              }}
+                                              className="p-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl text-xs font-bold transition-colors border border-slate-600"
+                                              title="Filter activity queue to this student"
+                                              aria-label="Filter activity queue to this student"
+                                            >
+                                              <Filter className="w-3.5 h-3.5" />
+                                            </button>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            })()}
+                          </div>
                         )}
                       </>
                     )}
@@ -2243,6 +2656,20 @@ export default function TeacherPortal({
           isOpen={showGuideModal}
           onClose={() => setShowGuideModal(false)}
         />
+
+        {/* Student Submissions Portfolio Modal */}
+        {inspectingStudentSubmissions && (
+          <StudentSubmissionsModal
+            student={inspectingStudentSubmissions}
+            classId={selectedClass?.id}
+            className={selectedClass?.name}
+            submissions={submissions}
+            onReview={handleReview}
+            onClose={() => setInspectingStudentSubmissions(null)}
+            allStudents={students}
+            onSelectStudent={setInspectingStudentSubmissions}
+          />
+        )}
       </div>
   );
 }
@@ -4014,7 +4441,7 @@ function RewardsManager({ classId }) {
   );
 }
 
-function SubmissionCard({ submission, onReview }) {
+function SubmissionCard({ submission, onReview, onInspectStudent }) {
   const [feedback, setFeedback] = useState('');
   const feedbackId = `feedback-${submission.id}`;
 
@@ -4023,7 +4450,19 @@ function SubmissionCard({ submission, onReview }) {
       <div className="flex justify-between items-start mb-4">
         <div>
           <h4 className="font-bold text-lg text-white">{submission.activityTitle}</h4>
-          <p className="text-blue-400 font-bold">{submission.playerName}</p>
+          {onInspectStudent ? (
+            <button
+              type="button"
+              onClick={() => onInspectStudent(submission)}
+              className="text-blue-400 hover:text-blue-300 font-bold hover:underline flex items-center gap-1.5 text-left transition-colors"
+              title={`Click to view all submissions from ${submission.playerName}`}
+            >
+              <span>{submission.playerName}</span>
+              <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+            </button>
+          ) : (
+            <p className="text-blue-400 font-bold">{submission.playerName}</p>
+          )}
         </div>
         <span className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded">
           {new Date(submission.submittedAt).toLocaleDateString()}
@@ -4094,7 +4533,7 @@ function SubmissionCard({ submission, onReview }) {
   );
 }
 
-function ReviewedSubmissions({ reviewed, onReview }) {
+function ReviewedSubmissions({ reviewed, onReview, onInspectStudent }) {
   const [expandedId, setExpandedId] = useState(null);
   const [showAll, setShowAll] = useState(false);
   const [filter, setFilter] = useState('all'); // 'all', 'approved', 'rejected'
@@ -4150,7 +4589,21 @@ function ReviewedSubmissions({ reviewed, onReview }) {
               <div className="flex items-center gap-3 min-w-0">
                 <div className={`w-2 h-2 rounded-full flex-shrink-0 ${sub.status === 'approved' ? 'bg-green-400' : 'bg-red-400'}`} />
                 <div className="min-w-0">
-                  <p className="font-bold text-white truncate">{sub.playerName}</p>
+                  {onInspectStudent ? (
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onInspectStudent(sub);
+                      }}
+                      className="font-bold text-white hover:text-green-400 hover:underline inline-flex items-center gap-1 truncate text-left transition-colors cursor-pointer"
+                      title={`Click to view all submissions from ${sub.playerName}`}
+                    >
+                      <span className="truncate">{sub.playerName}</span>
+                      <ExternalLink className="w-3 h-3 opacity-60 flex-shrink-0" />
+                    </span>
+                  ) : (
+                    <p className="font-bold text-white truncate">{sub.playerName}</p>
+                  )}
                   <p className="text-sm text-slate-400 truncate">{sub.activityTitle}</p>
                 </div>
               </div>
@@ -4244,11 +4697,23 @@ function ReviewedSubmissions({ reviewed, onReview }) {
                   </div>
                 </div>
 
-                <div className="mt-2 flex gap-4 text-xs text-slate-500">
-                  <span>Submitted: {new Date(sub.submittedAt).toLocaleString()}</span>
-                  {sub.reviewedAt && <span>Reviewed: {new Date(sub.reviewedAt).toLocaleString()}</span>}
-                  <span>XP: {sub.xp}</span>
-                  {sub.isBoss && <span className="text-orange-400 font-bold">Boss Challenge</span>}
+                <div className="mt-3 pt-3 border-t border-slate-700/60 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+                  <div className="flex gap-4 flex-wrap">
+                    <span>Submitted: {new Date(sub.submittedAt).toLocaleString()}</span>
+                    {sub.reviewedAt && <span>Reviewed: {new Date(sub.reviewedAt).toLocaleString()}</span>}
+                    <span>XP: {sub.xp}</span>
+                    {sub.isBoss && <span className="text-orange-400 font-bold">Boss Challenge</span>}
+                  </div>
+                  {onInspectStudent && (
+                    <button
+                      type="button"
+                      onClick={() => onInspectStudent(sub)}
+                      className="text-green-400 hover:text-green-300 font-bold hover:underline flex items-center gap-1.5"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>View All {sub.playerName}'s Work</span>
+                    </button>
+                  )}
                 </div>
               </div>
             )}

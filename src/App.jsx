@@ -3,7 +3,7 @@ import {
   Gamepad2, Mic, BarChart3, Palette, CheckCircle2, Trophy, Rocket, Info, X, PlayCircle,
   Star, Gift, Swords, Users, User, Sparkles, Zap, Shield, ShieldCheck, Crown, Target, Building2,
   Upload, Link, Link2, Clock, CheckCheck, XCircle, ClipboardList, Lock, Eye, FileText, LogOut,
-  MessageSquare, Pencil, BookOpen, Award, ChevronDown, ChevronUp
+  MessageSquare, Pencil, BookOpen, Award, ChevronDown, ChevronUp, RotateCcw, ExternalLink, Filter
 } from 'lucide-react';
 import { useGameState } from './hooks/useGameState';
 import {
@@ -25,7 +25,17 @@ import { realBackend as backend } from './services/realBackend';
 const IconMap = { Mic, BarChart3, Palette, BookOpen };
 
 // ============== PLAYER STATS BAR ==============
-function PlayerStats({ gameState, getCurrentLevel, getNextLevelXp, onOpenProfile, onOpenMysteryBox, onOpenSubmissions, pendingSubmissions }) {
+function PlayerStats({
+  gameState,
+  getCurrentLevel,
+  getNextLevelXp,
+  onOpenProfile,
+  onOpenMysteryBox,
+  onOpenSubmissions,
+  pendingSubmissions = 0,
+  rejectedSubmissions = 0,
+  totalSubmissions = 0
+}) {
   const currentLevel = getCurrentLevel();
   const nextLevelXp = getNextLevelXp();
   const progress = ((gameState.xp - currentLevel.xpRequired) / (nextLevelXp - currentLevel.xpRequired)) * 100;
@@ -72,16 +82,46 @@ function PlayerStats({ gameState, getCurrentLevel, getNextLevelXp, onOpenProfile
             <Zap className="w-5 h-5" aria-hidden="true" />
             <span className="font-bold">{gameState.currentStreak}</span>
           </div>
-          {pendingSubmissions > 0 && (
-            <button
-              onClick={onOpenSubmissions}
-              className="flex items-center gap-1 bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded-lg"
-              aria-label={`View ${pendingSubmissions} pending submission${pendingSubmissions !== 1 ? 's' : ''}`}
-            >
-              <Clock className="w-4 h-4" aria-hidden="true" />
-              <span className="font-bold text-sm">{pendingSubmissions}</span>
-            </button>
-          )}
+          {/* Submissions button: ALWAYS accessible so students can view history & feedback */}
+          <button
+            onClick={onOpenSubmissions}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border shadow-sm ${
+              rejectedSubmissions > 0
+                ? 'bg-rose-600 hover:bg-rose-500 text-white border-rose-400 animate-pulse'
+                : pendingSubmissions > 0
+                ? 'bg-blue-600 hover:bg-blue-500 text-white border-blue-400'
+                : totalSubmissions > 0
+                ? 'bg-slate-700 hover:bg-slate-600 text-slate-200 border-slate-600'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-400 border-slate-700'
+            }`}
+            title={
+              rejectedSubmissions > 0
+                ? `${rejectedSubmissions} activity needs revision - click to see teacher feedback!`
+                : pendingSubmissions > 0
+                ? `${pendingSubmissions} pending submission(s) awaiting teacher review`
+                : totalSubmissions > 0
+                ? `View your ${totalSubmissions} submission(s) and teacher feedback`
+                : 'View your submitted work'
+            }
+            aria-label="View my submissions and teacher feedback"
+          >
+            {rejectedSubmissions > 0 ? (
+              <>
+                <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>Fix ({rejectedSubmissions})</span>
+              </>
+            ) : pendingSubmissions > 0 ? (
+              <>
+                <Clock className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>{pendingSubmissions} Pending</span>
+              </>
+            ) : (
+              <>
+                <ClipboardList className="w-3.5 h-3.5 text-green-400" aria-hidden="true" />
+                <span>My Work{totalSubmissions > 0 ? ` (${totalSubmissions})` : ''}</span>
+              </>
+            )}
+          </button>
           {gameState.pendingMysteryBoxes > 0 && (
             <button
               onClick={onOpenMysteryBox}
@@ -612,48 +652,304 @@ function SubmissionForm({ activityTitle, task, onSubmit, onCancel }) {
 // Shared component from FileViewer.jsx is used now
 
 // ============== MY SUBMISSIONS ==============
-function MySubmissions({ submissions, onClose }) {
-  const mySubmissions = submissions.filter(s => s.status !== 'approved' || new Date(s.reviewedAt) > new Date(Date.now() - 86400000));
+function MySubmissions({ submissions = [], onClose, onReviseActivity }) {
+  const [filter, setFilter] = useState('all'); // 'all', 'rejected', 'pending', 'approved'
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const pendingSubs = submissions.filter(s => s.status === 'pending');
+  const rejectedSubs = submissions.filter(s => s.status === 'rejected');
+  const approvedSubs = submissions.filter(s => s.status === 'approved');
+
+  const filtered = submissions.filter(s => {
+    if (filter === 'rejected' && s.status !== 'rejected') return false;
+    if (filter === 'pending' && s.status !== 'pending') return false;
+    if (filter === 'approved' && s.status !== 'approved') return false;
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const title = (s.activityTitle || '').toLowerCase();
+      const note = (s.submissionNote || '').toLowerCase();
+      const content = typeof s.submissionContent === 'string' ? s.submissionContent.toLowerCase() : '';
+      const feedback = (s.teacherFeedback || '').toLowerCase();
+      return title.includes(q) || note.includes(q) || content.includes(q) || feedback.includes(q);
+    }
+    return true;
+  }).sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="submissions-dialog-title" onKeyDown={(e) => e.key === 'Escape' && onClose()}>
-      <div className="bg-slate-800 border-2 border-blue-500 rounded-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h3 id="submissions-dialog-title" className="text-2xl font-black uppercase italic flex items-center gap-2">
-            <ClipboardList className="w-8 h-8 text-blue-500" aria-hidden="true" /> My Submissions
-          </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white" aria-label="Close submissions">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="submissions-dialog-title"
+      onKeyDown={(e) => e.key === 'Escape' && onClose()}
+    >
+      <div className="bg-slate-800 border-2 border-blue-500/60 rounded-2xl max-w-2xl w-full p-5 sm:p-6 max-h-[90vh] flex flex-col shadow-2xl text-slate-100 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between pb-4 border-b border-slate-700/80 flex-shrink-0">
+          <div>
+            <h3 id="submissions-dialog-title" className="text-xl sm:text-2xl font-black uppercase italic flex items-center gap-2">
+              <ClipboardList className="w-7 h-7 text-blue-400" aria-hidden="true" />
+              <span>My Submitted Work</span>
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Review all activities you've submitted, check teacher feedback, and revise work.
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 text-slate-400 hover:text-white rounded-lg bg-slate-700/60 hover:bg-slate-700 transition-colors"
+            aria-label="Close submissions"
+          >
             <X className="w-6 h-6" aria-hidden="true" />
           </button>
         </div>
 
-        {mySubmissions.length === 0 ? (
-          <p className="text-slate-400 text-center py-8">No submissions yet. Complete an activity to submit your work!</p>
-        ) : (
-          <div className="space-y-4">
-            {mySubmissions.map(sub => (
-              <div key={sub.id} className={`p-4 rounded-xl border-2 ${sub.status === 'pending' ? 'bg-blue-900/20 border-blue-600' : sub.status === 'approved' ? 'bg-green-900/20 border-green-600' : 'bg-red-900/20 border-red-600'}`}>
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <p className="font-bold text-white">{sub.activityTitle}</p>
-                    <p className="text-xs text-slate-400">{new Date(sub.submittedAt).toLocaleDateString()}</p>
-                  </div>
-                  <div className={`flex items-center gap-1 text-sm font-bold ${sub.status === 'pending' ? 'text-blue-400' : sub.status === 'approved' ? 'text-green-400' : 'text-red-400'}`} role="status">
-                    {sub.status === 'pending' && <><Clock className="w-4 h-4" aria-hidden="true" /> Pending</>}
-                    {sub.status === 'approved' && <><CheckCheck className="w-4 h-4" aria-hidden="true" /> Approved</>}
-                    {sub.status === 'rejected' && <><XCircle className="w-4 h-4" aria-hidden="true" /> Try Again</>}
-                  </div>
-                </div>
-                {sub.teacherFeedback && (
-                  <div className="mt-2 p-2 bg-slate-700/50 rounded-lg">
-                    <p className="text-xs text-slate-400">Teacher feedback:</p>
-                    <p className="text-sm text-white">{sub.teacherFeedback}</p>
-                  </div>
-                )}
-              </div>
-            ))}
+        {/* Filter Tabs & Search */}
+        <div className="py-3 flex flex-wrap items-center justify-between gap-2.5 border-b border-slate-700/60 flex-shrink-0">
+          <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold overflow-x-auto">
+            <button
+              type="button"
+              onClick={() => setFilter('all')}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                filter === 'all'
+                  ? 'bg-slate-800 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              All ({submissions.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilter('rejected')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                filter === 'rejected'
+                  ? 'bg-rose-600 text-white font-black shadow-sm'
+                  : rejectedSubs.length > 0
+                  ? 'text-rose-400 font-bold hover:text-rose-300'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Needs Revision ({rejectedSubs.length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilter('pending')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                filter === 'pending'
+                  ? 'bg-blue-600 text-white font-black shadow-sm'
+                  : 'text-blue-400 hover:text-blue-300'
+              }`}
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span>Pending ({pendingSubs.length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilter('approved')}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                filter === 'approved'
+                  ? 'bg-emerald-600 text-white font-black shadow-sm'
+                  : 'text-emerald-400 hover:text-emerald-300'
+              }`}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Approved ({approvedSubs.length})</span>
+            </button>
           </div>
-        )}
+
+          {submissions.length > 3 && (
+            <input
+              type="text"
+              placeholder="Search my work..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs placeholder:text-slate-500 focus:border-blue-400 focus:outline-none"
+            />
+          )}
+        </div>
+
+        {/* Submissions List */}
+        <div className="flex-1 overflow-y-auto pt-4 space-y-4 pr-1">
+          {filtered.length === 0 ? (
+            <div className="text-center py-12 px-4 border border-dashed border-slate-700/80 rounded-2xl bg-slate-900/40">
+              <ClipboardList className="w-12 h-12 text-slate-600 mx-auto mb-2 opacity-50" />
+              <p className="text-base font-bold text-white mb-1">
+                {submissions.length === 0
+                  ? "No submissions yet!"
+                  : "No submissions match this filter."}
+              </p>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                {submissions.length === 0
+                  ? "Pick an activity on the board, complete the challenge, and click 'Submit My Work' to send it to your teacher!"
+                  : "Try switching to another tab or clearing your search."}
+              </p>
+            </div>
+          ) : (
+            filtered.map(sub => {
+              const isRejected = sub.status === 'rejected';
+              const isApproved = sub.status === 'approved';
+              const isPending = sub.status === 'pending';
+
+              return (
+                <div
+                  key={sub.id}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    isRejected
+                      ? 'bg-rose-950/20 border-rose-500/60 shadow-lg shadow-rose-950/30'
+                      : isApproved
+                      ? 'bg-slate-900/90 border-emerald-500/40'
+                      : 'bg-blue-950/20 border-blue-500/40'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        {sub.isBoss && (
+                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-red-950 text-red-300 border border-red-700">
+                            Boss Challenge
+                          </span>
+                        )}
+                        <span className="text-xs font-bold text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/30">
+                          +{sub.xp || 100} XP
+                        </span>
+                      </div>
+                      <h4 className="font-bold text-base text-white">{sub.activityTitle || 'Untitled Activity'}</h4>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Submitted: {new Date(sub.submittedAt || Date.now()).toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      {isApproved && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-300 border border-emerald-600/60">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Approved
+                        </span>
+                      )}
+                      {isPending && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-950 text-blue-300 border border-blue-600/60">
+                          <Clock className="w-3.5 h-3.5 text-blue-400" /> Pending Review
+                        </span>
+                      )}
+                      {isRejected && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-950 text-rose-200 border border-rose-500 animate-pulse">
+                          <RotateCcw className="w-3.5 h-3.5 text-rose-400" /> Needs Revision
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Teacher Feedback Callout */}
+                  {sub.teacherFeedback ? (
+                    <div className={`mt-3 p-3 rounded-xl border text-xs space-y-1 ${
+                      isRejected
+                        ? 'bg-rose-900/30 border-rose-500/50 text-rose-100'
+                        : isApproved
+                        ? 'bg-blue-950/40 border-blue-800/60 text-blue-100'
+                        : 'bg-slate-800 border-slate-700 text-slate-200'
+                    }`}>
+                      <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-[11px] mb-1">
+                        {isRejected ? (
+                          <>
+                            <RotateCcw className="w-3.5 h-3.5 text-rose-400" />
+                            <span className="text-rose-300">Teacher's Instructions for Revision:</span>
+                          </>
+                        ) : (
+                          <>
+                            <MessageSquare className="w-3.5 h-3.5 text-blue-400" />
+                            <span className="text-blue-300">Teacher Feedback:</span>
+                          </>
+                        )}
+                      </div>
+                      <p className="italic font-medium text-sm leading-relaxed whitespace-pre-wrap">
+                        "{sub.teacherFeedback}"
+                      </p>
+                      {sub.reviewedAt && (
+                        <p className="text-[10px] text-slate-400 pt-1">
+                          Reviewed: {new Date(sub.reviewedAt).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  ) : isRejected ? (
+                    <div className="mt-3 p-3 bg-rose-950/40 border border-rose-700/60 rounded-xl text-xs text-rose-200">
+                      <p className="font-semibold">Your teacher requested changes on this activity. Please review and resubmit!</p>
+                    </div>
+                  ) : null}
+
+                  {/* Student Work Preview */}
+                  <div className="mt-3 p-2.5 bg-slate-950/60 rounded-lg border border-slate-800/80 text-xs">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
+                      My Submission:
+                    </span>
+                    {sub.submissionType === 'link' ? (
+                      <div className="flex items-center justify-between gap-2 bg-slate-900 p-2 rounded border border-slate-800">
+                        <span className="text-blue-400 truncate font-mono text-xs">{sub.submissionContent}</span>
+                        <a
+                          href={sub.submissionContent}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-2 py-0.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-[11px] font-bold flex items-center gap-1 flex-shrink-0"
+                        >
+                          <ExternalLink className="w-3 h-3" /> Open
+                        </a>
+                      </div>
+                    ) : sub.submissionType === 'text' ? (
+                      <div className="p-2 bg-slate-900 rounded text-slate-200 text-xs whitespace-pre-wrap max-h-28 overflow-y-auto border border-slate-800">
+                        {sub.submissionContent || 'No text provided'}
+                      </div>
+                    ) : (
+                      <div className="p-1 bg-slate-900 rounded border border-slate-800">
+                        {sub.submissionContent ? (
+                          <FileViewer content={sub.submissionContent} fileName={sub.fileName} fileType={sub.fileType} />
+                        ) : (
+                          <span className="text-slate-400 italic">Attached file</span>
+                        )}
+                      </div>
+                    )}
+
+                    {sub.submissionNote && (
+                      <p className="text-slate-400 italic mt-1.5 text-[11px]">
+                        <strong>My note:</strong> "{sub.submissionNote}"
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Revise & Resubmit Action */}
+                  {isRejected && onReviseActivity && (
+                    <div className="mt-3 pt-3 border-t border-slate-800 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => onReviseActivity(sub.activityId, sub.pathId)}
+                        className="w-full sm:w-auto px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow transition-all"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Revise & Resubmit This Activity</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Modal Footer */}
+        <div className="pt-3 border-t border-slate-700/80 flex items-center justify-between text-xs text-slate-500 flex-shrink-0">
+          <span>{submissions.length} total activity submission{submissions.length !== 1 ? 's' : ''} on record</span>
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-colors"
+          >
+            Close
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1070,7 +1366,15 @@ function AchievementModal({ achievement, onClose }) {
 }
 
 // ============== ACTIVITY CARD ==============
-function ActivityCard({ path, selectedOption, onSelect, completedActivities, pendingActivities }) {
+function ActivityCard({
+  path,
+  selectedOption,
+  onSelect,
+  completedActivities = [],
+  pendingActivities = [],
+  approvedActivities = [],
+  rejectedActivities = []
+}) {
   const IconComponent = IconMap[path.icon] || BookOpen;
 
   return (
@@ -1085,8 +1389,10 @@ function ActivityCard({ path, selectedOption, onSelect, completedActivities, pen
 
       <div className="bg-slate-800 p-4 rounded-b-xl border-x border-b border-slate-700 flex-1 flex flex-col gap-4">
         {path.options.map((opt) => {
-          const isCompleted = completedActivities.includes(opt.id);
+          const isCompleted = completedActivities.includes(opt.id) || approvedActivities.includes(opt.id);
           const isPending = pendingActivities.includes(opt.id);
+          const isRejected = rejectedActivities.includes(opt.id) && !isCompleted && !isPending;
+
           return (
             <button
               key={opt.id}
@@ -1094,10 +1400,11 @@ function ActivityCard({ path, selectedOption, onSelect, completedActivities, pen
               className={`text-left p-4 rounded-lg border-2 transition-all group ${
                 isCompleted ? 'border-green-500/50 bg-green-900/20'
                 : isPending ? 'border-blue-500/50 bg-blue-900/20'
+                : isRejected ? 'border-rose-500/60 bg-rose-950/20 hover:border-rose-400'
                 : selectedOption === opt.id ? 'border-yellow-500 bg-slate-700'
                 : 'border-slate-700 bg-slate-800 hover:border-slate-500'
               }`}
-              aria-label={`${opt.title}: ${opt.desc}${isCompleted ? ' - Completed' : isPending ? ' - Pending approval' : ''}`}
+              aria-label={`${opt.title}: ${opt.desc}${isCompleted ? ' - Completed' : isPending ? ' - Pending approval' : isRejected ? ' - Needs revision' : ''}`}
             >
               <div className="flex justify-between items-start mb-2">
                 <span className="text-xs font-black uppercase text-slate-400 group-hover:text-yellow-500">{opt.type}</span>
@@ -1105,11 +1412,17 @@ function ActivityCard({ path, selectedOption, onSelect, completedActivities, pen
                   <span className="text-xs text-yellow-500 font-bold">+{opt.xp} XP</span>
                   {isCompleted && <CheckCircle2 className="w-5 h-5 text-green-500" aria-hidden="true" />}
                   {isPending && <Clock className="w-5 h-5 text-blue-400" aria-hidden="true" />}
+                  {isRejected && <RotateCcw className="w-5 h-5 text-rose-400" aria-hidden="true" />}
                 </div>
               </div>
               <h3 className="font-bold text-lg mb-1">{opt.title}</h3>
               <p className="text-sm text-slate-400 leading-snug">{opt.desc}</p>
-              {isPending && <p className="text-xs text-blue-400 mt-2">Waiting for teacher approval...</p>}
+              {isPending && <p className="text-xs text-blue-400 mt-2 font-medium">Waiting for teacher approval...</p>}
+              {isRejected && (
+                <p className="text-xs text-rose-400 mt-2 font-bold flex items-center gap-1">
+                  <RotateCcw className="w-3.5 h-3.5" /> Needs revision &bull; Click to see feedback & resubmit
+                </p>
+              )}
             </button>
           );
         })}
@@ -1119,7 +1432,17 @@ function ActivityCard({ path, selectedOption, onSelect, completedActivities, pen
 }
 
 // ============== INSTRUCTION MODAL ==============
-function InstructionModal({ activity, path, onSubmit, onClose, dailyQuest, dailyCompleted, isPending, isCompleted }) {
+function InstructionModal({
+  activity,
+  path,
+  onSubmit,
+  onClose,
+  dailyQuest,
+  dailyCompleted,
+  isPending,
+  isCompleted,
+  existingSubmission
+}) {
   const [showSubmitForm, setShowSubmitForm] = useState(false);
 
   const isDailyMatch = dailyQuest && (
@@ -1131,6 +1454,8 @@ function InstructionModal({ activity, path, onSubmit, onClose, dailyQuest, daily
     onSubmit(activity, path.id, submissionData);
     onClose();
   };
+
+  const isRejected = existingSubmission?.status === 'rejected' && !isCompleted;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="instruction-dialog-title" onKeyDown={(e) => e.key === 'Escape' && onClose()}>
@@ -1150,6 +1475,28 @@ function InstructionModal({ activity, path, onSubmit, onClose, dailyQuest, daily
                 <p className="text-yellow-500 text-sm font-bold uppercase tracking-widest">Active Objective</p>
               </div>
             </div>
+
+            {/* Teacher Feedback / Revision Callout if rejected */}
+            {isRejected && (
+              <div className="bg-rose-950/60 border border-rose-500/50 p-4 rounded-xl mb-6 text-xs shadow-sm">
+                <div className="flex items-center gap-1.5 text-rose-300 font-bold mb-1">
+                  <RotateCcw className="w-4 h-4 text-rose-400" />
+                  <span className="uppercase tracking-wider">Teacher Revision Request:</span>
+                </div>
+                {existingSubmission.teacherFeedback ? (
+                  <p className="text-rose-100 font-medium italic bg-rose-900/40 p-3 rounded-lg border border-rose-800/80 text-sm leading-relaxed whitespace-pre-wrap">
+                    "{existingSubmission.teacherFeedback}"
+                  </p>
+                ) : (
+                  <p className="text-rose-200 italic">Teacher requested revision for this activity. Please check your work and resubmit!</p>
+                )}
+                {existingSubmission.reviewedAt && (
+                  <span className="text-[10px] text-slate-400 block mt-2">
+                    Reviewed: {new Date(existingSubmission.reviewedAt).toLocaleString()}
+                  </span>
+                )}
+              </div>
+            )}
 
             {isDailyMatch && !dailyCompleted && (
               <div className="bg-purple-600/30 border border-purple-500 p-3 rounded-lg mb-6 flex items-center gap-2" role="note">
@@ -1182,19 +1529,34 @@ function InstructionModal({ activity, path, onSubmit, onClose, dailyQuest, daily
             )}
 
             {isCompleted ? (
-              <div className="text-center text-green-400 font-bold py-3" role="status">
-                <CheckCircle2 className="w-6 h-6 inline mr-2" aria-hidden="true" />
-                Already completed!
+              <div className="space-y-3">
+                <div className="text-center text-green-400 font-bold py-3 bg-green-950/40 border border-green-600/40 rounded-xl" role="status">
+                  <CheckCircle2 className="w-6 h-6 inline mr-2 text-green-400" aria-hidden="true" />
+                  Activity Completed & Approved (+{activity.xp} XP)!
+                </div>
+                {existingSubmission?.teacherFeedback && (
+                  <div className="p-3 bg-slate-900/90 rounded-xl border border-slate-700 text-xs">
+                    <span className="text-slate-400 uppercase font-bold tracking-wider block mb-1">Teacher Feedback / Praise:</span>
+                    <p className="text-white italic text-sm">"{existingSubmission.teacherFeedback}"</p>
+                  </div>
+                )}
               </div>
             ) : isPending ? (
-              <div className="text-center text-blue-400 font-bold py-3" role="status">
-                <Clock className="w-6 h-6 inline mr-2" aria-hidden="true" />
+              <div className="text-center text-blue-400 font-bold py-3 bg-blue-950/40 border border-blue-600/40 rounded-xl" role="status">
+                <Clock className="w-6 h-6 inline mr-2 text-blue-400" aria-hidden="true" />
                 Waiting for teacher approval...
               </div>
+            ) : isRejected ? (
+              <button
+                onClick={() => setShowSubmitForm(true)}
+                className="w-full py-3 bg-amber-500 text-slate-900 font-black uppercase italic rounded-xl hover:bg-amber-400 transition-colors flex items-center justify-center gap-2 shadow"
+              >
+                <RotateCcw className="w-5 h-5" aria-hidden="true" /> Resubmit Revised Work
+              </button>
             ) : (
               <button
                 onClick={() => setShowSubmitForm(true)}
-                className="w-full py-3 bg-yellow-500 text-slate-900 font-black uppercase italic rounded-xl hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 bg-yellow-500 text-slate-900 font-black uppercase italic rounded-xl hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2 shadow"
               >
                 <Rocket className="w-5 h-5" aria-hidden="true" /> Submit My Work
               </button>
@@ -1280,10 +1642,13 @@ function GameContent({ emulatedClassId } = {}) {
     refreshClassData();
   }, [refreshClassData]);
 
-  // Helper to extract pending status safely
+  // Helper to extract submission status safely
   const pendingActivities = submissions ? submissions.filter(s => s.status === 'pending' && !s.isBoss).map(s => s.activityId) : [];
+  const approvedActivities = submissions ? submissions.filter(s => s.status === 'approved' && !s.isBoss).map(s => s.activityId) : [];
+  const rejectedActivities = submissions ? submissions.filter(s => s.status === 'rejected' && !s.isBoss).map(s => s.activityId) : [];
   const pendingBossIds = submissions ? submissions.filter(s => s.status === 'pending' && s.isBoss).map(s => s.activityId) : [];
   const myPendingCount = submissions ? submissions.filter(s => s.status === 'pending').length : 0;
+  const myRejectedCount = submissions ? submissions.filter(s => s.status === 'rejected').length : 0;
 
   const handleSelect = (pathId, activity) => {
     setSelectedPath(prev => ({ ...prev, [pathId]: activity.id }));
@@ -1329,6 +1694,8 @@ function GameContent({ emulatedClassId } = {}) {
           onOpenMysteryBox={openMysteryBox}
           onOpenSubmissions={() => setShowMySubmissions(true)}
           pendingSubmissions={myPendingCount}
+          rejectedSubmissions={myRejectedCount}
+          totalSubmissions={submissions ? submissions.length : 0}
         />
 
         <div className="flex gap-4 mb-6 flex-wrap">
@@ -1358,6 +1725,34 @@ function GameContent({ emulatedClassId } = {}) {
           >
             <Award className="w-5 h-5 text-amber-400" aria-hidden="true" />
             <span className="font-bold">Levels & Gold Guide</span>
+          </button>
+          {/* Submissions & Feedback Button in action row */}
+          <button
+            onClick={() => setShowMySubmissions(true)}
+            className={`flex items-center gap-2 px-4 py-2 bg-slate-800 border rounded-lg transition-colors ${
+              myRejectedCount > 0
+                ? 'border-rose-500 text-rose-300 hover:border-rose-400 bg-rose-950/20'
+                : myPendingCount > 0
+                ? 'border-blue-500 text-blue-300 hover:border-blue-400 bg-blue-950/20'
+                : 'border-slate-700 text-slate-200 hover:border-blue-500'
+            }`}
+            aria-label="View My Submissions and Teacher Feedback"
+          >
+            <ClipboardList className={`w-5 h-5 ${myRejectedCount > 0 ? 'text-rose-400' : myPendingCount > 0 ? 'text-blue-400' : 'text-blue-400'}`} aria-hidden="true" />
+            <span className="font-bold">My Submissions</span>
+            {myRejectedCount > 0 ? (
+              <span className="text-xs bg-rose-600 text-white font-black px-2 py-0.5 rounded-full animate-pulse">
+                {myRejectedCount} Fix
+              </span>
+            ) : myPendingCount > 0 ? (
+              <span className="text-xs bg-blue-600 text-white font-black px-2 py-0.5 rounded-full">
+                {myPendingCount}
+              </span>
+            ) : submissions && submissions.length > 0 ? (
+              <span className="text-xs bg-slate-700 text-slate-300 font-bold px-2 py-0.5 rounded-full">
+                {submissions.length}
+              </span>
+            ) : null}
           </button>
           <button
             onClick={() => { setLegalModalTab('privacy'); setShowLegalModal(true); }}
@@ -1449,6 +1844,8 @@ function GameContent({ emulatedClassId } = {}) {
               onSelect={handleSelect}
               completedActivities={gameState.completedActivities}
               pendingActivities={pendingActivities}
+              approvedActivities={approvedActivities}
+              rejectedActivities={rejectedActivities}
             />
           ))}
         </main>
@@ -1489,14 +1886,32 @@ function GameContent({ emulatedClassId } = {}) {
           dailyQuest={dailyQuest}
           dailyCompleted={gameState.dailyQuestCompleted}
           isPending={pendingActivities.includes(activeInstruction.id)}
-          isCompleted={gameState.completedActivities.includes(activeInstruction.id)}
+          isCompleted={gameState.completedActivities.includes(activeInstruction.id) || approvedActivities.includes(activeInstruction.id)}
+          existingSubmission={submissions ? submissions.find(s => s.activityId === activeInstruction.id) : null}
         />
       )}
 
       {showLeaderboard && effectiveClassId && <Leaderboard classId={effectiveClassId} currentPlayerId={user?.id} onClose={() => setShowLeaderboard(false)} />}
       {showTrophyCase && <TrophyCase achievements={gameState.unlockedAchievements} onClose={() => setShowTrophyCase(false)} />}
       {showAvatarBuilder && <AvatarBuilder gameState={gameState} getCurrentLevel={getCurrentLevel} onBuy={buyAvatarItem} onEquip={equipAvatarItem} onClose={() => setShowAvatarBuilder(false)} onSetName={setPlayerName} classId={effectiveClassId} userId={user?.id} />}
-      {showMySubmissions && <MySubmissions submissions={submissions} onClose={() => setShowMySubmissions(false)} />}
+      {showMySubmissions && (
+        <MySubmissions
+          submissions={submissions}
+          onClose={() => setShowMySubmissions(false)}
+          onReviseActivity={(activityId, pathId) => {
+            setShowMySubmissions(false);
+            const path = learningPaths.find(p => p.id === pathId || p.options?.some(o => o.id === activityId));
+            if (path) {
+              const act = path.options?.find(o => o.id === activityId);
+              if (act) {
+                setSelectedPath(prev => ({ ...prev, [path.id]: act.id }));
+                setActiveInstruction(act);
+                setActivePath(path);
+              }
+            }
+          }}
+        />
+      )}
       {showMysteryReward && <MysteryBoxModal reward={showMysteryReward} onClose={() => setShowMysteryReward(null)} />}
       {showLevelUp && newLevel && <LevelUpModal level={newLevel} avatar={gameState.avatar} onClose={() => setShowLevelUp(false)} />}
       {showAchievement && <AchievementModal achievement={showAchievement} onClose={() => setShowAchievement(null)} />}

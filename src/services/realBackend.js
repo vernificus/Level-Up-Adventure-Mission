@@ -16,7 +16,9 @@ import {
   where,
   setDoc,
   serverTimestamp,
-  onSnapshot
+  onSnapshot,
+  arrayUnion,
+  arrayRemove
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, DEFAULT_STEM_SUPPLIES, GUILD_LEVELS, GUILD_CHALLENGES, BOSS_CHALLENGES, getGuildLevelInfo, getHighFiveCooldownStatus } from "../data/gameData";
@@ -183,6 +185,7 @@ export const realBackend = {
         totalActivitiesCompleted: 0,
         collaborationCount: 0,
         pathCompletions: {},
+        lastActivityReset: new Date().toISOString(),
         createdAt: serverTimestamp()
       };
 
@@ -774,6 +777,36 @@ export const realBackend = {
         teacherFeedback: feedback,
         reviewedAt: new Date().toISOString()
       });
+
+      // Synchronize student's completedActivities directly in Firestore
+      try {
+        const subSnap = await getDoc(docRef);
+        if (subSnap.exists()) {
+          const subData = subSnap.data();
+          if (subData.studentId && subData.activityId && !subData.isBoss) {
+            const studentRef = doc(db, "students", subData.studentId);
+            const studentSnap = await getDoc(studentRef);
+            if (studentSnap.exists()) {
+              const studentData = studentSnap.data();
+              const completed = Array.isArray(studentData.completedActivities)
+                ? studentData.completedActivities
+                : [];
+              if (status === 'approved' && !completed.includes(subData.activityId)) {
+                await updateDoc(studentRef, {
+                  completedActivities: arrayUnion(subData.activityId)
+                });
+              } else if (status === 'rejected' && completed.includes(subData.activityId)) {
+                await updateDoc(studentRef, {
+                  completedActivities: arrayRemove(subData.activityId)
+                });
+              }
+            }
+          }
+        }
+      } catch (syncErr) {
+        console.warn("Could not sync student completedActivities in reviewSubmission:", syncErr);
+      }
+
       return { id: submissionId, status, teacherFeedback: feedback };
     } catch (error) {
       console.error("Error reviewing submission:", error);

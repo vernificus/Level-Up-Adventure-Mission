@@ -700,6 +700,19 @@ export default function TeacherPortal({
     }
   };
 
+  const handleToggleAutoReset = async () => {
+    if (!selectedClass) return;
+    const current = selectedClass.autoResetWeekly !== false;
+    const next = !current;
+    try {
+      await backend.updateClass(selectedClass.id, { autoResetWeekly: next });
+      setSelectedClass(prev => ({ ...prev, autoResetWeekly: next }));
+      setClasses(prev => prev.map(c => c.id === selectedClass.id ? { ...c, autoResetWeekly: next } : c));
+    } catch (err) {
+      alert("Failed to update auto-reset setting: " + err.message);
+    }
+  };
+
   // Filter submissions (supports filtering by individual student)
   const activeSubmissions = useMemo(() => {
     if (selectedStudentFilterId === 'all') return submissions;
@@ -1133,7 +1146,17 @@ export default function TeacherPortal({
                         >
                           <RotateCcw className="w-4 h-4" aria-hidden="true" /> Reset Activities
                         </button>
-                        <p className="text-xs text-slate-500 mt-1">Auto-resets Mondays at 7am</p>
+                        <button
+                          type="button"
+                          onClick={handleToggleAutoReset}
+                          className="text-xs text-slate-400 hover:text-white mt-1.5 flex items-center gap-1 transition-colors group cursor-pointer"
+                          title="Click to toggle automatic weekly reset on Mondays at 7am"
+                        >
+                          <span>Auto-resets Mondays:</span>
+                          <span className={`font-bold underline decoration-dotted ${selectedClass.autoResetWeekly !== false ? 'text-green-400' : 'text-amber-400'}`}>
+                            {selectedClass.autoResetWeekly !== false ? 'ON (7am)' : 'OFF (Manual)'}
+                          </span>
+                        </button>
                       </div>
                     </div>
                   </div>

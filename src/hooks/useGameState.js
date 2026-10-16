@@ -52,9 +52,10 @@ function getMostRecentMonday7am() {
 }
 
 // Check if activities should be auto-reset (weekly Monday 7am)
-function shouldAutoReset(lastResetIso) {
+function shouldAutoReset(lastResetIso, autoResetEnabled = true) {
+  if (autoResetEnabled === false) return false;
+  if (!lastResetIso) return false; // CRITICAL FIX: never wipe on initial/subsequent login if never set
   const monday7am = getMostRecentMonday7am();
-  if (!lastResetIso) return true; // never reset before
   const lastReset = new Date(lastResetIso);
   return lastReset < monday7am;
 }
@@ -170,16 +171,50 @@ export function useGameState(overrideClassId) {
   const loadUserData = async () => {
     try {
       const studentData = await backend.getStudent(user.id);
+      let classDoc = null;
+      if (effectiveClassId) {
+        try {
+          classDoc = await backend.getClass(effectiveClassId);
+        } catch (e) {
+          console.error("Failed to fetch class doc for reset config", e);
+        }
+      }
+      const autoResetEnabled = classDoc ? classDoc.autoResetWeekly !== false : true;
+
+      // Fetch student submissions right away
+      const subs = (await backend.getStudentSubmissions(user.id)) || [];
+      setSubmissions(subs);
+
       if (studentData) {
         const { id, classId, name, ...gameData } = studentData;
 
         // Check for weekly auto-reset (Monday 7am)
-        if (shouldAutoReset(gameData.lastActivityReset)) {
+        let wasAutoReset = false;
+        if (!gameData.lastActivityReset) {
+          // Initialize timestamp to current time so future Mondays are evaluated properly without wiping current work
+          gameData.lastActivityReset = new Date().toISOString();
+          backend.updateStudent(user.id, { lastActivityReset: gameData.lastActivityReset });
+        } else if (shouldAutoReset(gameData.lastActivityReset, autoResetEnabled)) {
+          wasAutoReset = true;
           gameData.completedActivities = [];
           gameData.lastActivityReset = new Date().toISOString();
           // Persist the reset to backend
           await backend.resetStudentActivities(user.id);
         }
+
+        // RECONCILIATION:
+        // Ensure any activities approved by teacher are recognized in completedActivities
+        const approvedNonBossSubs = subs.filter(s => s.status === 'approved' && !s.isBoss);
+        const validApprovedSubs = wasAutoReset
+          ? approvedNonBossSubs.filter(s => new Date(s.reviewedAt || s.submittedAt || 0) >= new Date(gameData.lastActivityReset))
+          : approvedNonBossSubs;
+
+        const approvedActivityIds = validApprovedSubs.map(s => s.activityId);
+        const mergedCompleted = Array.from(new Set([
+          ...(gameData.completedActivities || []),
+          ...approvedActivityIds
+        ]));
+        gameData.completedActivities = mergedCompleted;
 
         setGameState(prev => ({
           ...prev,
@@ -187,9 +222,6 @@ export function useGameState(overrideClassId) {
           playerName: name || prev.playerName
         }));
       }
-
-      const subs = await backend.getStudentSubmissions(user.id);
-      setSubmissions(subs);
     } catch (error) {
       console.error("Error loading user data:", error);
     } finally {

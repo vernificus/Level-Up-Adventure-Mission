@@ -207,6 +207,7 @@ export const mockBackend = {
         totalActivitiesCompleted: 0,
         collaborationCount: 0,
         pathCompletions: {},
+        lastActivityReset: new Date().toISOString(),
       };
       db.students.push(student);
 
@@ -285,12 +286,29 @@ export const mockBackend = {
     const db = getDB();
     const index = db.submissions.findIndex(s => s.id === submissionId);
     if (index !== -1) {
+      const sub = db.submissions[index];
       db.submissions[index] = {
-        ...db.submissions[index],
+        ...sub,
         status,
         teacherFeedback: feedback,
         reviewedAt: new Date().toISOString()
       };
+
+      // Sync student completedActivities
+      if (sub.studentId && sub.activityId && !sub.isBoss) {
+        const student = db.students.find(st => st.id === sub.studentId);
+        if (student) {
+          student.completedActivities = Array.isArray(student.completedActivities)
+            ? student.completedActivities
+            : [];
+          if (status === 'approved' && !student.completedActivities.includes(sub.activityId)) {
+            student.completedActivities.push(sub.activityId);
+          } else if (status === 'rejected') {
+            student.completedActivities = student.completedActivities.filter(id => id !== sub.activityId);
+          }
+        }
+      }
+
       saveDB(db);
       return db.submissions[index];
     }

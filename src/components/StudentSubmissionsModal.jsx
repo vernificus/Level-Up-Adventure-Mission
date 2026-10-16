@@ -188,42 +188,47 @@ export default function StudentSubmissionsModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-labelledby="student-submissions-title"
     >
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-5xl w-full p-5 sm:p-7 shadow-2xl my-auto max-h-[92vh] flex flex-col text-slate-100 overflow-hidden print:max-h-none print:m-0 print:border-none print:shadow-none print:bg-white print:text-black">
+      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-5xl w-full p-4 sm:p-5 shadow-2xl my-auto max-h-[94vh] flex flex-col text-slate-100 overflow-hidden print:max-h-none print:m-0 print:border-none print:shadow-none print:bg-white print:text-black">
 
-        {/* ── HEADER ── */}
-        <div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-800 print:border-b-2 print:border-black">
-          <div className="flex items-center gap-4">
-            <div className="rounded-xl overflow-hidden bg-slate-950 p-1 border border-slate-800 flex-shrink-0 shadow-inner">
+        {/* ── COMPACT HEADER ── */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800 print:border-b-2 print:border-black">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl overflow-hidden bg-slate-950 p-0.5 border border-slate-800 flex-shrink-0 shadow-inner w-11 h-11 flex items-center justify-center">
               <Avatar3D
                 avatar={student.avatar || { color: 'default', hat: 'none', accessory: 'none', face: 'happy' }}
                 level={studentLevel.level}
-                size="md"
+                size="sm"
               />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-bold uppercase tracking-wider text-green-400 print:text-green-800">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-green-400 print:text-green-800">
                   Student Submission Portfolio
                 </span>
                 {className && (
-                  <span className="text-xs text-slate-400 font-medium">
+                  <span className="text-[10px] text-slate-400 font-medium">
                     &bull; {className}
                   </span>
                 )}
               </div>
-              <h2 id="student-submissions-title" className="text-2xl font-black text-white flex items-center gap-2 print:text-black">
-                {student.name}
-                <span className={`text-xs px-2 py-0.5 rounded-full font-bold bg-slate-800 border border-slate-700 ${studentLevel.color} print:text-black print:border-gray-400`}>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 id="student-submissions-title" className="text-lg sm:text-xl font-black text-white flex items-center gap-2 print:text-black leading-tight">
+                  {student.name}
+                </h2>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-800 border border-slate-700 ${studentLevel.color} print:text-black print:border-gray-400`}>
                   Lvl {studentLevel.level} - {studentLevel.title}
                 </span>
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5 print:text-gray-600">
-                {student.xp || 0} Total XP &bull; {student.coins || 0} Coins &bull; {(student.completedActivities || []).length} Activities Done
+                <span className="text-xs text-slate-400 hidden sm:inline print:inline">
+                  &bull; {student.xp || 0} XP &bull; {student.coins || 0} Coins &bull; {(student.completedActivities || []).length} Done
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 sm:hidden print:hidden leading-tight mt-0.5">
+                {student.xp || 0} XP &bull; {student.coins || 0} Coins &bull; {(student.completedActivities || []).length} Done
               </p>
             </div>
           </div>
@@ -231,7 +236,7 @@ export default function StudentSubmissionsModal({
           <div className="flex items-center gap-2 print:hidden flex-wrap">
             {/* Student Switcher dropdown & controls */}
             {allStudents.length > 1 && onSelectStudent && (
-              <div className="flex items-center gap-1 bg-slate-800 border border-slate-700 rounded-xl p-1">
+              <div className="flex items-center gap-1 bg-slate-800 border border-slate-700 rounded-xl p-0.5">
                 <button
                   type="button"
                   onClick={handlePrevStudent}
@@ -240,7 +245,7 @@ export default function StudentSubmissionsModal({
                   title="Previous student"
                   aria-label="Previous student"
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
                 <select
                   value={student.id}
@@ -248,7 +253,7 @@ export default function StudentSubmissionsModal({
                     const next = allStudents.find(s => s.id === e.target.value);
                     if (next) onSelectStudent(next);
                   }}
-                  className="bg-transparent text-xs font-bold text-slate-200 focus:outline-none px-1 py-0.5 max-w-[130px] sm:max-w-[170px] truncate"
+                  className="bg-transparent text-xs font-bold text-slate-200 focus:outline-none px-1 py-0.5 max-w-[120px] sm:max-w-[160px] truncate"
                   aria-label="Select student"
                 >
                   {allStudents.map(s => (
@@ -265,7 +270,7 @@ export default function StudentSubmissionsModal({
                   title="Next student"
                   aria-label="Next student"
                 >
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             )}
@@ -273,11 +278,11 @@ export default function StudentSubmissionsModal({
             <button
               type="button"
               onClick={handlePrint}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"
+              className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"
               title="Print student work portfolio"
             >
               <Printer className="w-3.5 h-3.5 text-blue-400" />
-              <span>Print / Export</span>
+              <span className="hidden sm:inline">Print / Export</span>
             </button>
 
             <button
@@ -291,142 +296,144 @@ export default function StudentSubmissionsModal({
           </div>
         </div>
 
-        {/* ── STATS RIBBON ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 my-4">
-          <div className="bg-slate-800/80 border border-slate-700/60 rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-              <FileText className="w-3.5 h-3.5 text-blue-400" /> Total Submissions
-            </span>
-            <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-2xl font-black text-white">{totalCount}</span>
-              <span className="text-xs text-slate-500 font-semibold">{approvalRate}% Approved</span>
-            </div>
-          </div>
-
-          <div className="bg-slate-800/80 border border-emerald-500/30 rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
-            <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Approved
-            </span>
-            <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-2xl font-black text-emerald-300">{approvedSubs.length}</span>
-              <span className="text-xs text-emerald-400 font-bold">+{totalEarnedXp} XP</span>
-            </div>
-          </div>
-
-          <div className="bg-slate-800/80 border border-amber-500/30 rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
-            <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-amber-400" /> Pending Review
-            </span>
-            <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-2xl font-black text-amber-300">{pendingSubs.length}</span>
-              {pendingSubs.length > 0 ? (
-                <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-bold animate-pulse">
-                  Needs Attention
-                </span>
-              ) : (
-                <span className="text-xs text-slate-500">All caught up</span>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-slate-800/80 border border-rose-500/30 rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
-            <span className="text-[11px] font-bold text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
-              <RotateCcw className="w-3.5 h-3.5 text-rose-400" /> Needs Revision
-            </span>
-            <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-2xl font-black text-rose-300">{rejectedSubs.length}</span>
-              <span className="text-xs text-slate-500">Rejected</span>
-            </div>
-          </div>
-        </div>
-
         {/* ── ACTION NOTICE BANNER ── */}
         {actionNotice && (
-          <div className="mb-3 px-4 py-2 bg-emerald-950/80 border border-emerald-600/40 text-emerald-300 rounded-xl text-xs font-bold flex items-center gap-2 animate-fadeIn print:hidden">
+          <div className="my-2 px-3 py-1.5 bg-emerald-950/80 border border-emerald-600/40 text-emerald-300 rounded-xl text-xs font-bold flex items-center gap-2 animate-fadeIn print:hidden">
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
             <span>{actionNotice}</span>
           </div>
         )}
 
-        {/* ── FILTERS & SEARCH BAR ── */}
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4 print:hidden">
-          {/* Status Tabs */}
-          <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold overflow-x-auto max-w-full">
-            <button
-              type="button"
-              onClick={() => setStatusFilter('all')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
-                statusFilter === 'all'
-                  ? 'bg-slate-800 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              All ({totalCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusFilter('pending')}
-              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-                statusFilter === 'pending'
-                  ? 'bg-amber-500 text-slate-950 font-black shadow-sm'
-                  : 'text-amber-400 hover:text-amber-300'
-              }`}
-            >
-              <Clock className="w-3 h-3" />
-              Pending ({pendingSubs.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusFilter('approved')}
-              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-                statusFilter === 'approved'
-                  ? 'bg-emerald-600 text-white font-black shadow-sm'
-                  : 'text-emerald-400 hover:text-emerald-300'
-              }`}
-            >
-              <Check className="w-3 h-3" />
-              Approved ({approvedSubs.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusFilter('rejected')}
-              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-                statusFilter === 'rejected'
-                  ? 'bg-rose-600 text-white font-black shadow-sm'
-                  : 'text-rose-400 hover:text-rose-300'
-              }`}
-            >
-              <RotateCcw className="w-3 h-3" />
-              Needs Revision ({rejectedSubs.length})
-            </button>
-          </div>
+        {/* ── PRINT-ONLY STATS ── */}
+        <div className="hidden print:flex items-center gap-4 text-xs font-semibold py-2 border-b border-black mb-3">
+          <span>Total: <strong>{totalCount}</strong> ({approvalRate}% Approved)</span>
+          <span>Approved: <strong>{approvedSubs.length}</strong> (+{totalEarnedXp} XP)</span>
+          <span>Pending: <strong>{pendingSubs.length}</strong></span>
+          <span>Needs Revision: <strong>{rejectedSubs.length}</strong></span>
+        </div>
 
-          {/* Search & Sort Controls */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative min-w-[200px]">
-              <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search submitted work..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs placeholder:text-slate-500 focus:border-green-500 focus:outline-none"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs"
-                >
-                  ✕
-                </button>
+        {/* ── COMBINED INTERACTIVE STAT-FILTER RIBBON (Screen Only) ── */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 my-2.5 print:hidden">
+          {/* Total / All */}
+          <button
+            type="button"
+            onClick={() => setStatusFilter('all')}
+            className={`p-2 rounded-xl border text-left transition-all flex items-center justify-between ${
+              statusFilter === 'all'
+                ? 'bg-slate-800 border-blue-500/80 shadow-sm ring-1 ring-blue-500/30 text-white'
+                : 'bg-slate-900/80 border-slate-800 hover:border-slate-700 text-slate-300'
+            }`}
+          >
+            <div className="flex items-center gap-1.5 min-w-0">
+              <FileText className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+              <span className="text-xs font-bold truncate">All Submissions</span>
+            </div>
+            <div className="flex items-baseline gap-1.5 flex-shrink-0">
+              <span className="text-sm sm:text-base font-black text-white">{totalCount}</span>
+              <span className="text-[10px] text-slate-500 font-semibold">{approvalRate}%</span>
+            </div>
+          </button>
+
+          {/* Approved */}
+          <button
+            type="button"
+            onClick={() => setStatusFilter('approved')}
+            className={`p-2 rounded-xl border text-left transition-all flex items-center justify-between ${
+              statusFilter === 'approved'
+                ? 'bg-emerald-950/60 border-emerald-500 shadow-sm ring-1 ring-emerald-500/40 text-emerald-200'
+                : 'bg-slate-900/80 border-slate-800 hover:border-emerald-600/40 text-slate-300'
+            }`}
+          >
+            <div className="flex items-center gap-1.5 min-w-0">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+              <span className="text-xs font-bold text-emerald-400 truncate">Approved</span>
+            </div>
+            <div className="flex items-baseline gap-1.5 flex-shrink-0">
+              <span className="text-sm sm:text-base font-black text-emerald-300">{approvedSubs.length}</span>
+              <span className="text-[10px] text-emerald-400 font-bold">+{totalEarnedXp} XP</span>
+            </div>
+          </button>
+
+          {/* Pending Review */}
+          <button
+            type="button"
+            onClick={() => setStatusFilter('pending')}
+            className={`p-2 rounded-xl border text-left transition-all flex items-center justify-between ${
+              statusFilter === 'pending'
+                ? 'bg-amber-950/60 border-amber-500 shadow-sm ring-1 ring-amber-500/40 text-amber-200'
+                : 'bg-slate-900/80 border-slate-800 hover:border-amber-600/40 text-slate-300'
+            }`}
+          >
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Clock className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+              <span className="text-xs font-bold text-amber-400 truncate">Pending</span>
+            </div>
+            <div className="flex items-baseline gap-1.5 flex-shrink-0">
+              <span className="text-sm sm:text-base font-black text-amber-300">{pendingSubs.length}</span>
+              {pendingSubs.length > 0 ? (
+                <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-bold animate-pulse">
+                  Action
+                </span>
+              ) : (
+                <span className="text-[10px] text-slate-500">Caught up</span>
               )}
             </div>
+          </button>
 
+          {/* Needs Revision */}
+          <button
+            type="button"
+            onClick={() => setStatusFilter('rejected')}
+            className={`p-2 rounded-xl border text-left transition-all flex items-center justify-between ${
+              statusFilter === 'rejected'
+                ? 'bg-rose-950/60 border-rose-500 shadow-sm ring-1 ring-rose-500/40 text-rose-200'
+                : 'bg-slate-900/80 border-slate-800 hover:border-rose-600/40 text-slate-300'
+            }`}
+          >
+            <div className="flex items-center gap-1.5 min-w-0">
+              <RotateCcw className="w-3.5 h-3.5 text-rose-400 flex-shrink-0" />
+              <span className="text-xs font-bold text-rose-400 truncate">Needs Revision</span>
+            </div>
+            <div className="flex items-baseline gap-1.5 flex-shrink-0">
+              <span className="text-sm sm:text-base font-black text-rose-300">{rejectedSubs.length}</span>
+              {rejectedSubs.length > 0 ? (
+                <span className="text-[9px] bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded font-bold">
+                  Redo
+                </span>
+              ) : (
+                <span className="text-[10px] text-slate-500">None</span>
+              )}
+            </div>
+          </button>
+        </div>
+
+        {/* ── COMPACT TOOLBAR (SEARCH & FORMAT/SORT) ── */}
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3 print:hidden">
+          <div className="relative flex-1 min-w-[180px] max-w-sm">
+            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search submitted work or notes..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-6 py-1 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs placeholder:text-slate-500 focus:border-green-500 focus:outline-none"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
             <select
               value={typeFilter}
               onChange={e => setTypeFilter(e.target.value)}
-              className="px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs font-semibold focus:border-green-500 focus:outline-none"
+              className="px-2 py-1 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs font-semibold focus:border-green-500 focus:outline-none"
               aria-label="Filter by type"
             >
               <option value="all">📁 All Formats</option>
@@ -439,7 +446,7 @@ export default function StudentSubmissionsModal({
             <select
               value={sortBy}
               onChange={e => setSortBy(e.target.value)}
-              className="px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs font-semibold focus:border-green-500 focus:outline-none"
+              className="px-2 py-1 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs font-semibold focus:border-green-500 focus:outline-none"
               aria-label="Sort submissions"
             >
               <option value="newest">🕒 Newest First</option>

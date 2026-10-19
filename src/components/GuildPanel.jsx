@@ -23,7 +23,8 @@ export default function GuildPanel({
   onStateUpdate,
   guilds = GUILDS,
   spendCoins,
-  highFiveLimit = 'daily'
+  highFiveLimit = 'daily',
+  allowStudentGuildSelect = true
 }) {
   const availableGuilds = guilds && guilds.length > 0 ? guilds : GUILDS;
 
@@ -287,6 +288,28 @@ export default function GuildPanel({
 
   // If user hasn't joined a guild yet or invalid guild:
   if (!currentGuild || !guild) {
+    if (!allowStudentGuildSelect) {
+      return (
+        <div className="mb-6 p-5 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-2 border-dashed border-amber-500/50 rounded-2xl shadow-lg">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+                <Shield className="w-6 h-6" />
+              </div>
+              <div className="text-left">
+                <span className="text-xs font-black uppercase tracking-wider text-amber-400 block">Guild Alliance</span>
+                <p className="font-black text-white text-base">Your guild alliance is assigned by your teacher.</p>
+                <p className="text-xs text-slate-400 mt-0.5">Contact your teacher if you need to be placed or moved to a guild team.</p>
+              </div>
+            </div>
+            <div className="px-3.5 py-1.5 bg-slate-800/90 text-amber-300 font-bold text-xs rounded-xl border border-slate-700 flex items-center gap-1.5 shadow-sm">
+              <Lock className="w-3.5 h-3.5" /> Teacher Assigned
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="mb-6">
         <button

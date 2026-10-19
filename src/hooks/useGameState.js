@@ -94,6 +94,7 @@ export function useGameState(overrideClassId) {
   const [categoriesPerRow, setCategoriesPerRow] = useState('auto');
   const [classGuilds, setClassGuilds] = useState(GUILDS);
   const [highFiveLimit, setHighFiveLimit] = useState('daily');
+  const [allowStudentGuildSelect, setAllowStudentGuildSelect] = useState(true);
 
   const loadClassActivities = async () => {
     if (!effectiveClassId) return;
@@ -101,6 +102,10 @@ export function useGameState(overrideClassId) {
       // Fetch the class document once to get both activities and category names
       const classDoc = await backend.getClass(effectiveClassId);
       if (!classDoc) return;
+
+      if (classDoc.allowStudentGuildSelect !== undefined) {
+        setAllowStudentGuildSelect(classDoc.allowStudentGuildSelect !== false);
+      }
 
       if (classDoc.highFiveLimit) {
         setHighFiveLimit(classDoc.highFiveLimit);
@@ -630,6 +635,7 @@ export function useGameState(overrideClassId) {
     categoriesPerRow, // Export this
     classGuilds, // Export this (supports up to 15 guilds)
     highFiveLimit, // High-five cooldown frequency limit ('daily' | 'weekly' | 'disabled')
+    allowStudentGuildSelect, // Teacher toggle for student self-selection
     spendCoins, // Helper to spend coins on STEM supplies
     getCurrentLevel,
     getNextLevelXp,

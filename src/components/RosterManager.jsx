@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { realBackend as backend } from '../services/realBackend';
-import { UserPlus, Lock, Trash2, Save, Edit, X, Check, RotateCcw, Gift, Star, Zap, Trophy, Eye, EyeOff, Sparkles, User, ShieldCheck, FileText } from 'lucide-react';
-import { ACHIEVEMENTS, LEVELS, AVATAR_ITEMS } from '../data/gameData';
+import { UserPlus, Lock, Trash2, Save, Edit, X, Check, RotateCcw, Gift, Star, Zap, Trophy, Eye, EyeOff, Sparkles, User, ShieldCheck, FileText, Shield } from 'lucide-react';
+import { ACHIEVEMENTS, LEVELS, AVATAR_ITEMS, GUILDS } from '../data/gameData';
 import Avatar3D, { AvatarColorSwatch } from './Avatar3D';
 import StudentSubmissionsModal from './StudentSubmissionsModal';
 
@@ -10,8 +10,10 @@ export default function RosterManager({
   className = '',
   onStudentAdded,
   submissions: propSubmissions = [],
-  onReview
+  onReview,
+  guilds = GUILDS
 }) {
+  const availableGuilds = guilds && guilds.length > 0 ? guilds : GUILDS;
   const [students, setStudents] = useState([]);
   const [newStudentName, setNewStudentName] = useState('');
   const [newStudentPassword, setNewStudentPassword] = useState('');
@@ -41,9 +43,20 @@ export default function RosterManager({
   const [inspectCoins, setInspectCoins] = useState(100);
   const [inspectXp, setInspectXp] = useState(0);
   const [inspectGuildXp, setInspectGuildXp] = useState(0);
+  const [inspectGuild, setInspectGuild] = useState('');
   const [inspectOwnedItems, setInspectOwnedItems] = useState([]);
   const [savingAvatar, setSavingAvatar] = useState(false);
   const [itemToGrant, setItemToGrant] = useState('');
+
+  const handleAssignStudentGuild = async (studentId, guildId) => {
+    try {
+      await backend.assignStudentGuild(studentId, guildId || null);
+      setStudents(prev => prev.map(s => s.id === studentId ? { ...s, guild: guildId || null } : s));
+      if (onStudentAdded) onStudentAdded();
+    } catch (err) {
+      alert('Error updating student guild: ' + err.message);
+    }
+  };
 
   const handleOpenAvatarInspector = (student) => {
     const normAvatar = {
@@ -57,6 +70,7 @@ export default function RosterManager({
     setInspectCoins(student.coins || 0);
     setInspectXp(student.xp || 0);
     setInspectGuildXp(student.guildXpContributed || 0);
+    setInspectGuild(student.guild || '');
     setInspectOwnedItems(student.ownedItems || ['default', 'none', 'happy']);
     setItemToGrant('');
   };
@@ -67,6 +81,7 @@ export default function RosterManager({
     try {
       await backend.updateStudent(inspectStudent.id, {
         avatar: inspectAvatar,
+        guild: inspectGuild || null,
         xp: Math.max(0, parseInt(inspectXp) || 0),
         guildXpContributed: Math.max(0, parseInt(inspectGuildXp) || 0),
         coins: Math.max(0, parseInt(inspectCoins) || 0),
@@ -491,6 +506,32 @@ export default function RosterManager({
                          <p className="font-mono text-purple-400 group-hover/done:text-green-300 font-bold">{(student.completedActivities || []).length}</p>
                        </button>
                     </div>
+
+                    {/* Guild Alliance Selection */}
+                    <div className="mt-3 pt-3 border-t border-slate-600/60 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Shield className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
+                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex-shrink-0">Guild:</span>
+                      </div>
+                      <select
+                        value={student.guild || ''}
+                        onChange={(e) => handleAssignStudentGuild(student.id, e.target.value)}
+                        className={`text-xs font-bold px-2 py-1.5 rounded-lg border outline-none cursor-pointer transition-colors max-w-[210px] truncate ${
+                          student.guild
+                            ? 'bg-slate-800 text-white border-purple-500/50 hover:border-purple-400'
+                            : 'bg-amber-500/10 text-amber-300 border-amber-500/40 hover:border-amber-400'
+                        }`}
+                        title={`Assign guild for ${student.name}`}
+                        aria-label={`Assign guild for ${student.name}`}
+                      >
+                        <option value="">⚡ No Guild (Unassigned)</option>
+                        {availableGuilds.map(g => (
+                          <option key={g.id} value={g.id}>
+                            {g.emoji || '🛡️'} {g.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </>
                 )}
               </div>
@@ -774,7 +815,23 @@ export default function RosterManager({
 
               {/* Right: Equipment Slots & Grant Tool */}
               <div className="space-y-4">
-                <h4 className="text-xs font-black uppercase tracking-wider text-yellow-400">Equipped Gear</h4>
+                <div>
+                  <label className="block text-xs text-slate-400 font-bold uppercase mb-1 flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5 text-purple-400" /> Guild Alliance
+                  </label>
+                  <select
+                    value={inspectGuild}
+                    onChange={e => setInspectGuild(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-xl text-white text-xs font-bold outline-none cursor-pointer"
+                  >
+                    <option value="">⚡ No Guild (Unassigned)</option>
+                    {availableGuilds.map(g => (
+                      <option key={g.id} value={g.id}>{g.emoji || '🛡️'} {g.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <h4 className="text-xs font-black uppercase tracking-wider text-yellow-400 pt-1">Equipped Gear</h4>
                 {/* Skin Color */}
                 <div>
                   <label className="block text-xs text-slate-400 font-bold uppercase mb-1">Skin Tone</label>

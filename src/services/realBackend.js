@@ -1225,6 +1225,18 @@ export const realBackend = {
     }
   },
 
+  // ================= ASSIGN STUDENT GUILD (TEACHER) =================
+  async assignStudentGuild(studentId, guildId) {
+    try {
+      const docRef = doc(db, "students", studentId);
+      await updateDoc(docRef, { guild: guildId || null });
+      return true;
+    } catch (error) {
+      console.error("Error assigning student guild:", error);
+      throw error;
+    }
+  },
+
   // ================= AUTO-BALANCE GUILDS (TEACHER) =================
   async autoBalanceGuilds(classId, mode = 'unassigned') {
     try {

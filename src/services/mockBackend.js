@@ -633,6 +633,18 @@ export const mockBackend = {
     throw new Error('Student not found');
   },
 
+  async assignStudentGuild(studentId, guildId) {
+    await wait(DELAY);
+    const db = getDB();
+    const st = (db.students || []).find(s => s.id === studentId);
+    if (st) {
+      st.guild = guildId || null;
+      saveDB(db);
+      return true;
+    }
+    return false;
+  },
+
   async autoBalanceGuilds(classId, mode = 'unassigned') {
     await wait(DELAY);
     const db = getDB();

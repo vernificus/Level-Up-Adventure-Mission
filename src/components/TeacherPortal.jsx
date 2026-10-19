@@ -740,8 +740,8 @@ export default function TeacherPortal({
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 p-8 font-sans">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 sm:p-6 lg:p-8 font-sans">
+      <div className="w-full max-w-[1920px] mx-auto">
 
         {/* Header */}
         <header className="flex items-center justify-between mb-8 pb-8 border-b border-slate-700">
@@ -787,10 +787,10 @@ export default function TeacherPortal({
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
 
           {/* Sidebar: Class List */}
-          <div className="lg:col-span-1 space-y-4">
+          <div className="lg:col-span-4 xl:col-span-3 space-y-4">
             {/* Super Admin View Scope Switcher: My Classes vs All Org Classes */}
             {isAdmin && (
               <div className="bg-slate-900 border border-amber-500/30 rounded-xl p-3 shadow-md space-y-2.5">
@@ -1006,7 +1006,7 @@ export default function TeacherPortal({
           </div>
 
           {/* Main Content */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-8 xl:col-span-9">
             {selectedClass ? (
               <div>
                 {/* Super Admin Oversight Banner */}
@@ -3403,7 +3403,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
             </div>
 
             {filteredUnassigned.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
                 {filteredUnassigned.map(student => {
                   const level = LEVELS.reduce((acc, l) => (student.xp || 0) >= l.xpRequired ? l : acc, LEVELS[0]);
                   const isDragging = draggingStudentId === student.id;
@@ -3474,7 +3474,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
           </div>
 
           {/* GUILD KANBAN COLUMNS */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
             {activeGuilds.map(guild => {
               const members = getGuildMembers(guild.id);
               const stats = guildData[guild.id];

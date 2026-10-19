@@ -626,8 +626,8 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
   const currentOrg = organizations.find(o => o.id === selectedOrgId);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 font-sans">
+      <div className="w-full max-w-[1920px] mx-auto">
 
         {/* Top Header */}
         <header className="flex flex-wrap items-center justify-between gap-4 mb-8 bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">

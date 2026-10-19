@@ -1674,9 +1674,9 @@ function GameContent({ emulatedClassId } = {}) {
 
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8 font-sans relative">
+    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 sm:p-6 lg:p-8 font-sans relative">
       <a href="#main-content" className="sr-skip-link">Skip to main content</a>
-      <div className="max-w-6xl mx-auto">
+      <div className="w-full max-w-[1920px] mx-auto">
         <header className="text-center mb-6">
           <div className="inline-flex items-center justify-center p-3 bg-yellow-500 rounded-full mb-4 shadow-lg shadow-yellow-500/20" aria-hidden="true">
             <Gamepad2 className="w-8 h-8 text-slate-900" />

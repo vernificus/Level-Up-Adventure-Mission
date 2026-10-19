@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { realBackend as backend } from '../services/realBackend';
-import { UserPlus, Lock, Trash2, Save, Edit, X, Check, RotateCcw, Gift, Star, Zap, Trophy, Eye, EyeOff, Sparkles, User, ShieldCheck, FileText, Shield } from 'lucide-react';
+import { UserPlus, Lock, Trash2, Save, Edit, X, Check, RotateCcw, Gift, Star, Zap, Trophy, Eye, EyeOff, Sparkles, User, ShieldCheck, FileText, Shield, Search, ArrowRightLeft } from 'lucide-react';
 import { ACHIEVEMENTS, LEVELS, AVATAR_ITEMS, GUILDS } from '../data/gameData';
 import Avatar3D, { AvatarColorSwatch } from './Avatar3D';
 import StudentSubmissionsModal from './StudentSubmissionsModal';
@@ -15,6 +15,8 @@ export default function RosterManager({
 }) {
   const availableGuilds = guilds && guilds.length > 0 ? guilds : GUILDS;
   const [students, setStudents] = useState([]);
+  const [rosterSort, setRosterSort] = useState('alpha-asc'); // 'alpha-asc' | 'alpha-desc' | 'xp-desc' | 'xp-asc'
+  const [rosterSearch, setRosterSearch] = useState('');
   const [newStudentName, setNewStudentName] = useState('');
   const [newStudentPassword, setNewStudentPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -376,13 +378,81 @@ export default function RosterManager({
       </div>
 
       <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
-        <h3 className="text-xl font-bold text-white mb-4">Class Roster ({students.length})</h3>
+        {(() => {
+          const sortedStudents = [...students]
+            .filter(s => !rosterSearch.trim() || s.name.toLowerCase().includes(rosterSearch.trim().toLowerCase()))
+            .sort((a, b) => {
+              if (rosterSort === 'alpha-asc') {
+                return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
+              }
+              if (rosterSort === 'alpha-desc') {
+                return (b.name || '').localeCompare(a.name || '', undefined, { sensitivity: 'base' });
+              }
+              if (rosterSort === 'xp-desc') {
+                return (b.xp || 0) - (a.xp || 0);
+              }
+              if (rosterSort === 'xp-asc') {
+                return (a.xp || 0) - (b.xp || 0);
+              }
+              return 0;
+            });
 
-        {loading ? (
-          <p className="text-slate-500" role="status" aria-live="polite">Loading roster...</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {students.map(student => (
+          return (
+            <>
+              <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+                <div>
+                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    Class Roster
+                    <span className="text-xs font-black uppercase px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                      {students.length} Students
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">Manage student accounts, avatar rewards, and guild placements.</p>
+                </div>
+
+                <div className="flex items-center gap-3 flex-wrap">
+                  {/* Search */}
+                  <div className="relative min-w-[200px]">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="Search students..."
+                      value={rosterSearch}
+                      onChange={e => setRosterSearch(e.target.value)}
+                      className="w-full pl-9 pr-7 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs placeholder:text-slate-500 outline-none focus:border-purple-500 min-h-[38px]"
+                    />
+                    {rosterSearch && (
+                      <button onClick={() => setRosterSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Sort */}
+                  <div className="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
+                    <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider flex items-center gap-1 shrink-0">
+                      <ArrowRightLeft className="w-3.5 h-3.5 text-purple-400" /> Sort:
+                    </span>
+                    <select
+                      value={rosterSort}
+                      onChange={e => setRosterSort(e.target.value)}
+                      className="bg-slate-800 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg border border-slate-700 focus:border-purple-400 outline-none cursor-pointer min-h-[34px]"
+                      aria-label="Sort student roster"
+                    >
+                      <option value="alpha-asc">Name: A → Z (Alphabetical)</option>
+                      <option value="alpha-desc">Name: Z → A</option>
+                      <option value="xp-desc">XP: Highest → Lowest</option>
+                      <option value="xp-asc">XP: Lowest → Highest</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {loading ? (
+                <p className="text-slate-500" role="status" aria-live="polite">Loading roster...</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {sortedStudents.map(student => (
               <div key={student.id} className="bg-slate-700 p-4 rounded-lg border border-slate-600 relative group">
                 {editingId === student.id ? (
                    <div className="space-y-2">
@@ -509,14 +579,14 @@ export default function RosterManager({
 
                     {/* Guild Alliance Selection */}
                     <div className="mt-3 pt-3 border-t border-slate-600/60 flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <Shield className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
-                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex-shrink-0">Guild:</span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <Shield className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0">Guild:</span>
                       </div>
                       <select
                         value={student.guild || ''}
                         onChange={(e) => handleAssignStudentGuild(student.id, e.target.value)}
-                        className={`text-xs font-bold px-2 py-1.5 rounded-lg border outline-none cursor-pointer transition-colors max-w-[210px] truncate ${
+                        className={`text-xs font-bold px-2.5 py-1.5 rounded-lg border outline-none cursor-pointer transition-colors flex-1 min-w-0 min-h-[36px] ${
                           student.guild
                             ? 'bg-slate-800 text-white border-purple-500/50 hover:border-purple-400'
                             : 'bg-amber-500/10 text-amber-300 border-amber-500/40 hover:border-amber-400'
@@ -536,10 +606,17 @@ export default function RosterManager({
                 )}
               </div>
             ))}
-            {students.length === 0 && <p className="text-slate-500 italic">No students yet.</p>}
+            {sortedStudents.length === 0 && (
+              <p className="text-slate-500 italic col-span-full py-6 text-center">
+                {rosterSearch ? `No students match "${rosterSearch}".` : 'No students in this class yet.'}
+              </p>
+            )}
           </div>
         )}
-      </div>
+      </>
+    );
+  })()}
+</div>
 
       {/* Reward Modal */}
       {rewardTarget && (

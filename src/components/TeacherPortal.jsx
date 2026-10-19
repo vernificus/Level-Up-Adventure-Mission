@@ -2719,6 +2719,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
 
   // Drag and Drop & Assignment State
   const [rosterSearch, setRosterSearch] = useState('');
+  const [studentSortOrder, setStudentSortOrder] = useState('alpha-asc'); // 'alpha-asc' | 'alpha-desc' | 'xp-desc' | 'xp-asc'
   const [draggingStudentId, setDraggingStudentId] = useState(null);
   const [dragOverGuildId, setDragOverGuildId] = useState(null); // guildId or 'unassigned'
   const [movingStudentId, setMovingStudentId] = useState(null);
@@ -3148,15 +3149,37 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
     return bXp - aXp;
   });
 
+  const sortStudentsList = (list) => {
+    return [...list].sort((a, b) => {
+      if (studentSortOrder === 'alpha-asc') {
+        return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
+      }
+      if (studentSortOrder === 'alpha-desc') {
+        return (b.name || '').localeCompare(a.name || '', undefined, { sensitivity: 'base' });
+      }
+      if (studentSortOrder === 'xp-desc') {
+        return (b.xp || 0) - (a.xp || 0);
+      }
+      if (studentSortOrder === 'xp-asc') {
+        return (a.xp || 0) - (b.xp || 0);
+      }
+      return 0;
+    });
+  };
+
   const unassigned = students.filter(s => !s.guild || !activeGuilds.some(g => g.id === s.guild));
-  const filteredUnassigned = unassigned.filter(s =>
-    !rosterSearch.trim() || s.name.toLowerCase().includes(rosterSearch.trim().toLowerCase())
+  const filteredUnassigned = sortStudentsList(
+    unassigned.filter(s =>
+      !rosterSearch.trim() || s.name.toLowerCase().includes(rosterSearch.trim().toLowerCase())
+    )
   );
 
   const getGuildMembers = (guildId) => {
     const members = students.filter(s => s.guild === guildId);
-    if (!rosterSearch.trim()) return members;
-    return members.filter(s => s.name.toLowerCase().includes(rosterSearch.trim().toLowerCase()));
+    const filtered = !rosterSearch.trim()
+      ? members
+      : members.filter(s => s.name.toLowerCase().includes(rosterSearch.trim().toLowerCase()));
+    return sortStudentsList(filtered);
   };
 
   // Filter STEM purchases
@@ -3269,17 +3292,17 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
             </div>
           </div>
 
-          {/* Search & Student Self-Selection Policy Bar */}
+          {/* Search, Alphabetical Sort & Student Self-Selection Policy Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-slate-900/80 rounded-xl border border-slate-700/80">
             {/* Real-time Search */}
-            <div className="relative flex-1 min-w-[220px] max-w-md">
+            <div className="relative flex-1 min-w-[200px] max-w-sm">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search students in guilds..."
                 value={rosterSearch}
                 onChange={e => setRosterSearch(e.target.value)}
-                className="w-full pl-9 pr-8 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs placeholder:text-slate-500 outline-none focus:border-purple-500 transition-colors"
+                className="w-full pl-9 pr-8 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs placeholder:text-slate-500 outline-none focus:border-purple-500 transition-colors min-h-[38px]"
               />
               {rosterSearch && (
                 <button
@@ -3290,6 +3313,24 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
+            </div>
+
+            {/* Alphabetical & XP Sort Control */}
+            <div className="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
+              <span className="text-slate-400 font-bold flex items-center gap-1.5 uppercase text-[10px] tracking-wider shrink-0">
+                <ArrowRightLeft className="w-3.5 h-3.5 text-purple-400" /> Sort Students:
+              </span>
+              <select
+                value={studentSortOrder}
+                onChange={e => setStudentSortOrder(e.target.value)}
+                className="bg-slate-900 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg border border-slate-700 focus:border-purple-400 outline-none cursor-pointer min-h-[34px]"
+                aria-label="Sort student roster"
+              >
+                <option value="alpha-asc">Name: A → Z (Alphabetical)</option>
+                <option value="alpha-desc">Name: Z → A</option>
+                <option value="xp-desc">XP: Highest → Lowest</option>
+                <option value="xp-asc">XP: Lowest → Highest</option>
+              </select>
             </div>
 
             {/* Student Guild Choice Policy Toggle */}
@@ -3338,7 +3379,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                 : 'border-dashed border-slate-700 bg-slate-900/40'
             }`}
           >
-            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <div className="flex items-center justify-between mb-3.5 flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <span className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-black text-xs">
                   ⚡
@@ -3350,19 +3391,19 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                   </span>
                 </h4>
                 <span className="text-[11px] text-slate-400 italic hidden sm:inline">
-                  (Drag students here to unassign them from their guild)
+                  (Drag students here or into any guild column below)
                 </span>
               </div>
 
               {unassigned.length > 0 && (
                 <span className="text-[11px] font-bold text-amber-300/80">
-                  {filteredUnassigned.length} showing
+                  {filteredUnassigned.length} showing {rosterSearch ? `(matching "${rosterSearch}")` : ''}
                 </span>
               )}
             </div>
 
             {filteredUnassigned.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                 {filteredUnassigned.map(student => {
                   const level = LEVELS.reduce((acc, l) => (student.xp || 0) >= l.xpRequired ? l : acc, LEVELS[0]);
                   const isDragging = draggingStudentId === student.id;
@@ -3381,30 +3422,43 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                         setDraggingStudentId(null);
                         setDragOverGuildId(null);
                       }}
-                      className={`p-2.5 rounded-xl border flex items-center gap-2.5 bg-slate-900/90 text-white transition-all cursor-grab active:cursor-grabbing hover:border-amber-400 hover:shadow-md ${
+                      className={`p-3 rounded-2xl border flex flex-col justify-between bg-slate-900/95 text-white transition-all cursor-grab active:cursor-grabbing hover:border-amber-400 hover:shadow-lg ${
                         isDragging ? 'opacity-40 border-amber-400 ring-2 ring-amber-400 scale-95' : 'border-slate-700'
                       } ${isMoving ? 'animate-pulse' : ''}`}
                     >
-                      <GripVertical className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
-                      <Avatar3D avatar={student.avatar || { color: 'default', hat: 'none', accessory: 'none', face: 'happy' }} level={level.level} size="sm" />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-xs truncate text-white">{student.name}</p>
-                        <p className={`text-[10px] ${level.color}`}>Lv.{level.level} • {student.xp || 0} XP</p>
+                      <div className="flex items-start gap-2.5">
+                        <GripVertical className="w-4 h-4 text-slate-500 hover:text-slate-300 flex-shrink-0 mt-1 cursor-grab" />
+                        <Avatar3D avatar={student.avatar || { color: 'default', hat: 'none', accessory: 'none', face: 'happy' }} level={level.level} size="sm" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-xs text-white leading-snug break-words" title={student.name}>
+                            {student.name}
+                          </p>
+                          <div className="flex items-center gap-1.5 text-[10px] mt-0.5 flex-wrap">
+                            <span className={`font-semibold ${level.color}`}>Lv.{level.level}</span>
+                            <span className="text-slate-500">•</span>
+                            <span className="text-yellow-400 font-bold">{student.xp || 0} XP</span>
+                          </div>
+                        </div>
                       </div>
-                      <select
-                        value=""
-                        onChange={(e) => handleMoveStudentToGuild(student.id, e.target.value)}
-                        className="text-[11px] font-bold px-2 py-1 bg-slate-800 text-yellow-300 rounded border border-slate-600 focus:border-yellow-400 outline-none cursor-pointer flex-shrink-0"
-                        title={`Assign ${student.name} to a guild`}
-                        aria-label={`Assign ${student.name} to a guild`}
-                      >
-                        <option value="">Assign...</option>
-                        {activeGuilds.map(g => (
-                          <option key={g.id} value={g.id}>
-                            {g.emoji || '🛡️'} {g.name}
-                          </option>
-                        ))}
-                      </select>
+
+                      <div className="mt-2.5 pt-2 border-t border-slate-800">
+                        <select
+                          value=""
+                          onChange={(e) => {
+                            if (e.target.value) handleMoveStudentToGuild(student.id, e.target.value);
+                          }}
+                          className="w-full text-xs font-bold px-2.5 py-1.5 bg-slate-800 hover:bg-slate-750 text-yellow-300 rounded-xl border border-slate-700 hover:border-amber-400 focus:border-amber-400 outline-none cursor-pointer transition-colors min-h-[36px]"
+                          title={`Assign ${student.name} to a guild`}
+                          aria-label={`Assign ${student.name} to a guild`}
+                        >
+                          <option value="" disabled>+ Choose Guild...</option>
+                          {activeGuilds.map(g => (
+                            <option key={g.id} value={g.id}>
+                              {g.emoji || '🛡️'} {g.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   );
                 })}
@@ -3420,7 +3474,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
           </div>
 
           {/* GUILD KANBAN COLUMNS */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
             {activeGuilds.map(guild => {
               const members = getGuildMembers(guild.id);
               const stats = guildData[guild.id];
@@ -3448,32 +3502,36 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                       : 'border-slate-700 bg-slate-900/80 hover:border-slate-600'
                   }`}
                 >
-                  {/* Guild Column Header */}
-                  <div className={`p-3.5 bg-gradient-to-r ${guild.gradient || 'from-slate-800 to-slate-700'} border-b border-white/10 text-white`}>
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2.5 min-w-0">
+                  {/* Guild Column Header - Full Name and Clear Badges */}
+                  <div className={`p-4 bg-gradient-to-r ${guild.gradient || 'from-slate-800 to-slate-700'} border-b border-white/10 text-white`}>
+                    <div className="flex items-start justify-between gap-2.5">
+                      <div className="flex items-start gap-2.5 min-w-0 flex-1">
                         {botPic ? (
                           <img
                             src={botPic}
                             alt=""
-                            className="w-8 h-8 rounded-lg object-cover border border-white/30 flex-shrink-0"
+                            className="w-10 h-10 rounded-xl object-cover border border-white/30 flex-shrink-0 mt-0.5 shadow"
                           />
                         ) : (
-                          <span className="text-xl flex-shrink-0 drop-shadow">
+                          <span className="text-2xl flex-shrink-0 drop-shadow mt-0.5" aria-hidden="true">
                             {guild.emoji || '🛡️'}
                           </span>
                         )}
-                        <div className="min-w-0">
-                          <h4 className="font-black text-sm text-white truncate drop-shadow-sm">{guild.name}</h4>
-                          <p className="text-[10px] text-white/80 truncate">{guild.motto || guild.symbol || 'Alliance'}</p>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-black text-sm text-white leading-snug break-words drop-shadow-sm">
+                            {guild.name}
+                          </h4>
+                          <p className="text-[11px] text-white/80 line-clamp-1 mt-0.5 font-medium">
+                            {guild.motto || guild.symbol || 'Alliance'}
+                          </p>
                         </div>
                       </div>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-black/40 text-yellow-300 border border-white/15 flex-shrink-0">
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-black/40 text-yellow-300 border border-white/20 shrink-0 whitespace-nowrap shadow-sm">
                         {members.length} {members.length === 1 ? 'member' : 'members'}
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between text-[10px] font-bold text-white/90 mt-2 pt-2 border-t border-white/10">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-white/95 mt-2.5 pt-2 border-t border-white/15">
                       <span>Lvl {levelInfo.level} • {levelInfo.name}</span>
                       <span className="text-yellow-300 font-black">{(stats?.totalXp || 0).toLocaleString()} XP</span>
                     </div>
@@ -3487,7 +3545,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                   )}
 
                   {/* Member Cards List */}
-                  <div className="p-2.5 space-y-2 flex-1 min-h-[140px] max-h-[460px] overflow-y-auto">
+                  <div className="p-3 space-y-2.5 flex-1 min-h-[140px] max-h-[500px] overflow-y-auto">
                     {members.length > 0 ? (
                       members.map(member => {
                         const level = LEVELS.reduce((acc, l) => (member.xp || 0) >= l.xpRequired ? l : acc, LEVELS[0]);
@@ -3507,45 +3565,52 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                               setDraggingStudentId(null);
                               setDragOverGuildId(null);
                             }}
-                            className={`p-2 rounded-xl border flex items-center gap-2 bg-slate-800/90 text-white transition-all cursor-grab active:cursor-grabbing hover:border-purple-400 hover:shadow-md group ${
+                            className={`p-3 rounded-xl border flex flex-col justify-between bg-slate-800/95 text-white transition-all cursor-grab active:cursor-grabbing hover:border-purple-400 hover:shadow-md group ${
                               isDragging ? 'opacity-40 border-purple-400 ring-2 ring-purple-400 scale-95' : 'border-slate-700/80'
                             } ${isMoving ? 'animate-pulse' : ''}`}
                           >
-                            <GripVertical className="w-3.5 h-3.5 text-slate-500 group-hover:text-slate-300 flex-shrink-0" />
-                            <Avatar3D avatar={member.avatar || { color: 'default', hat: 'none', accessory: 'none', face: 'happy' }} level={level.level} size="sm" />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-bold text-xs truncate text-white leading-tight">{member.name}</p>
-                              <div className="flex items-center gap-1.5 text-[10px]">
-                                <span className={level.color}>Lv.{level.level}</span>
-                                <span className="text-yellow-400 font-bold">{member.xp || 0} XP</span>
+                            <div className="flex items-start gap-2.5">
+                              <GripVertical className="w-4 h-4 text-slate-500 group-hover:text-slate-300 flex-shrink-0 mt-1 cursor-grab" />
+                              <Avatar3D avatar={member.avatar || { color: 'default', hat: 'none', accessory: 'none', face: 'happy' }} level={level.level} size="sm" />
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-xs text-white leading-snug break-words" title={member.name}>
+                                  {member.name}
+                                </p>
+                                <div className="flex items-center gap-1.5 text-[10px] mt-0.5 flex-wrap">
+                                  <span className={`font-semibold ${level.color}`}>Lv.{level.level}</span>
+                                  <span className="text-slate-500">•</span>
+                                  <span className="text-yellow-400 font-bold">{member.xp || 0} XP</span>
+                                </div>
                               </div>
                             </div>
 
-                            {/* Guild Selector / Dropdown on Card */}
-                            <select
-                              value={guild.id}
-                              onChange={(e) => handleMoveStudentToGuild(member.id, e.target.value)}
-                              className="text-[10px] font-bold px-1.5 py-1 bg-slate-900 text-slate-300 hover:text-white rounded border border-slate-700 hover:border-slate-500 outline-none cursor-pointer max-w-[90px] truncate"
-                              title={`Change ${member.name}'s guild`}
-                              aria-label={`Change ${member.name}'s guild`}
-                            >
-                              <option value="unassigned">⚡ Unassign</option>
-                              {activeGuilds.map(g => (
-                                <option key={g.id} value={g.id}>
-                                  {g.emoji || '🛡️'} {g.name}
-                                </option>
-                              ))}
-                            </select>
+                            {/* Guild Selector Footer */}
+                            <div className="mt-2.5 pt-2 border-t border-slate-700/70 flex items-center justify-between gap-1.5">
+                              <select
+                                value={guild.id}
+                                onChange={(e) => handleMoveStudentToGuild(member.id, e.target.value)}
+                                className="flex-1 text-xs font-bold px-2 py-1.5 bg-slate-900 text-slate-200 hover:text-white rounded-lg border border-slate-700 hover:border-purple-400 outline-none cursor-pointer transition-colors min-h-[34px]"
+                                title={`Change ${member.name}'s guild`}
+                                aria-label={`Change ${member.name}'s guild`}
+                              >
+                                <option value="unassigned">⚡ Unassign</option>
+                                {activeGuilds.map(g => (
+                                  <option key={g.id} value={g.id}>
+                                    {g.emoji || '🛡️'} {g.name}
+                                  </option>
+                                ))}
+                              </select>
 
-                            <button
-                              type="button"
-                              onClick={() => handleMoveStudentToGuild(member.id, null)}
-                              className="p-1 text-slate-500 hover:text-red-400 rounded transition-colors opacity-0 group-hover:opacity-100"
-                              title={`Remove ${member.name} from guild`}
-                              aria-label={`Remove ${member.name} from guild`}
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
+                              <button
+                                type="button"
+                                onClick={() => handleMoveStudentToGuild(member.id, 'unassigned')}
+                                className="p-2 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-lg border border-transparent hover:border-red-500/30 transition-colors min-h-[34px] min-w-[34px] flex items-center justify-center shrink-0"
+                                title={`Unassign ${member.name} from ${guild.name}`}
+                                aria-label={`Unassign ${member.name}`}
+                              >
+                                <UserX className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </div>
                         );
                       })

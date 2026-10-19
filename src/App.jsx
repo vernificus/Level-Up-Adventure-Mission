@@ -1983,6 +1983,14 @@ class ErrorBoundary extends React.Component {
             <p className="text-xs text-slate-400">
               An unexpected display issue occurred. Don't worry, your progress and data are safe!
             </p>
+            {this.state.error && (
+              <div className="text-left bg-slate-950/80 p-3 rounded-xl border border-red-900/60 text-xs font-mono text-red-300 max-h-48 overflow-y-auto space-y-1">
+                <p className="font-bold text-red-400">{this.state.error.name}: {this.state.error.message}</p>
+                {this.state.error.stack && (
+                  <p className="text-[10px] text-slate-500 whitespace-pre-wrap">{this.state.error.stack.split('\n').slice(0, 5).join('\n')}</p>
+                )}
+              </div>
+            )}
             <div className="pt-2 flex gap-3 justify-center">
               <button
                 onClick={() => {

@@ -6,7 +6,7 @@ import {
   XCircle, Clock, ChevronRight, GraduationCap, Copy, Trash2, Edit, RefreshCw, RotateCcw, Link, Save, Gift,
   Share2, UserPlus, X, Mail, MessageSquare, Sparkles, Star, Trophy, ChevronDown, ChevronUp, BarChart3, Eye, Zap, Building2, Layers, Shield, ShieldCheck,
   Camera, Upload, Package, ShoppingBag, Swords, Check, Settings, Image as ImageIcon, Award, Crown, Pencil, User, AlertTriangle,
-  Filter, Search, FileText, ExternalLink, Printer, GripVertical, UserX, ArrowRightLeft
+  Filter, Search, FileText, ExternalLink, Printer, GripVertical, UserX, ArrowRightLeft, Lock
 } from 'lucide-react';
 import {
   LEVELS, ACHIEVEMENTS, GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, GUILD_TROPHIES,

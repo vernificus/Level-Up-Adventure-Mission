@@ -413,7 +413,10 @@ export function useGameState(overrideClassId) {
       submissionNote: submissionData.note,
       fileName: submissionData.fileName,
       fileType: submissionData.fileType,
-      isBoss: false
+      isBoss: false,
+      activityDesc: activity.desc || '',
+      activitySteps: activity.steps || [],
+      activityProTip: activity.proTip || ''
     });
 
     setSubmissions(prev => [...prev, newSubmission]);
@@ -444,7 +447,10 @@ export function useGameState(overrideClassId) {
       submissionNote: submissionData.note,
       fileName: submissionData.fileName,
       fileType: submissionData.fileType,
-      isBoss: true
+      isBoss: true,
+      activityDesc: boss.desc || '',
+      activityRequirements: boss.requirements || '',
+      activitySteps: boss.steps || []
     });
 
     setSubmissions(prev => [...prev, newSubmission]);

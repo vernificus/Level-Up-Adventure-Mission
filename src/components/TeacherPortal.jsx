@@ -22,6 +22,7 @@ import ChoiceBoardExport from './ChoiceBoardExport';
 import LegalModal from './LegalModal';
 import LevelEconomyGuideModal from './LevelEconomyGuideModal';
 import StudentSubmissionsModal from './StudentSubmissionsModal';
+import ActivityDirectionsCard from './ActivityDirectionsCard';
 
 
 export default function TeacherPortal({
@@ -75,6 +76,9 @@ export default function TeacherPortal({
   const [inspectingStudentSubmissions, setInspectingStudentSubmissions] = useState(null);
   const [studentDirectorySearch, setStudentDirectorySearch] = useState('');
   const [studentDirectoryFilter, setStudentDirectoryFilter] = useState('all'); // 'all', 'pending', 'has_submissions', 'no_submissions'
+  const [classActivities, setClassActivities] = useState([]);
+  const [activeBoss, setActiveBoss] = useState(null);
+  const [globalExpandDirections, setGlobalExpandDirections] = useState(true);
 
   useEffect(() => {
     if (initialTab) {
@@ -330,6 +334,28 @@ export default function TeacherPortal({
     return () => {
       if (unsubscribe) unsubscribe();
     };
+  }, [selectedClass]);
+
+  // Load class activities and active boss for submission review context
+  useEffect(() => {
+    if (selectedClass) {
+      if (selectedClass.activities && selectedClass.activities.length > 0) {
+        setClassActivities(selectedClass.activities);
+      } else {
+        backend.getClassActivities(selectedClass.id).then(acts => {
+          setClassActivities(acts || LEARNING_PATHS);
+        }).catch(() => {
+          setClassActivities(LEARNING_PATHS);
+        });
+      }
+
+      backend.getActiveBoss(selectedClass.id, selectedClass.organizationId).then(boss => {
+        setActiveBoss(boss);
+      }).catch(() => {});
+    } else {
+      setClassActivities(LEARNING_PATHS);
+      setActiveBoss(null);
+    }
   }, [selectedClass]);
 
   const loadClasses = async (scope = adminViewScope, targetOrg = adminOrgFilter) => {
@@ -1275,7 +1301,10 @@ export default function TeacherPortal({
                       classId={selectedClass.id}
                       organizationId={selectedClass?.organizationId || user?.organizationId || null}
                       organizationName={user?.organizationName || ''}
-                      onSave={() => alert('Activities updated!')}
+                      onSave={(updatedPaths) => {
+                        if (updatedPaths) setClassActivities(updatedPaths);
+                        alert('Activities updated!');
+                      }}
                     />
                   </div>
                 )}
@@ -1825,11 +1854,24 @@ export default function TeacherPortal({
                         {/* ── VIEW MODE: QUEUE ── */}
                         {submissionsViewMode === 'queue' ? (
                           <>
-                            <h3 className="font-bold text-slate-400 uppercase text-xs tracking-widest flex items-center gap-2">
-                              <Clock className="w-4 h-4 text-amber-400" aria-hidden="true" />
-                              Pending Reviews ({pending.length})
-                              {selectedStudentObj && <span className="text-slate-500 lowercase">for {selectedStudentObj.name}</span>}
-                            </h3>
+                            <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                              <h3 className="font-bold text-slate-400 uppercase text-xs tracking-widest flex items-center gap-2">
+                                <Clock className="w-4 h-4 text-amber-400" aria-hidden="true" />
+                                Pending Reviews ({pending.length})
+                                {selectedStudentObj && <span className="text-slate-500 lowercase">for {selectedStudentObj.name}</span>}
+                              </h3>
+                              {pending.length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => setGlobalExpandDirections(prev => !prev)}
+                                  className="text-xs text-amber-300 hover:text-amber-200 font-bold flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 rounded-xl transition-all shadow-sm"
+                                  title={globalExpandDirections ? 'Collapse directions on all cards' : 'Expand directions on all cards'}
+                                >
+                                  <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+                                  <span>{globalExpandDirections ? 'Collapse All Directions' : 'Expand All Directions'}</span>
+                                </button>
+                              )}
+                            </div>
 
                             {pending.length === 0 ? (
                               <div className="bg-slate-800/50 rounded-xl p-8 text-center text-slate-500 mb-8">
@@ -1846,6 +1888,9 @@ export default function TeacherPortal({
                                     submission={sub}
                                     onReview={handleReview}
                                     onInspectStudent={handleInspectStudentFromSubmission}
+                                    classActivities={classActivities}
+                                    activeBoss={activeBoss}
+                                    forceExpanded={globalExpandDirections}
                                   />
                                 ))}
                               </div>
@@ -1856,6 +1901,8 @@ export default function TeacherPortal({
                                 reviewed={reviewed}
                                 onReview={handleReview}
                                 onInspectStudent={handleInspectStudentFromSubmission}
+                                classActivities={classActivities}
+                                activeBoss={activeBoss}
                               />
                             ) : selectedStudentObj && (
                               <div className="bg-slate-800/30 rounded-xl p-6 text-center text-slate-500 border border-slate-800">
@@ -2692,6 +2739,8 @@ export default function TeacherPortal({
             onClose={() => setInspectingStudentSubmissions(null)}
             allStudents={students}
             onSelectStudent={setInspectingStudentSubmissions}
+            classActivities={classActivities}
+            activeBoss={activeBoss}
           />
         )}
       </div>
@@ -5083,7 +5132,7 @@ function RewardsManager({ classId }) {
   );
 }
 
-function SubmissionCard({ submission, onReview, onInspectStudent }) {
+function SubmissionCard({ submission, onReview, onInspectStudent, classActivities, activeBoss, forceExpanded }) {
   const [feedback, setFeedback] = useState('');
   const feedbackId = `feedback-${submission.id}`;
 
@@ -5091,19 +5140,31 @@ function SubmissionCard({ submission, onReview, onInspectStudent }) {
     <article className="bg-slate-800 border-2 border-slate-700 rounded-xl p-6 hover:border-blue-500 transition-colors" aria-label={`Submission from ${submission.playerName}: ${submission.activityTitle}`}>
       <div className="flex justify-between items-start mb-4">
         <div>
-          <h4 className="font-bold text-lg text-white">{submission.activityTitle}</h4>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h4 className="font-bold text-lg text-white">{submission.activityTitle}</h4>
+            {submission.isBoss && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                Boss Challenge
+              </span>
+            )}
+            {submission.activityType && !submission.isBoss && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-slate-700 text-slate-300">
+                {submission.activityType}
+              </span>
+            )}
+          </div>
           {onInspectStudent ? (
             <button
               type="button"
               onClick={() => onInspectStudent(submission)}
-              className="text-blue-400 hover:text-blue-300 font-bold hover:underline flex items-center gap-1.5 text-left transition-colors"
+              className="text-blue-400 hover:text-blue-300 font-bold hover:underline flex items-center gap-1.5 text-left transition-colors mt-0.5"
               title={`Click to view all submissions from ${submission.playerName}`}
             >
               <span>{submission.playerName}</span>
               <ExternalLink className="w-3.5 h-3.5 opacity-70" />
             </button>
           ) : (
-            <p className="text-blue-400 font-bold">{submission.playerName}</p>
+            <p className="text-blue-400 font-bold mt-0.5">{submission.playerName}</p>
           )}
         </div>
         <span className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded">
@@ -5111,12 +5172,21 @@ function SubmissionCard({ submission, onReview, onInspectStudent }) {
         </span>
       </div>
 
+      {/* Activity Directions for Teacher Reference */}
+      <ActivityDirectionsCard
+        submission={submission}
+        classActivities={classActivities}
+        activeBoss={activeBoss}
+        defaultExpanded={true}
+        forceExpanded={forceExpanded}
+      />
+
       <div className="bg-slate-900/50 p-4 rounded-lg mb-4 border border-slate-800">
-        <p className="text-xs text-slate-500 uppercase font-bold mb-2 flex items-center gap-1.5">
-          {submission.submissionType === 'text' && <><MessageSquare className="w-3.5 h-3.5" aria-hidden="true" /> Written Response:</>}
-          {submission.submissionType === 'link' && <>Submission Link:</>}
-          {submission.submissionType === 'file' && <>Uploaded File:</>}
-          {!['text', 'link', 'file'].includes(submission.submissionType) && <>Submission Content:</>}
+        <p className="text-xs text-slate-400 uppercase font-bold mb-2 flex items-center gap-1.5">
+          {submission.submissionType === 'text' && <><MessageSquare className="w-3.5 h-3.5 text-purple-400" aria-hidden="true" /> Student Written Response:</>}
+          {submission.submissionType === 'link' && <><ExternalLink className="w-3.5 h-3.5 text-blue-400" aria-hidden="true" /> Student Submission Link:</>}
+          {submission.submissionType === 'file' && <><FileText className="w-3.5 h-3.5 text-green-400" aria-hidden="true" /> Attached File:</>}
+          {!['text', 'link', 'file'].includes(submission.submissionType) && <>Student Submitted Work:</>}
         </p>
         {submission.submissionType === 'link' ? (
           <a href={submission.submissionContent} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline break-all block p-2 bg-slate-800 rounded">
@@ -5175,7 +5245,7 @@ function SubmissionCard({ submission, onReview, onInspectStudent }) {
   );
 }
 
-function ReviewedSubmissions({ reviewed, onReview, onInspectStudent }) {
+function ReviewedSubmissions({ reviewed, onReview, onInspectStudent, classActivities, activeBoss }) {
   const [expandedId, setExpandedId] = useState(null);
   const [showAll, setShowAll] = useState(false);
   const [filter, setFilter] = useState('all'); // 'all', 'approved', 'rejected'
@@ -5263,12 +5333,22 @@ function ReviewedSubmissions({ reviewed, onReview, onInspectStudent }) {
 
             {expandedId === sub.id && (
               <div className="px-4 pb-4 border-t border-slate-700">
+                {/* Activity Directions for Teacher Reference */}
+                <div className="mt-3">
+                  <ActivityDirectionsCard
+                    submission={sub}
+                    classActivities={classActivities}
+                    activeBoss={activeBoss}
+                    defaultExpanded={false}
+                  />
+                </div>
+
                 <div className="bg-slate-900/50 p-4 rounded-lg mt-3 border border-slate-800">
-                  <p className="text-xs text-slate-500 uppercase font-bold mb-2 flex items-center gap-1.5">
-                    {sub.submissionType === 'text' && <><MessageSquare className="w-3.5 h-3.5" aria-hidden="true" /> Written Response:</>}
-                    {sub.submissionType === 'link' && <>Submission Link:</>}
-                    {sub.submissionType === 'file' && <>Uploaded File:</>}
-                    {!['text', 'link', 'file'].includes(sub.submissionType) && <>Submission Content:</>}
+                  <p className="text-xs text-slate-400 uppercase font-bold mb-2 flex items-center gap-1.5">
+                    {sub.submissionType === 'text' && <><MessageSquare className="w-3.5 h-3.5 text-purple-400" aria-hidden="true" /> Student Written Response:</>}
+                    {sub.submissionType === 'link' && <><ExternalLink className="w-3.5 h-3.5 text-blue-400" aria-hidden="true" /> Student Submission Link:</>}
+                    {sub.submissionType === 'file' && <><FileText className="w-3.5 h-3.5 text-green-400" aria-hidden="true" /> Attached File:</>}
+                    {!['text', 'link', 'file'].includes(sub.submissionType) && <>Student Submitted Work:</>}
                   </p>
                   {sub.submissionType === 'link' ? (
                     <a href={sub.submissionContent} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline break-all block p-2 bg-slate-800 rounded">

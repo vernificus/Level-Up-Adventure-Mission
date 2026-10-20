@@ -8,6 +8,7 @@ import {
 import { LEVELS } from '../data/gameData';
 import { FileViewer } from './FileViewer';
 import { realBackend as backend } from '../services/realBackend';
+import ActivityDirectionsCard from './ActivityDirectionsCard';
 
 export default function StudentSubmissionsModal({
   student,
@@ -17,9 +18,13 @@ export default function StudentSubmissionsModal({
   onReview,
   onClose,
   allStudents = [],
-  onSelectStudent
+  onSelectStudent,
+  classActivities = [],
+  activeBoss = null
 }) {
   const [localSubmissions, setLocalSubmissions] = useState([]);
+  const [loadedClassActivities, setLoadedClassActivities] = useState(classActivities || []);
+  const [loadedActiveBoss, setLoadedActiveBoss] = useState(activeBoss || null);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'pending', 'approved', 'rejected'
@@ -28,6 +33,27 @@ export default function StudentSubmissionsModal({
   const [feedbackInputs, setFeedbackInputs] = useState({});
   const [submittingAction, setSubmittingAction] = useState({});
   const [actionNotice, setActionNotice] = useState(null);
+
+  // Load activities and active boss if not provided via props
+  useEffect(() => {
+    if (classActivities && classActivities.length > 0) {
+      setLoadedClassActivities(classActivities);
+    } else if (classId) {
+      backend.getClassActivities(classId).then(acts => {
+        if (acts && acts.length > 0) setLoadedClassActivities(acts);
+      }).catch(() => {});
+    }
+  }, [classActivities, classId]);
+
+  useEffect(() => {
+    if (activeBoss) {
+      setLoadedActiveBoss(activeBoss);
+    } else if (classId) {
+      backend.getActiveBoss(classId).then(boss => {
+        if (boss) setLoadedActiveBoss(boss);
+      }).catch(() => {});
+    }
+  }, [activeBoss, classId]);
 
   // Load student submissions
   useEffect(() => {
@@ -523,6 +549,15 @@ export default function StudentSubmissionsModal({
                       </span>
                     </div>
                   </div>
+
+                  {/* Activity Directions for Teacher Evaluation */}
+                  <ActivityDirectionsCard
+                    submission={sub}
+                    classActivities={loadedClassActivities}
+                    activeBoss={loadedActiveBoss}
+                    defaultExpanded={sub.status === 'pending'}
+                    className="print:border-gray-400 print:bg-white"
+                  />
 
                   {/* Submission Content Body */}
                   <div className="bg-slate-950/60 rounded-xl p-4 border border-slate-800/80 mb-3 space-y-3 print:bg-gray-50 print:border-gray-300">

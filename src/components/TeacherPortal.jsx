@@ -6,7 +6,8 @@ import {
   XCircle, Clock, ChevronRight, GraduationCap, Copy, Trash2, Edit, RefreshCw, RotateCcw, Link, Save, Gift,
   Share2, UserPlus, X, Mail, MessageSquare, Sparkles, Star, Trophy, ChevronDown, ChevronUp, BarChart3, Eye, Zap, Building2, Layers, Shield, ShieldCheck,
   Camera, Upload, Package, ShoppingBag, Swords, Check, Settings, Image as ImageIcon, Award, Crown, Pencil, User, AlertTriangle,
-  Filter, Search, FileText, ExternalLink, Printer, GripVertical, UserX, ArrowRightLeft, Lock
+  Filter, Search, FileText, ExternalLink, Printer, GripVertical, UserX, ArrowRightLeft, Lock,
+  Archive, ArchiveRestore
 } from 'lucide-react';
 import {
   LEVELS, ACHIEVEMENTS, GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, GUILD_TROPHIES,
@@ -64,6 +65,7 @@ export default function TeacherPortal({
   const [selectedMoveOrgId, setSelectedMoveOrgId] = useState('none');
   const [savingMoveOrg, setSavingMoveOrg] = useState(false);
   const [newClassOrgId, setNewClassOrgId] = useState('none');
+  const [classArchiveFilter, setClassArchiveFilter] = useState('active'); // 'active' | 'archived'
 
   const [submissions, setSubmissions] = useState([]);
   const [students, setStudents] = useState([]);
@@ -471,6 +473,42 @@ export default function TeacherPortal({
       } catch (error) {
         alert('Error deleting class: ' + error.message);
       }
+    }
+  };
+
+  const handleArchiveClass = async (classId, e) => {
+    if (e) e.stopPropagation();
+    const target = classes.find(c => c.id === classId) || selectedClass;
+    const name = target?.name || 'this class';
+    if (!window.confirm(`Archive "${name}"?\n\nStudents will no longer be able to log in with this class code, but all student progress, submissions, and leaderboard records will be safely preserved. You can restore this class anytime.`)) {
+      return;
+    }
+    try {
+      await backend.archiveClass(classId);
+      setClasses(prev => prev.map(c => c.id === classId ? { ...c, archived: true, archivedAt: new Date().toISOString() } : c));
+      if (selectedClass?.id === classId) {
+        setSelectedClass(prev => prev ? { ...prev, archived: true, archivedAt: new Date().toISOString() } : null);
+      }
+    } catch (error) {
+      alert('Error archiving class: ' + error.message);
+    }
+  };
+
+  const handleUnarchiveClass = async (classId, e) => {
+    if (e) e.stopPropagation();
+    const target = classes.find(c => c.id === classId) || selectedClass;
+    const name = target?.name || 'this class';
+    if (!window.confirm(`Restore "${name}" to active classes?\n\nStudents will once again be able to log in and submit tasks.`)) {
+      return;
+    }
+    try {
+      await backend.unarchiveClass(classId);
+      setClasses(prev => prev.map(c => c.id === classId ? { ...c, archived: false, archivedAt: null } : c));
+      if (selectedClass?.id === classId) {
+        setSelectedClass(prev => prev ? { ...prev, archived: false, archivedAt: null } : null);
+      }
+    } catch (error) {
+      alert('Error restoring class: ' + error.message);
     }
   };
 
@@ -947,8 +985,47 @@ export default function TeacherPortal({
               </form>
             )}
 
+            {/* Active / Archived Class Filter Tabs */}
+            <div className="flex items-center gap-1 p-1 bg-slate-900 border border-slate-800 rounded-lg mb-3">
+              <button
+                type="button"
+                onClick={() => setClassArchiveFilter('active')}
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors flex items-center justify-center gap-1.5 ${
+                  classArchiveFilter === 'active'
+                    ? 'bg-green-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <span>Active</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  classArchiveFilter === 'active' ? 'bg-green-700 text-green-100' : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {classes.filter(c => !c.archived).length}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setClassArchiveFilter('archived')}
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors flex items-center justify-center gap-1.5 ${
+                  classArchiveFilter === 'archived'
+                    ? 'bg-amber-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Archive className="w-3 h-3" />
+                <span>Archived</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  classArchiveFilter === 'archived' ? 'bg-amber-700 text-amber-100' : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {classes.filter(c => !!c.archived).length}
+                </span>
+              </button>
+            </div>
+
             <div className="space-y-2" role="listbox" aria-label="Your classes">
-              {classes.map(cls => (
+              {classes
+                .filter(c => classArchiveFilter === 'archived' ? !!c.archived : !c.archived)
+                .map(cls => (
                 <div
                   key={cls.id}
                   role="option"
@@ -956,9 +1033,20 @@ export default function TeacherPortal({
                   tabIndex={0}
                   onClick={() => setSelectedClass(cls)}
                   onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setSelectedClass(cls)}
-                  className={`w-full p-4 rounded-xl text-left transition-all cursor-pointer relative group ${selectedClass?.id === cls.id ? 'bg-green-600 text-white shadow-lg shadow-green-900/50' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+                  className={`w-full p-4 rounded-xl text-left transition-all cursor-pointer relative group ${
+                    selectedClass?.id === cls.id
+                      ? (cls.archived ? 'bg-amber-700 text-white shadow-lg shadow-amber-950/50' : 'bg-green-600 text-white shadow-lg shadow-green-900/50')
+                      : (cls.archived ? 'bg-slate-800/70 border border-amber-900/30 text-slate-300 hover:bg-slate-800' : 'bg-slate-800 text-slate-300 hover:bg-slate-700')
+                  }`}
                 >
-                  <div className="font-bold text-lg pr-14 truncate">{cls.name}</div>
+                  <div className="flex items-center gap-2 pr-14">
+                    <div className="font-bold text-lg truncate">{cls.name}</div>
+                    {cls.archived && (
+                      <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        Archived
+                      </span>
+                    )}
+                  </div>
                   {cls.teacherName && cls.teacherId !== user.id && (
                     <div className="text-xs text-yellow-300/90 font-medium flex items-center gap-1 mt-0.5">
                       <User className="w-3 h-3 text-yellow-400" />
@@ -977,6 +1065,25 @@ export default function TeacherPortal({
                   </div>
 
                   <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {cls.archived ? (
+                      <button
+                        onClick={(e) => handleUnarchiveClass(cls.id, e)}
+                        className="p-1.5 text-amber-300 hover:text-white hover:bg-amber-900/50 rounded"
+                        title="Restore class to active"
+                        aria-label={`Restore class ${cls.name}`}
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={(e) => handleArchiveClass(cls.id, e)}
+                        className="p-1.5 text-slate-300 hover:text-amber-300 hover:bg-black/20 rounded"
+                        title="Archive class (preserves records, disables student login)"
+                        aria-label={`Archive class ${cls.name}`}
+                      >
+                        <Archive className="w-3.5 h-3.5" aria-hidden="true" />
+                      </button>
+                    )}
                     {isAdmin && (
                       <button
                         onClick={(e) => {
@@ -1004,7 +1111,7 @@ export default function TeacherPortal({
                     <button
                       onClick={(e) => handleDeleteClass(cls.id, e)}
                       className="p-1.5 text-red-300 hover:text-white hover:bg-red-900/40 rounded"
-                      title="Delete class"
+                      title="Delete class permanently"
                       aria-label={`Delete class ${cls.name}`}
                     >
                       <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
@@ -1012,7 +1119,18 @@ export default function TeacherPortal({
                   </div>
                 </div>
               ))}
-              {classes.length === 0 && !creatingClass && (
+
+              {classArchiveFilter === 'archived' && classes.filter(c => !!c.archived).length === 0 && (
+                <div className="text-center py-8 text-slate-500 border-2 border-dashed border-slate-700/60 rounded-xl px-4 text-xs">
+                  <Archive className="w-6 h-6 text-slate-600 mx-auto mb-2" />
+                  <p className="font-semibold text-slate-400 mb-1">No archived classes.</p>
+                  <p className="text-slate-500">
+                    When you archive completed or past classes, they will be safely kept here for reference.
+                  </p>
+                </div>
+              )}
+
+              {classArchiveFilter === 'active' && classes.filter(c => !c.archived).length === 0 && !creatingClass && (
                 <div className="text-center py-8 text-slate-500 border-2 border-dashed border-slate-700 rounded-xl px-4 text-xs">
                   {isAdmin && adminViewScope === 'mine' ? (
                     <>
@@ -1023,7 +1141,7 @@ export default function TeacherPortal({
                     </>
                   ) : (
                     <>
-                      No classes yet.<br/>Click + to create one.
+                      No active classes yet.<br/>Click + to create one.
                     </>
                   )}
                 </div>
@@ -1062,6 +1180,28 @@ export default function TeacherPortal({
                         <ChevronRight className="w-3.5 h-3.5" />
                       </button>
                     )}
+                  </div>
+                )}
+
+                {/* Archived Class Notice Banner */}
+                {selectedClass.archived && (
+                  <div className="bg-amber-950/40 border border-amber-500/40 rounded-xl p-3.5 mb-4 flex flex-wrap items-center justify-between gap-3 shadow-md">
+                    <div className="flex items-center gap-2.5 text-xs text-amber-200">
+                      <Archive className="w-4 h-4 text-amber-400 shrink-0" />
+                      <div>
+                        <strong className="text-white">This class is archived.</strong>
+                        <span className="ml-1 text-slate-300">
+                          Student logins and task submissions are disabled. All past student submissions, grades, and records remain preserved.
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleUnarchiveClass(selectedClass.id)}
+                      className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Restore Class</span>
+                    </button>
                   </div>
                 )}
 

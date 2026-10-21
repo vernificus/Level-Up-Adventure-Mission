@@ -140,6 +140,40 @@ export const mockBackend = {
     return true;
   },
 
+  async archiveClass(classId) {
+    await wait(DELAY);
+    const db = getDB();
+    const cls = db.classes.find(c => c.id === classId);
+    if (!cls) throw new Error("Class not found");
+    cls.archived = true;
+    cls.archivedAt = new Date().toISOString();
+    saveDB(db);
+    return true;
+  },
+
+  async unarchiveClass(classId) {
+    await wait(DELAY);
+    const db = getDB();
+    const cls = db.classes.find(c => c.id === classId);
+    if (!cls) throw new Error("Class not found");
+    cls.archived = false;
+    cls.archivedAt = null;
+    saveDB(db);
+    return true;
+  },
+
+  async getClassByCode(code) {
+    await wait(DELAY);
+    const db = getDB();
+    const cls = db.classes.find(c => c.code === code);
+    if (!cls) throw new Error('Class not found');
+    if (cls.archived) {
+      throw new Error('This class has been archived by the teacher. Please contact your teacher for assistance.');
+    }
+    const teacher = (db.teachers || []).find(t => t.id === cls.teacherId);
+    return { ...cls, teacherName: teacher?.name || 'Teacher' };
+  },
+
   async getAllClassesByOrg(orgId) {
     await wait(DELAY);
     const db = getDB();
@@ -176,6 +210,9 @@ export const mockBackend = {
     const db = getDB();
     const cls = db.classes.find(c => c.code === classCode);
     if (!cls) throw new Error('Invalid class code');
+    if (cls.archived) {
+      throw new Error('This class has been archived by the teacher. Please contact your teacher for assistance.');
+    }
 
     // Check if student exists in this class
     let student = db.students.find(s => s.classId === cls.id && s.name.toLowerCase() === username.toLowerCase());

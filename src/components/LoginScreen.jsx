@@ -60,6 +60,9 @@ export default function LoginScreen() {
         setLoading(true);
         try {
           const cls = await backend.getClassByCode(code);
+          if (cls?.archived) {
+            throw new Error('This class has been archived by the teacher. Please contact your teacher for assistance.');
+          }
           setClassInfo(cls);
           const students = await backend.getStudents(cls.id);
           setRoster(students);
@@ -96,6 +99,9 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const cls = await backend.getClassByCode(classCode.trim().toUpperCase());
+      if (cls?.archived) {
+        throw new Error('This class has been archived by the teacher. Please contact your teacher for assistance.');
+      }
       setClassInfo(cls);
 
       // Fetch roster

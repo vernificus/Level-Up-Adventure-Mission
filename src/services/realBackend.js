@@ -215,6 +215,12 @@ export const realBackend = {
       const student = docSnap.data();
 
       if (student.classId !== classId) throw new Error("Invalid class for this student");
+      
+      // Check if class is archived
+      const classDoc = await getDoc(doc(db, "classes", classId));
+      if (classDoc.exists() && classDoc.data().archived) {
+        throw new Error("This class has been archived by the teacher. Please contact your teacher for assistance.");
+      }
 
       // Check password (simple string check for now)
       if (student.password && student.password !== password) {
@@ -414,6 +420,34 @@ export const realBackend = {
     }
   },
 
+  async archiveClass(classId) {
+    try {
+      const classRef = doc(db, "classes", classId);
+      await updateDoc(classRef, {
+        archived: true,
+        archivedAt: serverTimestamp()
+      });
+      return true;
+    } catch (error) {
+      console.error("Error archiving class:", error);
+      throw error;
+    }
+  },
+
+  async unarchiveClass(classId) {
+    try {
+      const classRef = doc(db, "classes", classId);
+      await updateDoc(classRef, {
+        archived: false,
+        archivedAt: null
+      });
+      return true;
+    } catch (error) {
+      console.error("Error unarchiving class:", error);
+      throw error;
+    }
+  },
+
   async getClassByCode(code) {
     const q = query(collection(db, "classes"), where("code", "==", code));
     const snapshot = await getDocs(q);
@@ -422,6 +456,10 @@ export const realBackend = {
 
     const classDoc = snapshot.docs[0];
     const classData = classDoc.data();
+
+    if (classData.archived) {
+      throw new Error('This class has been archived by the teacher. Please contact your teacher for assistance.');
+    }
 
     let teacherName = "Unknown";
     try {

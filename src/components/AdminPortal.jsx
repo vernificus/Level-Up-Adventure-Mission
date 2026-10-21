@@ -5,7 +5,8 @@ import {
   Building2, Users, BookOpen, Plus, Search, LogOut, CheckCircle2,
   XCircle, Edit, Trash2, ShieldCheck, ChevronRight, Share2, Filter,
   CheckSquare, Square, RefreshCw, AlertCircle, Layers, Sparkles, Shield, Copy,
-  Swords, Package, ShoppingBag, Check, Pencil, Eye, X, Crown, User, FileText
+  Swords, Package, ShoppingBag, Check, Pencil, Eye, X, Crown, User, FileText,
+  Archive, RotateCcw
 } from 'lucide-react';
 import ActivityEditor from './ActivityEditor';
 import LegalModal from './LegalModal';
@@ -86,6 +87,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
   // Classes Oversight State
   const [classSearch, setClassSearch] = useState('');
   const [classOrgFilter, setClassOrgFilter] = useState('');
+  const [classArchiveFilter, setClassArchiveFilter] = useState('active'); // 'active' | 'archived'
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [renamingClass, setRenamingClass] = useState(null);
   const [renameInput, setRenameInput] = useState('');
@@ -268,6 +270,30 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
       loadAllData();
     } catch (err) {
       setError("Failed to delete class: " + err.message);
+    }
+  };
+
+  const handleArchiveClass = async (cls) => {
+    if (!window.confirm(`Archive class "${cls.name}" (Code: ${cls.code})?\n\nStudents will no longer be able to log in with this class code, but all student progress, submissions, and leaderboard records will be safely preserved. You can restore this class anytime.`)) return;
+    try {
+      await backend.archiveClass(cls.id);
+      notifySuccess(`Archived class "${cls.name}"`);
+      loadClassesForOrg(classOrgFilter || selectedOrgId || 'all');
+      loadAllData();
+    } catch (err) {
+      setError("Failed to archive class: " + err.message);
+    }
+  };
+
+  const handleUnarchiveClass = async (cls) => {
+    if (!window.confirm(`Restore class "${cls.name}" (Code: ${cls.code}) to active classes?\n\nStudents will once again be able to log in and submit tasks.`)) return;
+    try {
+      await backend.unarchiveClass(cls.id);
+      notifySuccess(`Restored class "${cls.name}"`);
+      loadClassesForOrg(classOrgFilter || selectedOrgId || 'all');
+      loadAllData();
+    } catch (err) {
+      setError("Failed to restore class: " + err.message);
     }
   };
 
@@ -1591,25 +1617,77 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                 />
               </div>
 
+              {/* Active / Archived Class Filter */}
+              <div className="flex items-center gap-1 p-1 bg-slate-900 border border-slate-800 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setClassArchiveFilter('active')}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 ${
+                    classArchiveFilter === 'active'
+                      ? 'bg-yellow-500 text-slate-950 font-bold shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <span>Active</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                    classArchiveFilter === 'active' ? 'bg-yellow-600/40 text-slate-950' : 'bg-slate-800 text-slate-400'
+                  }`}>
+                    {allClasses.filter(c => !c.archived).length}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setClassArchiveFilter('archived')}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 ${
+                    classArchiveFilter === 'archived'
+                      ? 'bg-amber-600 text-white font-bold shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Archive className="w-3.5 h-3.5" />
+                  <span>Archived</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                    classArchiveFilter === 'archived' ? 'bg-amber-700 text-amber-100' : 'bg-slate-800 text-slate-400'
+                  }`}>
+                    {allClasses.filter(c => !!c.archived).length}
+                  </span>
+                </button>
+              </div>
+
               <div className="flex items-center gap-4 text-xs text-slate-400">
-                <span>Total Classes: <strong className="text-white font-bold">{allClasses.length}</strong></span>
+                <span>Active: <strong className="text-white font-bold">{allClasses.filter(c => !c.archived).length}</strong></span>
                 <span>•</span>
-                <span>Total Enrolled Students: <strong className="text-white font-bold">{allClasses.reduce((acc, c) => acc + (c.studentCount || 0), 0)}</strong></span>
+                <span>Archived: <strong className="text-amber-400 font-bold">{allClasses.filter(c => !!c.archived).length}</strong></span>
+                <span>•</span>
+                <span>Total Students: <strong className="text-white font-bold">{allClasses.reduce((acc, c) => acc + (c.studentCount || 0), 0)}</strong></span>
               </div>
             </div>
 
             {/* Classes Grid */}
-            {allClasses.length === 0 ? (
+            {allClasses
+              .filter(c => classArchiveFilter === 'archived' ? !!c.archived : !c.archived)
+              .filter(c => {
+                const q = classSearch.toLowerCase().trim();
+                if (!q) return true;
+                return (c.name || '').toLowerCase().includes(q) ||
+                       (c.teacherName || '').toLowerCase().includes(q) ||
+                       (c.code || '').toLowerCase().includes(q);
+              }).length === 0 ? (
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center">
                 <BookOpen className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                <h3 className="text-lg font-bold text-white">No Classes Found</h3>
+                <h3 className="text-lg font-bold text-white">
+                  {classArchiveFilter === 'archived' ? 'No Archived Classes' : 'No Classes Found'}
+                </h3>
                 <p className="text-slate-400 text-sm mt-1 max-w-md mx-auto">
-                  {classSearch ? 'No classes match your search query.' : 'There are no classes created for this organization yet. Click "+ Create Class" to add one.'}
+                  {classArchiveFilter === 'archived'
+                    ? 'There are no archived classes in this organization view. Archived classes will be listed here when teachers or admins archive them.'
+                    : (classSearch ? 'No classes match your search query.' : 'There are no classes created for this organization yet. Click "+ Create Class" to add one.')}
                 </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {allClasses
+                  .filter(c => classArchiveFilter === 'archived' ? !!c.archived : !c.archived)
                   .filter(c => {
                     const q = classSearch.toLowerCase().trim();
                     if (!q) return true;
@@ -1648,6 +1726,11 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                           <h3 className="text-xl font-bold text-white group-hover:text-yellow-400 transition-colors truncate">
                             {cls.name}
                           </h3>
+                          {cls.archived && (
+                            <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                              Archived
+                            </span>
+                          )}
                           <button
                             onClick={() => handleStartRenameClass(cls)}
                             className="p-1 text-slate-500 hover:text-yellow-400 rounded transition-colors opacity-0 group-hover:opacity-100"
@@ -1710,10 +1793,30 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                           <span className="hidden sm:inline">Rename</span>
                         </button>
 
+                        {cls.archived ? (
+                          <button
+                            onClick={() => handleUnarchiveClass(cls)}
+                            className="px-2.5 py-2 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 rounded-xl text-xs font-semibold flex items-center gap-1 border border-amber-500/30 transition-colors"
+                            title="Restore class to active"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                            <span className="hidden sm:inline">Restore</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleArchiveClass(cls)}
+                            className="px-2.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1 border border-slate-700 transition-colors"
+                            title="Archive class (preserves data, disables student login)"
+                          >
+                            <Archive className="w-3.5 h-3.5 text-slate-400" />
+                            <span className="hidden sm:inline">Archive</span>
+                          </button>
+                        )}
+
                         <button
                           onClick={() => handleDeleteClass(cls)}
                           className="p-2 bg-red-950/40 hover:bg-red-900/60 text-red-300 rounded-xl text-xs font-semibold flex items-center justify-center border border-red-900/30 transition-colors"
-                          title="Delete class"
+                          title="Delete class permanently"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

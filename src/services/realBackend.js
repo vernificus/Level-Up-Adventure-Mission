@@ -21,7 +21,7 @@ import {
   arrayRemove
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
-import { GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, DEFAULT_STEM_SUPPLIES, GUILD_LEVELS, GUILD_CHALLENGES, BOSS_CHALLENGES, getGuildLevelInfo, getHighFiveCooldownStatus } from "../data/gameData";
+import { GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, DEFAULT_STEM_SUPPLIES, GUILD_LEVELS, GUILD_CHALLENGES, BOSS_CHALLENGES, DEFAULT_PATHS, getGuildLevelInfo, getHighFiveCooldownStatus } from "../data/gameData";
 
 export const realBackend = {
   // ================= TEACHER AUTH =================

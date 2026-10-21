@@ -727,6 +727,9 @@ export const LEARNING_PATHS = [
   }
 ];
 
+// Alias for convenience / backwards compatibility
+export const DEFAULT_PATHS = LEARNING_PATHS;
+
 /**
  * Checks if a high-five cooldown is currently active between sender and receiver.
  * @param {string|Date} lastSentIso - ISO timestamp string of the last high-five sent to this target

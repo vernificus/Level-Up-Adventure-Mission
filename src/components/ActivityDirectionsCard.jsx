@@ -11,7 +11,7 @@ import {
   Trophy,
   Info
 } from 'lucide-react';
-import { DEFAULT_PATHS, BOSS_CHALLENGES } from '../data/gameData';
+import { LEARNING_PATHS as DEFAULT_PATHS, BOSS_CHALLENGES } from '../data/gameData';
 
 // Normalize a step into object form { text, link?, linkText? }
 export function normalizeStep(step) {

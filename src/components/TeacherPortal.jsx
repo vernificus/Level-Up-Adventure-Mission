@@ -546,7 +546,14 @@ export default function TeacherPortal({
 
   const handleReview = async (submissionId, status, feedback) => {
     await backend.reviewSubmission(submissionId, status, feedback);
-    // No need to reload, subscription handles it
+    if (selectedClass?.id) {
+      const updatedStudents = await backend.getStudents(selectedClass.id);
+      setStudents(updatedStudents || []);
+      if (inspectingStudentSubmissions) {
+        const refreshed = (updatedStudents || []).find(s => s.id === inspectingStudentSubmissions.id);
+        if (refreshed) setInspectingStudentSubmissions(refreshed);
+      }
+    }
   };
 
   const handleRefresh = () => {
@@ -2876,7 +2883,12 @@ export default function TeacherPortal({
             className={selectedClass?.name}
             submissions={submissions}
             onReview={handleReview}
-            onClose={() => setInspectingStudentSubmissions(null)}
+            onClose={() => {
+              setInspectingStudentSubmissions(null);
+              if (selectedClass?.id) {
+                backend.getStudents(selectedClass.id).then(setStudents);
+              }
+            }}
             allStudents={students}
             onSelectStudent={setInspectingStudentSubmissions}
             classActivities={classActivities}

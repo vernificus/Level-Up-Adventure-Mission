@@ -1,4 +1,17 @@
-import { GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, DEFAULT_STEM_SUPPLIES, GUILD_LEVELS, GUILD_CHALLENGES, BOSS_CHALLENGES, getGuildLevelInfo, getHighFiveCooldownStatus } from "../data/gameData";
+import { LEVELS, GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, DEFAULT_STEM_SUPPLIES, GUILD_LEVELS, GUILD_CHALLENGES, BOSS_CHALLENGES, getGuildLevelInfo, getHighFiveCooldownStatus } from "../data/gameData";
+
+function calculateLevelAndBonusCoins(oldXp, newXp) {
+  const oldLevel = LEVELS.reduce((acc, l) => oldXp >= l.xpRequired ? l : acc, LEVELS[0]);
+  const newLevel = LEVELS.reduce((acc, l) => newXp >= l.xpRequired ? l : acc, LEVELS[0]);
+  let bonusCoins = 0;
+  if (newLevel.level > oldLevel.level) {
+    for (let lvl = oldLevel.level + 1; lvl <= newLevel.level; lvl++) {
+      const lvlData = LEVELS.find(l => l.level === lvl);
+      if (lvlData?.coinReward) bonusCoins += lvlData.coinReward;
+    }
+  }
+  return { oldLevel, newLevel, bonusCoins };
+}
 
 // Simulates a backend with a 500ms delay to mimic network latency
 const DELAY = 500;
@@ -324,24 +337,68 @@ export const mockBackend = {
     const index = db.submissions.findIndex(s => s.id === submissionId);
     if (index !== -1) {
       const sub = db.submissions[index];
+      const prevStatus = sub.status || 'pending';
+      const xpEarned = Number(sub.xp) || (sub.isBoss ? 300 : 100);
+
       db.submissions[index] = {
         ...sub,
         status,
-        teacherFeedback: feedback,
+        teacherFeedback: feedback !== undefined ? feedback : (sub.teacherFeedback || ''),
         reviewedAt: new Date().toISOString()
       };
 
-      // Sync student completedActivities
-      if (sub.studentId && sub.activityId && !sub.isBoss) {
+      // Sync student completedActivities, XP, Coins, Level, Guild XP
+      if (sub.studentId) {
         const student = db.students.find(st => st.id === sub.studentId);
         if (student) {
-          student.completedActivities = Array.isArray(student.completedActivities)
-            ? student.completedActivities
+          const currentXp = Number(student.xp) || 0;
+          const currentCoins = Number(student.coins) || 100;
+          const currentGuildXp = Number(student.guildXpContributed) || 0;
+          const completed = Array.isArray(student.completedActivities)
+            ? [...student.completedActivities]
             : [];
-          if (status === 'approved' && !student.completedActivities.includes(sub.activityId)) {
-            student.completedActivities.push(sub.activityId);
-          } else if (status === 'rejected') {
-            student.completedActivities = student.completedActivities.filter(id => id !== sub.activityId);
+          const completedBosses = Array.isArray(student.completedBossChallenges)
+            ? [...student.completedBossChallenges]
+            : [];
+          const totalCompleted = Number(student.totalActivitiesCompleted) || completed.length;
+
+          if (status === 'approved' && prevStatus !== 'approved') {
+            const newXp = currentXp + xpEarned;
+            const { bonusCoins } = calculateLevelAndBonusCoins(currentXp, newXp);
+            student.xp = newXp;
+            student.coins = currentCoins + bonusCoins;
+            if (student.guild) {
+              student.guildXpContributed = currentGuildXp + xpEarned;
+            }
+            student.totalActivitiesCompleted = totalCompleted + 1;
+            if (student.totalActivitiesCompleted % 3 === 0) {
+              student.pendingMysteryBoxes = (Number(student.pendingMysteryBoxes) || 0) + 1;
+            }
+
+            if (sub.isBoss) {
+              if (sub.activityId && !completedBosses.includes(sub.activityId)) {
+                completedBosses.push(sub.activityId);
+              }
+              student.completedBossChallenges = completedBosses;
+            } else {
+              if (sub.activityId && !completed.includes(sub.activityId)) {
+                completed.push(sub.activityId);
+              }
+              student.completedActivities = completed;
+            }
+            db.submissions[index].xpAwarded = xpEarned;
+          } else if (status !== 'approved' && prevStatus === 'approved') {
+            const xpToDeduct = Number(sub.xpAwarded) || xpEarned;
+            student.xp = Math.max(0, currentXp - xpToDeduct);
+            student.guildXpContributed = Math.max(0, currentGuildXp - xpToDeduct);
+            student.totalActivitiesCompleted = Math.max(0, totalCompleted - 1);
+
+            if (sub.isBoss) {
+              student.completedBossChallenges = completedBosses.filter(id => id !== sub.activityId);
+            } else {
+              student.completedActivities = completed.filter(id => id !== sub.activityId);
+            }
+            db.submissions[index].xpAwarded = 0;
           }
         }
       }
@@ -350,6 +407,111 @@ export const mockBackend = {
       return db.submissions[index];
     }
     throw new Error('Submission not found');
+  },
+
+  async syncStudentSubmissions(studentId) {
+    await wait(DELAY);
+    const db = getDB();
+    const student = db.students.find(s => s.id === studentId);
+    if (!student) throw new Error("Student not found");
+
+    const subs = db.submissions.filter(s =>
+      s.studentId === student.id ||
+      (student.name && s.playerName && s.playerName.trim().toLowerCase() === student.name.trim().toLowerCase())
+    );
+
+    const approvedSubs = subs.filter(s => s.status === 'approved');
+    const approvedXpTotal = approvedSubs.reduce(
+      (sum, s) => sum + (Number(s.xp) || (s.isBoss ? 300 : 100)),
+      0
+    );
+
+    const currentXp = Number(student.xp) || 0;
+    let updated = false;
+
+    if (currentXp < approvedXpTotal) {
+      student.xp = approvedXpTotal;
+      const { bonusCoins } = calculateLevelAndBonusCoins(currentXp, approvedXpTotal);
+      if (bonusCoins > 0) {
+        student.coins = (Number(student.coins) || 100) + bonusCoins;
+      }
+      if (student.guild) {
+        student.guildXpContributed = Math.max(Number(student.guildXpContributed) || 0, approvedXpTotal);
+      }
+      updated = true;
+    }
+
+    const approvedActivityIds = approvedSubs.filter(s => !s.isBoss && s.activityId).map(s => s.activityId);
+    student.completedActivities = Array.from(new Set([...(student.completedActivities || []), ...approvedActivityIds]));
+    student.totalActivitiesCompleted = Math.max(Number(student.totalActivitiesCompleted) || 0, approvedSubs.length);
+
+    saveDB(db);
+    return {
+      studentId,
+      updated,
+      oldXp: currentXp,
+      newXp: student.xp,
+      approvedCount: approvedSubs.length,
+      talliedXp: approvedXpTotal
+    };
+  },
+
+  async reconcileClassSubmissions(classId) {
+    await wait(DELAY);
+    const db = getDB();
+    const students = db.students.filter(s => s.classId === classId);
+    let updatedCount = 0;
+    const details = [];
+
+    for (const student of students) {
+      const stSubs = db.submissions.filter(s =>
+        s.studentId === student.id ||
+        (student.name && s.playerName && s.playerName.trim().toLowerCase() === student.name.trim().toLowerCase())
+      );
+
+      const approvedSubs = stSubs.filter(s => s.status === 'approved');
+      const approvedXpTotal = approvedSubs.reduce(
+        (sum, s) => sum + (Number(s.xp) || (s.isBoss ? 300 : 100)),
+        0
+      );
+
+      const currentXp = Number(student.xp) || 0;
+      let needsUpdate = false;
+
+      if (currentXp < approvedXpTotal) {
+        student.xp = approvedXpTotal;
+        const { bonusCoins } = calculateLevelAndBonusCoins(currentXp, approvedXpTotal);
+        if (bonusCoins > 0) {
+          student.coins = (Number(student.coins) || 100) + bonusCoins;
+        }
+        if (student.guild) {
+          student.guildXpContributed = Math.max(Number(student.guildXpContributed) || 0, approvedXpTotal);
+        }
+        needsUpdate = true;
+      }
+
+      const approvedActivityIds = approvedSubs.filter(s => !s.isBoss && s.activityId).map(s => s.activityId);
+      const mergedCompleted = Array.from(new Set([...(student.completedActivities || []), ...approvedActivityIds]));
+      if (mergedCompleted.length !== (student.completedActivities || []).length) {
+        student.completedActivities = mergedCompleted;
+        needsUpdate = true;
+      }
+
+      if (needsUpdate) {
+        updatedCount++;
+        details.push({
+          studentId: student.id,
+          name: student.name,
+          oldXp: currentXp,
+          newXp: student.xp,
+          approvedSubsCount: approvedSubs.length,
+          talliedXp: approvedXpTotal
+        });
+      }
+    }
+
+    saveDB(db);
+    return { totalStudents: students.length, updatedCount, details };
   },
 
   async updateTeacherRole(teacherId, newRole) {

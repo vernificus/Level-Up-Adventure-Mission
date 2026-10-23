@@ -74,6 +74,7 @@ export function useGameState(overrideClassId) {
   const [showMysteryReward, setShowMysteryReward] = useState(null);
 
   const [dataLoaded, setDataLoaded] = useState(false);
+  const processedSubmissionIds = useRef(new Set());
 
   // Load data from "Backend" on mount
   useEffect(() => {
@@ -220,6 +221,68 @@ export function useGameState(overrideClassId) {
           ...approvedActivityIds
         ]));
         gameData.completedActivities = mergedCompleted;
+
+        // Also reconcile completedBossChallenges
+        const approvedBossSubs = subs.filter(s => s.status === 'approved' && s.isBoss);
+        const approvedBossIds = approvedBossSubs.map(s => s.activityId);
+        const mergedBosses = Array.from(new Set([
+          ...(gameData.completedBossChallenges || []),
+          ...approvedBossIds
+        ]));
+        gameData.completedBossChallenges = mergedBosses;
+
+        // Tally all approved submissions XP
+        const allApprovedSubs = subs.filter(s => s.status === 'approved');
+        const approvedXpTotal = allApprovedSubs.reduce(
+          (sum, s) => sum + (Number(s.xp) || (s.isBoss ? 300 : 100)),
+          0
+        );
+
+        let didReconcileXp = false;
+        if ((gameData.xp || 0) < approvedXpTotal) {
+          const oldXp = gameData.xp || 0;
+          gameData.xp = approvedXpTotal;
+          // Calculate bonus coins from levels gained
+          const oldLevel = LEVELS.reduce((acc, l) => oldXp >= l.xpRequired ? l : acc, LEVELS[0]);
+          const newLevel = LEVELS.reduce((acc, l) => approvedXpTotal >= l.xpRequired ? l : acc, LEVELS[0]);
+          let bonusCoins = 0;
+          if (newLevel.level > oldLevel.level) {
+            for (let lvl = oldLevel.level + 1; lvl <= newLevel.level; lvl++) {
+              const lvlData = LEVELS.find(l => l.level === lvl);
+              if (lvlData?.coinReward) bonusCoins += lvlData.coinReward;
+            }
+          }
+          if (bonusCoins > 0) {
+            gameData.coins = (gameData.coins || 100) + bonusCoins;
+          }
+          if (gameData.guild) {
+            gameData.guildXpContributed = Math.max(gameData.guildXpContributed || 0, approvedXpTotal);
+          }
+          didReconcileXp = true;
+        }
+
+        const expectedTotalActivities = Math.max(
+          gameData.totalActivitiesCompleted || 0,
+          allApprovedSubs.length,
+          mergedCompleted.length
+        );
+        gameData.totalActivitiesCompleted = expectedTotalActivities;
+
+        // Populate processedSubmissionIds with all currently approved subs so they don't double-trigger
+        allApprovedSubs.forEach(s => {
+          if (s.id) processedSubmissionIds.current.add(s.id);
+        });
+
+        if (didReconcileXp || mergedCompleted.length !== (studentData.completedActivities || []).length) {
+          backend.updateStudent(user.id, {
+            xp: gameData.xp,
+            coins: gameData.coins,
+            completedActivities: mergedCompleted,
+            completedBossChallenges: mergedBosses,
+            totalActivitiesCompleted: gameData.totalActivitiesCompleted,
+            guildXpContributed: gameData.guildXpContributed
+          }).catch(err => console.warn('Could not persist reconciled student XP:', err));
+        }
 
         setGameState(prev => ({
           ...prev,
@@ -494,9 +557,6 @@ export function useGameState(overrideClassId) {
     }
   }, [user]);
 
-  // Track which submission IDs we've already processed rewards for (to avoid double-counting
-  // the same approved submission during polling). This is an in-memory set, not persisted.
-  const processedSubmissionIds = useRef(new Set());
 
   const processReward = (submission) => {
     // Skip if we already processed this exact submission (prevents double-counting from polls)

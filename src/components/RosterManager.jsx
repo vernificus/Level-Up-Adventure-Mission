@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { realBackend as backend } from '../services/realBackend';
-import { UserPlus, Lock, Trash2, Save, Edit, X, Check, RotateCcw, Gift, Star, Zap, Trophy, Eye, EyeOff, Sparkles, User, ShieldCheck, FileText, Shield, Search, ArrowRightLeft } from 'lucide-react';
+import { UserPlus, Lock, Trash2, Save, Edit, X, Check, RotateCcw, Gift, Star, Zap, Trophy, Eye, EyeOff, Sparkles, User, ShieldCheck, FileText, Shield, Search, ArrowRightLeft, AlertTriangle } from 'lucide-react';
 import { ACHIEVEMENTS, LEVELS, AVATAR_ITEMS, GUILDS } from '../data/gameData';
 import Avatar3D, { AvatarColorSwatch } from './Avatar3D';
 import StudentSubmissionsModal from './StudentSubmissionsModal';
@@ -276,6 +276,56 @@ export default function RosterManager({
     setGivingReward(false);
   };
 
+  const [syncingRoster, setSyncingRoster] = useState(false);
+
+  // Identify any students whose approved submissions exceed their current recorded XP
+  const studentsWithMissingXp = useMemo(() => {
+    return students.filter(student => {
+      const stSubs = internalSubmissions.filter(s =>
+        s.studentId === student.id ||
+        (student.name && s.playerName && s.playerName.trim().toLowerCase() === student.name.trim().toLowerCase())
+      );
+      const approvedSubs = stSubs.filter(s => s.status === 'approved');
+      const approvedXpTotal = approvedSubs.reduce((sum, s) => sum + (Number(s.xp) || (s.isBoss ? 300 : 100)), 0);
+      return (student.xp || 0) < approvedXpTotal;
+    });
+  }, [students, internalSubmissions]);
+
+  // Bulk reconcile all students in this class
+  const handleReconcileAllSubmissions = async () => {
+    if (!classId) return;
+    setSyncingRoster(true);
+    try {
+      const result = await backend.reconcileClassSubmissions(classId);
+      await loadStudents();
+      const updatedSubs = await backend.getSubmissions(classId);
+      setInternalSubmissions(updatedSubs || []);
+      if (result.updatedCount > 0) {
+        const studentNames = result.details.map(d => `${d.name} (${d.oldXp} → ${d.newXp} XP)`).join(', ');
+        alert(`✅ Tally Complete!\n\nSuccessfully updated and tallied XP for ${result.updatedCount} student(s):\n${studentNames}`);
+      } else {
+        alert('✅ All student XP balances are already fully tallied and up to date with their approved submissions!');
+      }
+    } catch (err) {
+      alert('Error tallying submissions XP: ' + err.message);
+    } finally {
+      setSyncingRoster(false);
+    }
+  };
+
+  // Single-student tally action
+  const handleSyncSingleStudent = async (studentId) => {
+    try {
+      const res = await backend.syncStudentSubmissions(studentId);
+      await loadStudents();
+      const updatedSubs = await backend.getSubmissions(classId);
+      setInternalSubmissions(updatedSubs || []);
+      alert(`✅ Successfully tallied submissions! New XP: ${res.newXp} XP.`);
+    } catch (err) {
+      alert('Error tallying student XP: ' + err.message);
+    }
+  };
+
   // Bulk upload (simple text area parsing)
   const [bulkText, setBulkText] = useState('');
   const [showBulk, setShowBulk] = useState(false);
@@ -445,6 +495,32 @@ export default function RosterManager({
                       <option value="xp-asc">XP: Lowest → Highest</option>
                     </select>
                   </div>
+
+                  {/* Tally / Reconcile All Submissions XP Button */}
+                  <button
+                    type="button"
+                    onClick={handleReconcileAllSubmissions}
+                    disabled={syncingRoster}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 min-h-[34px] shadow-sm cursor-pointer ${
+                      studentsWithMissingXp.length > 0
+                        ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 font-black animate-pulse'
+                        : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 hover:border-slate-500'
+                    }`}
+                    title={
+                      studentsWithMissingXp.length > 0
+                        ? `${studentsWithMissingXp.length} student(s) have approved submissions with untallied XP! Click to auto-tally.`
+                        : 'Verify and sync all student XP balances with approved choice board submissions'
+                    }
+                  >
+                    <Zap className={`w-3.5 h-3.5 ${studentsWithMissingXp.length > 0 ? 'text-slate-950 fill-slate-950' : 'text-yellow-400'}`} />
+                    <span>
+                      {syncingRoster ? 'Tallying XP...' : (
+                        studentsWithMissingXp.length > 0
+                          ? `Tally Submissions XP (${studentsWithMissingXp.length} Unsynced)`
+                          : 'Tally Submissions XP'
+                      )}
+                    </span>
+                  </button>
                 </div>
               </div>
 
@@ -576,6 +652,34 @@ export default function RosterManager({
                          <p className="font-mono text-purple-400 group-hover/done:text-green-300 font-bold">{(student.completedActivities || []).length}</p>
                        </button>
                     </div>
+
+                    {/* Unsynced Submissions XP Alert & 1-Click Sync */}
+                    {(() => {
+                      const stApprovedSubs = internalSubmissions.filter(s =>
+                        (s.studentId === student.id || (student.name && s.playerName && s.playerName.trim().toLowerCase() === student.name.trim().toLowerCase())) &&
+                        s.status === 'approved'
+                      );
+                      const stApprovedXp = stApprovedSubs.reduce((sum, s) => sum + (Number(s.xp) || (s.isBoss ? 300 : 100)), 0);
+                      if (stApprovedXp > (student.xp || 0)) {
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => handleSyncSingleStudent(student.id)}
+                            className="mt-2.5 w-full py-1.5 px-2.5 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 rounded-lg text-xs font-bold flex items-center justify-between transition-colors group/sync cursor-pointer"
+                            title={`Approved submissions tally to ${stApprovedXp} XP, but ${student.name} currently only has ${student.xp || 0} XP. Click to tally!`}
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <Zap className="w-3.5 h-3.5 text-amber-400 group-hover/sync:animate-bounce" />
+                              <span>Submissions total <strong>{stApprovedXp} XP</strong></span>
+                            </span>
+                            <span className="bg-amber-500 text-slate-950 px-1.5 py-0.5 rounded text-[10px] font-black">
+                              Sync (+{stApprovedXp - (student.xp || 0)} XP)
+                            </span>
+                          </button>
+                        );
+                      }
+                      return null;
+                    })()}
 
                     {/* Guild Alliance Selection */}
                     <div className="mt-3 pt-3 border-t border-slate-600/60 flex items-center justify-between gap-2">
@@ -1036,11 +1140,22 @@ export default function RosterManager({
               await backend.reviewSubmission(subId, status, feedback);
             }
             if (classId) {
-              const subs = await backend.getSubmissions(classId);
+              const [subs, stList] = await Promise.all([
+                backend.getSubmissions(classId),
+                backend.getStudents(classId)
+              ]);
               setInternalSubmissions(subs || []);
+              setStudents(stList || []);
+              if (inspectSubmissionsStudent) {
+                const refreshed = (stList || []).find(s => s.id === inspectSubmissionsStudent.id);
+                if (refreshed) setInspectSubmissionsStudent(refreshed);
+              }
             }
           }}
-          onClose={() => setInspectSubmissionsStudent(null)}
+          onClose={() => {
+            setInspectSubmissionsStudent(null);
+            loadStudents();
+          }}
           allStudents={students}
           onSelectStudent={setInspectSubmissionsStudent}
         />

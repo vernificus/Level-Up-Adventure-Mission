@@ -3,7 +3,8 @@ import {
   X, CheckCircle2, Clock, XCircle, FileText, ExternalLink,
   MessageSquare, Sparkles, Filter, Search, ArrowUpDown,
   Printer, ChevronLeft, ChevronRight, Award, Trophy,
-  AlertCircle, Check, RotateCcw, Calendar, User, BookOpen
+  AlertCircle, Check, RotateCcw, Calendar, User, BookOpen,
+  Zap, AlertTriangle
 } from 'lucide-react';
 import { LEVELS } from '../data/gameData';
 import { FileViewer } from './FileViewer';
@@ -22,6 +23,7 @@ export default function StudentSubmissionsModal({
   classActivities = [],
   activeBoss = null
 }) {
+  const [currentStudent, setCurrentStudent] = useState(student);
   const [localSubmissions, setLocalSubmissions] = useState([]);
   const [loadedClassActivities, setLoadedClassActivities] = useState(classActivities || []);
   const [loadedActiveBoss, setLoadedActiveBoss] = useState(activeBoss || null);
@@ -33,6 +35,10 @@ export default function StudentSubmissionsModal({
   const [feedbackInputs, setFeedbackInputs] = useState({});
   const [submittingAction, setSubmittingAction] = useState({});
   const [actionNotice, setActionNotice] = useState(null);
+
+  useEffect(() => {
+    setCurrentStudent(student);
+  }, [student]);
 
   // Load activities and active boss if not provided via props
   useEffect(() => {
@@ -99,11 +105,11 @@ export default function StudentSubmissionsModal({
     };
   }, [student, submissions]);
 
-  if (!student) return null;
+  if (!currentStudent) return null;
 
   // Calculate Student Level
   const studentLevel = LEVELS.reduce(
-    (acc, l) => (student.xp || 0) >= l.xpRequired ? l : acc,
+    (acc, l) => (currentStudent.xp || 0) >= l.xpRequired ? l : acc,
     LEVELS[0]
   );
 
@@ -180,12 +186,42 @@ export default function StudentSubmissionsModal({
         } : s)
       );
 
+      // Refresh student metrics so header shows newly awarded XP and level
+      try {
+        const refreshed = await backend.getStudent(currentStudent.id);
+        if (refreshed) {
+          setCurrentStudent(refreshed);
+          if (onSelectStudent) onSelectStudent(refreshed);
+        }
+      } catch (e) {
+        console.warn('Could not refresh student metrics in modal:', e);
+      }
+
       setActionNotice(`Submission marked as ${newStatus}!`);
       setTimeout(() => setActionNotice(null), 3000);
     } catch (err) {
       alert('Error updating submission: ' + err.message);
     } finally {
       setSubmittingAction(prev => ({ ...prev, [submissionId]: false }));
+    }
+  };
+
+  // Auto-sync approved submissions XP to student profile
+  const handleSyncModalStudent = async () => {
+    setSubmittingAction(prev => ({ ...prev, sync: true }));
+    try {
+      const res = await backend.syncStudentSubmissions(currentStudent.id);
+      const refreshed = await backend.getStudent(currentStudent.id);
+      if (refreshed) {
+        setCurrentStudent(refreshed);
+        if (onSelectStudent) onSelectStudent(refreshed);
+      }
+      setActionNotice(`Successfully tallied ${currentStudent.name}'s XP to ${res.newXp} XP!`);
+      setTimeout(() => setActionNotice(null), 4000);
+    } catch (err) {
+      alert('Error tallying student XP: ' + err.message);
+    } finally {
+      setSubmittingAction(prev => ({ ...prev, sync: false }));
     }
   };
 
@@ -225,13 +261,13 @@ export default function StudentSubmissionsModal({
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h2 id="student-submissions-title" className="text-xl sm:text-2xl font-black text-white flex items-center gap-2 print:text-black leading-tight">
-                {student.name}
+                {currentStudent.name}
               </h2>
               <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-800 border border-slate-700 ${studentLevel.color} print:text-black print:border-gray-400`}>
                 Lvl {studentLevel.level} - {studentLevel.title}
               </span>
               <span className="text-xs text-slate-400 hidden sm:inline print:inline">
-                &bull; {student.xp || 0} XP &bull; {student.coins || 0} Coins &bull; {(student.completedActivities || []).length} Activities Done
+                &bull; {currentStudent.xp || 0} XP &bull; {currentStudent.coins || 0} Coins &bull; {(currentStudent.completedActivities || []).length} Activities Done
               </span>
               {className && (
                 <span className="text-xs text-green-400 font-medium hidden md:inline">
@@ -240,7 +276,7 @@ export default function StudentSubmissionsModal({
               )}
             </div>
             <p className="text-[11px] text-slate-400 sm:hidden print:hidden leading-tight mt-0.5">
-              {student.xp || 0} XP &bull; {student.coins || 0} Coins &bull; {(student.completedActivities || []).length} Done {className ? `• ${className}` : ''}
+              {currentStudent.xp || 0} XP &bull; {currentStudent.coins || 0} Coins &bull; {(currentStudent.completedActivities || []).length} Done {className ? `• ${className}` : ''}
             </p>
           </div>
 
@@ -306,6 +342,27 @@ export default function StudentSubmissionsModal({
             </button>
           </div>
         </div>
+
+        {/* ── UNSYNCED XP BANNER: Detects when approved submissions haven't tallied to student balance ── */}
+        {totalEarnedXp > (currentStudent.xp || 0) && (
+          <div className="my-2 p-3 bg-amber-950/70 border border-amber-500/50 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs text-amber-200 print:hidden flex-shrink-0 animate-fadeIn">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>
+                Approved submissions tally to <strong>{totalEarnedXp} XP</strong>, but <strong>{currentStudent.name}</strong> currently only has <strong>{currentStudent.xp || 0} XP</strong>.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleSyncModalStudent}
+              disabled={submittingAction.sync}
+              className="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg shrink-0 flex items-center gap-1.5 shadow transition-all cursor-pointer"
+            >
+              <Zap className="w-3.5 h-3.5 text-slate-950 fill-slate-950" />
+              <span>{submittingAction.sync ? 'Tallying...' : `Sync to ${totalEarnedXp} XP (+${totalEarnedXp - (currentStudent.xp || 0)} XP)`}</span>
+            </button>
+          </div>
+        )}
 
         {/* ── ACTION NOTICE BANNER ── */}
         {actionNotice && (

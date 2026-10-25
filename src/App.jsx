@@ -3,13 +3,14 @@ import {
   Gamepad2, Mic, BarChart3, Palette, CheckCircle2, Trophy, Rocket, Info, X, PlayCircle,
   Star, Gift, Swords, Users, User, Sparkles, Zap, Shield, ShieldCheck, Crown, Target, Building2,
   Upload, Link, Link2, Clock, CheckCheck, XCircle, ClipboardList, Lock, Eye, FileText, LogOut,
-  MessageSquare, Pencil, BookOpen, Award, ChevronDown, ChevronUp, RotateCcw, ExternalLink, Filter
+  MessageSquare, Pencil, BookOpen, Award, ChevronDown, ChevronUp, RotateCcw, ExternalLink, Filter, Camera
 } from 'lucide-react';
 import { useGameState } from './hooks/useGameState';
 import {
   LEVELS, ACHIEVEMENTS, GUILDS, AVATAR_ITEMS, BOSS_CHALLENGES, LEARNING_PATHS, GUILD_CHALLENGES,
-  GUILD_TROPHIES, GUILD_BANNERS
+  GUILD_TROPHIES, GUILD_BANNERS, getResolvedAchievements
 } from './data/gameData';
+import { compressImageFile } from './utils/imageUtils';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginScreen from './components/LoginScreen';
 import TeacherPortal from './components/TeacherPortal';
@@ -190,7 +191,16 @@ function DailyQuestBanner({ quest, completed }) {
 }
 
 // ============== BOSS CHALLENGE ==============
-function BossChallenge({ completedBosses, onSubmit, hasPendingSubmission, activeBoss }) {
+function BossChallenge({
+  completedBosses,
+  onSubmit,
+  hasPendingSubmission,
+  activeBoss,
+  classSubmissions = [],
+  classStudents = [],
+  currentUserId = null,
+  currentGuild = null
+}) {
   const [showBoss, setShowBoss] = useState(false);
   const [showSubmitForm, setShowSubmitForm] = useState(false);
 
@@ -199,6 +209,41 @@ function BossChallenge({ completedBosses, onSubmit, hasPendingSubmission, active
   const defaultBoss = BOSS_CHALLENGES[weekOfYear % BOSS_CHALLENGES.length];
   const currentBoss = activeBoss || defaultBoss;
   const isCompleted = completedBosses.includes(currentBoss.id);
+
+  // Calculate Shared Club Weekly Boss HP from approved class submissions since Monday 7:00am
+  const bossTotalHp = Number(currentBoss.totalHP) || 1000;
+  const getWeekStartMs = () => {
+    const now = new Date();
+    const day = now.getDay(); // 0=Sun, 1=Mon
+    const daysSinceMonday = (day + 6) % 7;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - daysSinceMonday);
+    monday.setHours(7, 0, 0, 0);
+    if (now < monday) monday.setDate(monday.getDate() - 7);
+    return monday.getTime();
+  };
+  const weekStartMs = getWeekStartMs();
+
+  const weeklyApproved = (classSubmissions || []).filter(s => {
+    if (s.status !== 'approved') return false;
+    const ts = new Date(s.reviewedAt || s.submittedAt || 0).getTime();
+    return ts >= weekStartMs;
+  });
+
+  const damageByStudent = {};
+  const totalDamageDealt = weeklyApproved.reduce((sum, s) => {
+    const dmg = s.isBoss ? 250 : 50;
+    const name = s.playerName || 'Hero';
+    damageByStudent[name] = (damageByStudent[name] || 0) + dmg;
+    return sum + dmg;
+  }, 0);
+
+  const remainingHp = Math.max(0, bossTotalHp - totalDamageDealt);
+  const hpPercent = Math.max(0, Math.min(100, Math.round((remainingHp / bossTotalHp) * 100)));
+  const isClubBossDefeated = remainingHp === 0;
+  const topDamagers = Object.entries(damageByStudent)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
 
   const handleSubmit = (submissionData) => {
     onSubmit(currentBoss, submissionData);
@@ -210,17 +255,23 @@ function BossChallenge({ completedBosses, onSubmit, hasPendingSubmission, active
     <>
       <button
         onClick={() => setShowBoss(true)}
-        className={`mb-6 w-full p-4 rounded-xl border-2 ${isCompleted ? 'bg-slate-800 border-slate-700' : hasPendingSubmission ? 'bg-blue-900/30 border-blue-500' : 'bg-gradient-to-r from-red-900/50 to-orange-900/50 border-red-500 animate-pulse'}`}
+        className={`mb-6 w-full p-4 rounded-xl border-2 text-left transition-all ${
+          isCompleted || isClubBossDefeated
+            ? 'bg-gradient-to-r from-emerald-950/60 to-slate-800 border-emerald-500/70'
+            : hasPendingSubmission
+            ? 'bg-blue-900/30 border-blue-500'
+            : 'bg-gradient-to-r from-red-900/50 to-orange-900/50 border-red-500 hover:border-red-400'
+        }`}
         aria-label={`Weekly Boss: ${currentBoss.name}${isCompleted ? ' - Defeated' : hasPendingSubmission ? ' - Pending approval' : ` - ${currentBoss.reward} XP reward`}`}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${isCompleted ? 'bg-slate-700' : hasPendingSubmission ? 'bg-blue-600' : 'bg-red-600'}`} aria-hidden="true">
-              <Swords className="w-6 h-6" />
+            <div className={`p-2 rounded-lg ${isCompleted || isClubBossDefeated ? 'bg-emerald-600' : hasPendingSubmission ? 'bg-blue-600' : 'bg-red-600'}`} aria-hidden="true">
+              <Swords className="w-6 h-6 text-white" />
             </div>
             <div className="text-left">
-              <div className="flex items-center gap-2">
-                <p className="text-xs font-bold uppercase tracking-widest text-red-400">Weekly Boss</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-xs font-bold uppercase tracking-widest text-red-400">Club Weekly Boss Raid</p>
                 {currentBoss.source === 'class' && (
                   <span className="text-[10px] font-black uppercase bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full">
                     Class Custom
@@ -231,14 +282,19 @@ function BossChallenge({ completedBosses, onSubmit, hasPendingSubmission, active
                     District / Org
                   </span>
                 )}
+                {isClubBossDefeated && (
+                  <span className="text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full">
+                    🎉 Club Raid Victory!
+                  </span>
+                )}
               </div>
-              <p className="font-black text-white">{currentBoss.name}</p>
+              <p className="font-black text-white text-lg">{currentBoss.name}</p>
             </div>
           </div>
 
           {isCompleted ? (
             <span className="text-green-400 font-bold flex items-center gap-1">
-              <Crown className="w-5 h-5" aria-hidden="true" /> Defeated!
+              <Crown className="w-5 h-5" aria-hidden="true" /> You Defeated!
             </span>
           ) : hasPendingSubmission ? (
             <span className="text-blue-400 font-bold flex items-center gap-1">
@@ -246,6 +302,43 @@ function BossChallenge({ completedBosses, onSubmit, hasPendingSubmission, active
             </span>
           ) : (
             <span className="text-yellow-400 font-bold">+{currentBoss.reward} XP</span>
+          )}
+        </div>
+
+        {/* Shared Club Boss HP Bar */}
+        <div className="mt-3 pt-3 border-t border-white/10">
+          <div className="flex items-center justify-between text-xs mb-1.5">
+            <span className="font-bold text-slate-300 flex items-center gap-1.5">
+              <span>❤️ Boss HP:</span>
+              <span className={isClubBossDefeated ? 'text-emerald-400 font-black' : 'text-red-300 font-black'}>
+                {remainingHp.toLocaleString()} / {bossTotalHp.toLocaleString()} HP
+              </span>
+            </span>
+            <span className="text-[11px] text-slate-400">
+              Club dealt <strong className="text-orange-400">{totalDamageDealt.toLocaleString()} DMG</strong> this week
+            </span>
+          </div>
+          <div className="h-3 bg-slate-900/90 rounded-full overflow-hidden border border-slate-700 p-0.5">
+            <div
+              className={`h-full rounded-full transition-all duration-700 ${
+                hpPercent > 50
+                  ? 'bg-gradient-to-r from-red-600 to-orange-500'
+                  : hpPercent > 20
+                  ? 'bg-gradient-to-r from-amber-500 to-yellow-400'
+                  : 'bg-gradient-to-r from-rose-600 to-pink-500 animate-pulse'
+              }`}
+              style={{ width: `${hpPercent}%` }}
+            />
+          </div>
+          {topDamagers.length > 0 && (
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Top Raiders:</span>
+              {topDamagers.map(([name, dmg], i) => (
+                <span key={name} className="text-[11px] bg-slate-900/80 border border-slate-700 px-2 py-0.5 rounded-full text-slate-200 font-semibold">
+                  {i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'} {name} <span className="text-orange-400 font-bold">-{dmg} HP</span>
+                </span>
+              ))}
+            </div>
           )}
         </div>
       </button>
@@ -259,11 +352,28 @@ function BossChallenge({ completedBosses, onSubmit, hasPendingSubmission, active
 
             {!showSubmitForm ? (
               <>
-                <div className="text-center mb-6">
-                  <div className="text-6xl mb-4" aria-hidden="true">{currentBoss.icon || '👹'}</div>
+                <div className="text-center mb-5">
+                  <div className="text-6xl mb-3" aria-hidden="true">{currentBoss.icon || '👹'}</div>
                   <h3 id="boss-dialog-title" className="text-2xl font-black uppercase italic text-red-400">{currentBoss.name}</h3>
                   {currentBoss.title && <p className="text-xs text-yellow-400 font-bold uppercase tracking-wider mt-0.5">{currentBoss.title}</p>}
                   <p className="text-slate-400 mt-2">{currentBoss.desc}</p>
+                </div>
+
+                {/* Live Club Raid HP Box inside Modal */}
+                <div className="bg-slate-900/80 border border-red-500/40 rounded-xl p-3.5 mb-5">
+                  <div className="flex justify-between items-center text-xs mb-1.5">
+                    <span className="font-black uppercase tracking-wider text-red-400">👹 Shared Club Boss HP</span>
+                    <span className="font-black text-white">{remainingHp.toLocaleString()} / {bossTotalHp.toLocaleString()} HP</span>
+                  </div>
+                  <div className="h-3.5 bg-slate-950 rounded-full overflow-hidden border border-slate-700 p-0.5 mb-2">
+                    <div
+                      className="h-full bg-gradient-to-r from-red-600 via-orange-500 to-yellow-400 rounded-full transition-all duration-500"
+                      style={{ width: `${hpPercent}%` }}
+                    />
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Every approved activity deals <strong className="text-orange-300">50 DMG</strong> and every Boss Challenge deals <strong className="text-red-300">250 DMG</strong> to the club boss!
+                  </p>
                 </div>
 
                 <div className="space-y-4 mb-6">
@@ -282,7 +392,7 @@ function BossChallenge({ completedBosses, onSubmit, hasPendingSubmission, active
 
                 <div className="bg-yellow-500/20 border border-yellow-500/30 p-4 rounded-xl mb-6">
                   <p className="text-sm text-yellow-200">
-                    <strong>Reward:</strong> {currentBoss.reward} XP + Mystery Box + Achievement
+                    <strong>Reward:</strong> {currentBoss.reward} XP + Mystery Box + Achievement + 250 Boss Damage!
                   </p>
                 </div>
 
@@ -313,6 +423,9 @@ function BossChallenge({ completedBosses, onSubmit, hasPendingSubmission, active
                 task={currentBoss}
                 onSubmit={handleSubmit}
                 onCancel={() => setShowSubmitForm(false)}
+                classStudents={classStudents}
+                currentUserId={currentUserId}
+                currentGuild={currentGuild}
               />
             )}
           </div>
@@ -377,7 +490,15 @@ function renderStep(step, idx) {
 }
 
 // ============== SUBMISSION FORM ==============
-function SubmissionForm({ activityTitle, task, onSubmit, onCancel }) {
+function SubmissionForm({
+  activityTitle,
+  task,
+  onSubmit,
+  onCancel,
+  classStudents = [],
+  currentUserId = null,
+  currentGuild = null
+}) {
   const [submissionType, setSubmissionType] = useState('link');
   const [linkValue, setLinkValue] = useState('');
   const [textValue, setTextValue] = useState('');
@@ -387,7 +508,106 @@ function SubmissionForm({ activityTitle, task, onSubmit, onCancel }) {
   const [note, setNote] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showDirections, setShowDirections] = useState(true);
+  const [selectedCollaborators, setSelectedCollaborators] = useState([]);
+  const [showCoOpPicker, setShowCoOpPicker] = useState(false);
+
+  // Camera capture states
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState('');
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
   const fileInputRef = useRef(null);
+  const cameraFileInputRef = useRef(null);
+
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setCameraActive(false);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  const startCamera = async () => {
+    setCameraError('');
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setCameraError('Webcam preview not supported on this browser. Use "Open Device Camera" below!');
+        return;
+      }
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false
+        });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      }
+      streamRef.current = stream;
+      setCameraActive(true);
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      }, 50);
+    } catch (err) {
+      console.warn('Camera access failed:', err);
+      setCameraError('Could not access webcam. You can click "Upload / Take Photo from Device" below instead.');
+    }
+  };
+
+  const snapPhotoFromVideo = () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    const maxDim = 1000;
+    let w = video.videoWidth || 640;
+    let h = video.videoHeight || 480;
+    if (w > maxDim || h > maxDim) {
+      const ratio = Math.min(maxDim / w, maxDim / h);
+      w = Math.round(w * ratio);
+      h = Math.round(h * ratio);
+    }
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, w, h);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+    setFileData(dataUrl);
+    setFileName(`club-build-${new Date().toISOString().slice(0, 10)}.jpg`);
+    setFileType('image/jpeg');
+    stopCamera();
+  };
+
+  // Eligible teammates for Co-Op tagging (prioritize same guild first)
+  const eligibleClassmates = (classStudents || [])
+    .filter(s => s && s.id && s.id !== currentUserId)
+    .sort((a, b) => {
+      const aSameGuild = currentGuild && a.guild === currentGuild ? 1 : 0;
+      const bSameGuild = currentGuild && b.guild === currentGuild ? 1 : 0;
+      if (aSameGuild !== bSameGuild) return bSameGuild - aSameGuild;
+      return (a.name || '').localeCompare(b.name || '');
+    });
+
+  const toggleCollaborator = (student) => {
+    setSelectedCollaborators(prev => {
+      const exists = prev.some(c => c.id === student.id);
+      if (exists) return prev.filter(c => c.id !== student.id);
+      if (prev.length >= 4) {
+        alert('You can tag up to 4 Co-Op teammates on a single build.');
+        return prev;
+      }
+      return [...prev, { id: student.id, name: student.name || 'Teammate', guild: student.guild || null }];
+    });
+  };
 
   const validSteps = (task?.steps || []).filter(s => {
     if (!s) return false;
@@ -399,30 +619,47 @@ function SubmissionForm({ activityTitle, task, onSubmit, onCancel }) {
     task && (validSteps.length > 0 || task.desc || task.requirements || task.proTip)
   );
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      // Check file size (limit to 900KB for Firestore)
-      if (file.size > 900 * 1024) {
-        alert('File is too large. Please upload a file smaller than 900KB (Firestore Limit), or use a link instead.');
+    if (!file) return;
+
+    setIsProcessing(true);
+
+    // Auto-compress image files so Chromebook/tablet camera photos never fail the 900KB limit
+    if (file.type && file.type.startsWith('image/')) {
+      try {
+        const compressedDataUrl = await compressImageFile(file, 1000, 1000, 0.82);
+        const cleanName = file.name.replace(/\.[^/.]+$/, '') + '.jpg';
+        setFileName(cleanName);
+        setFileType('image/jpeg');
+        setFileData(compressedDataUrl);
+        setIsProcessing(false);
         return;
+      } catch (err) {
+        console.warn('Image compression fallback to raw file:', err);
       }
-
-      setIsProcessing(true);
-      setFileName(file.name);
-      setFileType(file.type);
-
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setFileData(event.target.result);
-        setIsProcessing(false);
-      };
-      reader.onerror = () => {
-        alert('Error reading file. Please try again.');
-        setIsProcessing(false);
-      };
-      reader.readAsDataURL(file);
     }
+
+    // Non-image file size check (limit to 900KB for Firestore)
+    if (file.size > 900 * 1024) {
+      alert('File is too large. Please upload a file smaller than 900KB (Firestore Limit), or paste a link instead.');
+      setIsProcessing(false);
+      return;
+    }
+
+    setFileName(file.name);
+    setFileType(file.type);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setFileData(event.target.result);
+      setIsProcessing(false);
+    };
+    reader.onerror = () => {
+      alert('Error reading file. Please try again.');
+      setIsProcessing(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = () => {
@@ -430,8 +667,8 @@ function SubmissionForm({ activityTitle, task, onSubmit, onCancel }) {
       alert('Please enter a link to your work');
       return;
     }
-    if (submissionType === 'file' && !fileData) {
-      alert('Please select a file');
+    if ((submissionType === 'file' || submissionType === 'camera') && !fileData) {
+      alert(submissionType === 'camera' ? 'Please snap or select a photo of your build first!' : 'Please select a file');
       return;
     }
     if (submissionType === 'text' && !textValue.trim()) {
@@ -439,23 +676,28 @@ function SubmissionForm({ activityTitle, task, onSubmit, onCancel }) {
       return;
     }
 
+    stopCamera();
+
+    const isFileOrPhoto = submissionType === 'file' || submissionType === 'camera';
     let content;
     if (submissionType === 'link') content = linkValue.trim();
-    else if (submissionType === 'file') content = fileData;
+    else if (isFileOrPhoto) content = fileData;
     else content = textValue.trim();
 
     onSubmit({
-      type: submissionType,
+      type: isFileOrPhoto ? 'file' : submissionType,
       content,
-      fileName: submissionType === 'file' ? fileName : null,
-      fileType: submissionType === 'file' ? fileType : null,
-      note: note.trim()
+      fileName: isFileOrPhoto ? (fileName || 'photo.jpg') : null,
+      fileType: isFileOrPhoto ? (fileType || 'image/jpeg') : null,
+      note: note.trim(),
+      collaborators: selectedCollaborators
     });
   };
 
   const typeButtons = [
-    { type: 'link', icon: Link, label: 'Paste Link' },
+    { type: 'camera', icon: Camera, label: 'Take Photo' },
     { type: 'file', icon: Upload, label: 'Upload File' },
+    { type: 'link', icon: Link, label: 'Paste Link' },
     { type: 'text', icon: MessageSquare, label: 'Type Response' },
   ];
 
@@ -534,18 +776,111 @@ function SubmissionForm({ activityTitle, task, onSubmit, onCancel }) {
         </div>
       )}
 
-      <div className="flex gap-2 mb-6" role="group" aria-label="Submission type">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5" role="group" aria-label="Submission type">
         {typeButtons.map(({ type, icon: Icon, label }) => (
           <button
             key={type}
-            onClick={() => setSubmissionType(type)}
-            className={`flex-1 py-3 rounded-lg font-bold flex items-center justify-center gap-2 text-sm ${submissionType === type ? 'bg-yellow-500 text-slate-900' : 'bg-slate-700 text-slate-300'}`}
+            type="button"
+            onClick={() => {
+              if (type !== 'camera') stopCamera();
+              setSubmissionType(type);
+            }}
+            className={`py-2.5 px-2 rounded-lg font-bold flex items-center justify-center gap-1.5 text-xs sm:text-sm transition-colors ${
+              submissionType === type ? 'bg-yellow-500 text-slate-900 shadow' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+            }`}
             aria-pressed={submissionType === type}
           >
-            <Icon className="w-5 h-5" aria-hidden="true" /> {label}
+            <Icon className="w-4 h-4 flex-shrink-0" aria-hidden="true" /> {label}
           </button>
         ))}
       </div>
+
+      {submissionType === 'camera' && (
+        <div className="mb-4 bg-slate-900/70 border border-slate-700 rounded-xl p-4 text-center">
+          <input
+            type="file"
+            ref={cameraFileInputRef}
+            onChange={handleFileChange}
+            className="sr-only"
+            accept="image/*"
+            capture="environment"
+          />
+
+          {fileData && fileType?.startsWith('image/') ? (
+            <div className="space-y-3">
+              <img
+                src={fileData}
+                alt="Captured STEM build"
+                className="max-h-60 mx-auto rounded-lg border-2 border-emerald-500 object-contain bg-slate-950"
+              />
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFileData(null);
+                    setFileName('');
+                    startCamera();
+                  }}
+                  className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs font-bold flex items-center gap-1.5"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" /> Retake Photo
+                </button>
+              </div>
+            </div>
+          ) : cameraActive ? (
+            <div className="space-y-3">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full max-h-64 rounded-lg border-2 border-yellow-500 bg-black mx-auto object-cover"
+              />
+              <div className="flex justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={snapPhotoFromVideo}
+                  className="px-5 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-black uppercase rounded-xl flex items-center gap-2 text-sm shadow-lg"
+                >
+                  <Camera className="w-4 h-4" /> Snap Photo!
+                </button>
+                <button
+                  type="button"
+                  onClick={stopCamera}
+                  className="px-3 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold rounded-xl text-xs"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3 py-2">
+              <Camera className="w-10 h-10 text-yellow-400 mx-auto" aria-hidden="true" />
+              <p className="text-sm font-bold text-white">Snap a photo of your Robot, 3D Print, or STEM Build!</p>
+              <p className="text-xs text-slate-400">Photos are automatically compressed to fit fast on Chromebooks & iPads.</p>
+              {cameraError && (
+                <p className="text-xs text-amber-300 bg-amber-950/60 border border-amber-700/50 p-2 rounded-lg">{cameraError}</p>
+              )}
+              <div className="flex flex-wrap justify-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={startCamera}
+                  className="px-4 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-black rounded-xl text-xs uppercase flex items-center gap-1.5"
+                >
+                  <Camera className="w-4 h-4" /> Start Webcam
+                </button>
+                <button
+                  type="button"
+                  onClick={() => cameraFileInputRef.current?.click()}
+                  className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 border border-slate-600"
+                >
+                  <Upload className="w-4 h-4" /> Open Device Camera / Choose Photo
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {submissionType === 'link' && (
         <div className="mb-4">
@@ -559,38 +894,44 @@ function SubmissionForm({ activityTitle, task, onSubmit, onCancel }) {
             className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-yellow-500 focus:outline-none"
             aria-describedby="link-hint"
           />
-          <p id="link-hint" className="text-xs text-slate-500 mt-2">Paste a link to Google Docs, YouTube, Vocaroo, or any other website</p>
+          <p id="link-hint" className="text-xs text-slate-500 mt-2">Paste a link to Tinkercad, Scratch, VEXcode, Google Docs, or YouTube</p>
         </div>
       )}
 
       {submissionType === 'file' && (
         <div className="mb-4">
-          <label htmlFor="submission-file" className="block text-sm font-bold text-slate-300 mb-2">Upload your file</label>
+          <label htmlFor="submission-file" className="block text-sm font-bold text-slate-300 mb-2">Upload your file or photo</label>
           <input
             id="submission-file"
             type="file"
             ref={fileInputRef}
             onChange={handleFileChange}
             className="sr-only"
-            accept="image/*,.pdf,.doc,.docx,.mp3,.mp4"
+            accept="image/*,.pdf,.doc,.docx,.mp3,.mp4,.stl"
             aria-describedby="file-hint"
           />
           <button
+            type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="w-full px-4 py-6 bg-slate-700 border-2 border-dashed border-slate-600 rounded-lg text-slate-400 hover:border-slate-500 hover:text-slate-300 transition-colors"
+            className="w-full px-4 py-5 bg-slate-700 border-2 border-dashed border-slate-600 rounded-lg text-slate-400 hover:border-slate-500 hover:text-slate-300 transition-colors"
             aria-label={fileName ? `Selected file: ${fileName}. Click to change` : 'Click to select a file'}
           >
             {fileName ? (
-              <span className="flex items-center justify-center gap-2">
+              <span className="flex items-center justify-center gap-2 text-emerald-300 font-bold">
                 <FileText className="w-5 h-5" aria-hidden="true" /> {fileName}
               </span>
             ) : (
               <span className="flex items-center justify-center gap-2">
-                <Upload className="w-5 h-5" aria-hidden="true" /> Click to select a file
+                <Upload className="w-5 h-5" aria-hidden="true" /> Click to select a photo or file
               </span>
             )}
           </button>
-          <p id="file-hint" className="text-xs text-slate-500 mt-2">Images, PDFs, Documents, Audio, or Video files</p>
+          {fileData && fileType?.startsWith('image/') && (
+            <div className="mt-2 text-center">
+              <img src={fileData} alt="Preview" className="max-h-40 mx-auto rounded-lg border border-slate-600 object-contain" />
+            </div>
+          )}
+          <p id="file-hint" className="text-xs text-slate-500 mt-2">Photos are auto-compressed! Supports Images, PDFs, Docs, Audio, or Video</p>
         </div>
       )}
 
@@ -601,18 +942,18 @@ function SubmissionForm({ activityTitle, task, onSubmit, onCancel }) {
             id="submission-text"
             value={textValue}
             onChange={(e) => setTextValue(e.target.value)}
-            placeholder="Type your answer or describe what you did..."
+            placeholder="Type your answer or describe what you built and tested..."
             rows={5}
             className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-yellow-500 focus:outline-none resize-y min-h-[120px]"
             aria-describedby="text-hint"
           />
-          <p id="text-hint" className="text-xs text-slate-500 mt-2">Write your answer, explain your work, or describe what you created</p>
+          <p id="text-hint" className="text-xs text-slate-500 mt-2">Write your answer, explain your engineering design, or describe what you created</p>
         </div>
       )}
 
-      {/* Note field - shown for link and file types only (text type IS the response) */}
+      {/* Note field - shown for link, file, and camera types */}
       {submissionType !== 'text' && (
-        <div className="mb-6">
+        <div className="mb-4">
           <label htmlFor="submission-note" className="block text-sm font-bold text-slate-300 mb-2">Note to teacher (optional)</label>
           <textarea
             id="submission-note"
@@ -625,14 +966,96 @@ function SubmissionForm({ activityTitle, task, onSubmit, onCancel }) {
         </div>
       )}
 
+      {/* 🤝 Co-Op / Squad Teammates Selector */}
+      {eligibleClassmates.length > 0 && (
+        <div className="mb-5 bg-indigo-950/40 border border-indigo-500/40 rounded-xl p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-indigo-400" aria-hidden="true" />
+              <span className="text-xs font-bold text-indigo-200">
+                🤝 Built this with a partner or squad?
+              </span>
+              {selectedCollaborators.length > 0 && (
+                <span className="text-[11px] bg-indigo-600 text-white font-black px-2 py-0.5 rounded-full">
+                  +{selectedCollaborators.length} tagged
+                </span>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowCoOpPicker(prev => !prev)}
+              className="text-xs font-bold text-indigo-300 hover:text-white underline"
+            >
+              {showCoOpPicker ? 'Done' : selectedCollaborators.length > 0 ? 'Edit Squad' : 'Tag Teammates'}
+            </button>
+          </div>
+
+          {selectedCollaborators.length > 0 && !showCoOpPicker && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {selectedCollaborators.map(c => (
+                <span key={c.id} className="inline-flex items-center gap-1 text-xs bg-indigo-600/40 border border-indigo-400/50 text-indigo-100 px-2.5 py-0.5 rounded-full font-semibold">
+                  🤝 {c.name}
+                  <button
+                    type="button"
+                    onClick={() => toggleCollaborator(c)}
+                    className="hover:text-rose-300 ml-1"
+                    aria-label={`Remove ${c.name}`}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {showCoOpPicker && (
+            <div className="mt-2.5 pt-2.5 border-t border-indigo-500/30">
+              <p className="text-[11px] text-indigo-300 mb-2">
+                Select up to 4 teammates who worked on this build with you. When your teacher approves, everyone tagged earns the XP!
+              </p>
+              <div className="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto pr-1">
+                {eligibleClassmates.map(student => {
+                  const isSelected = selectedCollaborators.some(c => c.id === student.id);
+                  const isGuildmate = currentGuild && student.guild === currentGuild;
+                  return (
+                    <button
+                      key={student.id}
+                      type="button"
+                      onClick={() => toggleCollaborator(student)}
+                      className={`text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors border ${
+                        isSelected
+                          ? 'bg-indigo-600 text-white border-indigo-400'
+                          : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-indigo-500/60'
+                      }`}
+                    >
+                      <span className="truncate">{student.name}</span>
+                      {isGuildmate && (
+                        <span className="text-[9px] uppercase font-black px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-300 ml-1 flex-shrink-0">
+                          Guild
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex gap-3">
         <button
-          onClick={onCancel}
+          type="button"
+          onClick={() => {
+            stopCamera();
+            onCancel();
+          }}
           className="flex-1 py-3 bg-slate-700 text-slate-300 font-bold rounded-xl hover:bg-slate-600 transition-colors"
         >
           Cancel
         </button>
         <button
+          type="button"
           onClick={handleSubmit}
           disabled={isProcessing}
           className="flex-1 py-3 bg-yellow-500 text-slate-900 font-black uppercase rounded-xl hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
@@ -956,7 +1379,8 @@ function MySubmissions({ submissions = [], onClose, onReviseActivity }) {
 }
 
 // ============== TROPHY CASE ==============
-function TrophyCase({ achievements, onClose }) {
+function TrophyCase({ achievements, learningPaths = [], onClose }) {
+  const resolvedAchievements = getResolvedAchievements(learningPaths);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="trophy-dialog-title" onKeyDown={(e) => e.key === 'Escape' && onClose()}>
       <div className="bg-slate-800 border-2 border-yellow-500 rounded-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
@@ -970,7 +1394,7 @@ function TrophyCase({ achievements, onClose }) {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {ACHIEVEMENTS.map(achievement => {
+          {resolvedAchievements.map(achievement => {
             const unlocked = achievements.includes(achievement.id);
             return (
               <div key={achievement.id} className={`p-4 rounded-xl border-2 text-center ${unlocked ? 'bg-slate-700 border-yellow-500' : 'bg-slate-800/50 border-slate-700 opacity-50'}`} aria-label={`${achievement.title}: ${achievement.desc}${unlocked ? ' - Unlocked' : ' - Locked'}`}>
@@ -1441,7 +1865,10 @@ function InstructionModal({
   dailyCompleted,
   isPending,
   isCompleted,
-  existingSubmission
+  existingSubmission,
+  classStudents = [],
+  currentUserId = null,
+  currentGuild = null
 }) {
   const [showSubmitForm, setShowSubmitForm] = useState(false);
 
@@ -1568,6 +1995,9 @@ function InstructionModal({
             task={activity}
             onSubmit={handleSubmit}
             onCancel={() => setShowSubmitForm(false)}
+            classStudents={classStudents}
+            currentUserId={currentUserId}
+            currentGuild={currentGuild}
           />
         )}
       </div>
@@ -1586,6 +2016,8 @@ function GameContent({ emulatedClassId } = {}) {
     learningPaths,
     categoriesPerRow,
     classGuilds,
+    classStudents,
+    classSubmissions,
     highFiveLimit,
     allowStudentGuildSelect,
     spendCoins,
@@ -1817,6 +2249,10 @@ function GameContent({ emulatedClassId } = {}) {
           onSubmit={handleSubmitBoss}
           hasPendingSubmission={hasPendingBoss}
           activeBoss={currentBoss}
+          classSubmissions={classSubmissions}
+          classStudents={classStudents}
+          currentUserId={user?.id}
+          currentGuild={gameState.guild}
         />
 
         <main
@@ -1890,11 +2326,22 @@ function GameContent({ emulatedClassId } = {}) {
           isPending={pendingActivities.includes(activeInstruction.id)}
           isCompleted={gameState.completedActivities.includes(activeInstruction.id) || approvedActivities.includes(activeInstruction.id)}
           existingSubmission={submissions ? submissions.find(s => s.activityId === activeInstruction.id) : null}
+          classStudents={classStudents}
+          currentUserId={user?.id}
+          currentGuild={gameState.guild}
         />
       )}
 
-      {showLeaderboard && effectiveClassId && <Leaderboard classId={effectiveClassId} currentPlayerId={user?.id} onClose={() => setShowLeaderboard(false)} />}
-      {showTrophyCase && <TrophyCase achievements={gameState.unlockedAchievements} onClose={() => setShowTrophyCase(false)} />}
+      {showLeaderboard && effectiveClassId && (
+        <Leaderboard
+          classId={effectiveClassId}
+          currentPlayerId={user?.id}
+          guilds={classGuilds}
+          learningPaths={learningPaths}
+          onClose={() => setShowLeaderboard(false)}
+        />
+      )}
+      {showTrophyCase && <TrophyCase achievements={gameState.unlockedAchievements} learningPaths={learningPaths} onClose={() => setShowTrophyCase(false)} />}
       {showAvatarBuilder && <AvatarBuilder gameState={gameState} getCurrentLevel={getCurrentLevel} onBuy={buyAvatarItem} onEquip={equipAvatarItem} onClose={() => setShowAvatarBuilder(false)} onSetName={setPlayerName} classId={effectiveClassId} userId={user?.id} />}
       {showMySubmissions && (
         <MySubmissions

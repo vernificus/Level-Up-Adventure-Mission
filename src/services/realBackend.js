@@ -886,6 +886,84 @@ export const realBackend = {
 
               await updateDoc(studentRef, studentUpdates);
               subUpdates.xpAwarded = xpEarned;
+
+              // 🤝 CO-OP / SQUAD SUBMISSIONS: Award XP & completion to tagged teammates
+              if (Array.isArray(subData.collaborators) && subData.collaborators.length > 0 && !subData.isCoOpCopy) {
+                for (const collab of subData.collaborators) {
+                  const collabId = typeof collab === 'string' ? collab : collab?.id;
+                  if (!collabId || collabId === subData.studentId) continue;
+                  try {
+                    const collabRef = doc(db, "students", collabId);
+                    const collabSnap = await getDoc(collabRef);
+                    if (!collabSnap.exists()) continue;
+                    const collabData = collabSnap.data();
+
+                    // Check if a co-op submission copy already exists for this teammate
+                    const existingCoOpQuery = query(
+                      collection(db, "submissions"),
+                      where("parentSubmissionId", "==", submissionId),
+                      where("studentId", "==", collabId)
+                    );
+                    const existingCoOpSnap = await getDocs(existingCoOpQuery);
+                    if (!existingCoOpSnap.empty) continue;
+
+                    const cXp = Number(collabData.xp) || 0;
+                    const cCoins = Number(collabData.coins) || 100;
+                    const cGuildXp = Number(collabData.guildXpContributed) || 0;
+                    const cCompleted = Array.isArray(collabData.completedActivities) ? [...collabData.completedActivities] : [];
+                    const cBosses = Array.isArray(collabData.completedBossChallenges) ? [...collabData.completedBossChallenges] : [];
+                    const cTotal = Number(collabData.totalActivitiesCompleted) || cCompleted.length;
+
+                    const newCXp = cXp + xpEarned;
+                    const { bonusCoins: cBonusCoins } = calculateLevelAndBonusCoins(cXp, newCXp);
+                    const newCCoins = cCoins + cBonusCoins;
+                    const newCGuildXp = collabData.guild ? (cGuildXp + xpEarned) : cGuildXp;
+                    const newCTotal = cTotal + 1;
+                    const cPendingBoxes = Number(collabData.pendingMysteryBoxes) || 0;
+                    const newCPendingBoxes = (newCTotal % 3 === 0) ? cPendingBoxes + 1 : cPendingBoxes;
+
+                    const collabUpdates = {
+                      xp: newCXp,
+                      coins: newCCoins,
+                      guildXpContributed: newCGuildXp,
+                      totalActivitiesCompleted: newCTotal,
+                      pendingMysteryBoxes: newCPendingBoxes
+                    };
+
+                    if (subData.isBoss) {
+                      if (subData.activityId && !cBosses.includes(subData.activityId)) {
+                        collabUpdates.completedBossChallenges = arrayUnion(subData.activityId);
+                      }
+                    } else {
+                      if (subData.activityId && !cCompleted.includes(subData.activityId)) {
+                        collabUpdates.completedActivities = arrayUnion(subData.activityId);
+                      }
+                    }
+
+                    await updateDoc(collabRef, collabUpdates);
+
+                    // Create an approved submission record for the teammate so XP reconciliation preserves it
+                    await addDoc(collection(db, "submissions"), {
+                      ...subData,
+                      studentId: collabId,
+                      playerName: collabData.name || collabData.displayName || collab.name || 'Teammate',
+                      playerAvatar: collabData.avatar || '🧙',
+                      guild: collabData.guild || null,
+                      status: 'approved',
+                      xpAwarded: xpEarned,
+                      isCoOpCopy: true,
+                      parentSubmissionId: submissionId,
+                      coOpLeaderName: subData.playerName || 'Teammate',
+                      teacherFeedback: feedback
+                        ? `[Co-Op with ${subData.playerName}] ${feedback}`
+                        : `Approved Co-Op Mission with ${subData.playerName}!`,
+                      reviewedAt: new Date().toISOString()
+                    });
+                  } catch (collabErr) {
+                    console.warn("Could not award Co-Op XP to collaborator:", collabId, collabErr);
+                  }
+                }
+              }
             } else if (status !== 'approved' && prevStatus === 'approved') {
               // REJECTED OR REVOKED: Deduct previously awarded XP and rewards
               const xpToDeduct = Number(subData.xpAwarded) || xpEarned;

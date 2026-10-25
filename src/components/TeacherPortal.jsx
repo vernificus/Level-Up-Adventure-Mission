@@ -24,6 +24,7 @@ import LegalModal from './LegalModal';
 import LevelEconomyGuideModal from './LevelEconomyGuideModal';
 import StudentSubmissionsModal from './StudentSubmissionsModal';
 import ActivityDirectionsCard from './ActivityDirectionsCard';
+import ClubArenaModal from './ClubArenaModal';
 
 
 export default function TeacherPortal({
@@ -118,6 +119,31 @@ export default function TeacherPortal({
   const [importOptionTab, setImportOptionTab] = useState('menu'); // 'menu' | 'selective'
   const [selectiveActivities, setSelectiveActivities] = useState(new Set());
   const [showGuideModal, setShowGuideModal] = useState(false);
+  const [showClubArena, setShowClubArena] = useState(false);
+  const [arenaStemPurchases, setArenaStemPurchases] = useState([]);
+
+  const loadArenaData = async () => {
+    if (!selectedClass?.id) return;
+    try {
+      const [purchases, updatedStudents] = await Promise.all([
+        backend.getStemPurchases(selectedClass.id),
+        backend.getStudents(selectedClass.id)
+      ]);
+      setArenaStemPurchases(purchases || []);
+      if (updatedStudents) setStudents(updatedStudents);
+    } catch (e) {
+      console.error('Error refreshing Club Arena data:', e);
+    }
+  };
+
+  const handleFulfillArenaPurchase = async (purchaseId) => {
+    try {
+      await backend.fulfillStemPurchase(purchaseId);
+      setArenaStemPurchases(prev => prev.map(p => p.id === purchaseId ? { ...p, status: 'fulfilled' } : p));
+    } catch (e) {
+      alert('Failed to mark order fulfilled: ' + e.message);
+    }
+  };
 
   const loadOrgTemplates = async () => {
     if (!user.organizationId) return;
@@ -1301,7 +1327,18 @@ export default function TeacherPortal({
                       <p className="text-3xl font-black text-green-400">{students.length > 0 ? Math.round(students.reduce((sum, s) => sum + (s.xp || 0), 0) / students.length) : 0}</p>
                       <p className="text-slate-400 text-xs uppercase font-bold">Avg XP</p>
                     </div>
-                    <div className="ml-auto flex items-start gap-3">
+                    <div className="ml-auto flex flex-wrap items-start gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          loadArenaData();
+                          setShowClubArena(true);
+                        }}
+                        className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 border border-cyan-400/50 text-white rounded-lg text-sm font-black uppercase italic shadow-lg shadow-cyan-950/50 transition-all"
+                        title="Open Big-Screen Projector Mode for STEM Club Meetings (Live Guild Race, VEX Pitch Timer & Boss Raid)"
+                      >
+                        <span>📺 Live Club Arena</span>
+                      </button>
                       <button
                         type="button"
                         onClick={() => setShowGuideModal(true)}
@@ -2873,6 +2910,18 @@ export default function TeacherPortal({
         <LevelEconomyGuideModal
           isOpen={showGuideModal}
           onClose={() => setShowGuideModal(false)}
+        />
+
+        <ClubArenaModal
+          isOpen={showClubArena}
+          onClose={() => setShowClubArena(false)}
+          classData={selectedClass}
+          students={students}
+          submissions={submissions}
+          stemPurchases={arenaStemPurchases}
+          activeBoss={activeBoss}
+          onFulfillPurchase={handleFulfillArenaPurchase}
+          onRefreshData={loadArenaData}
         />
 
         {/* Student Submissions Portfolio Modal */}
@@ -5304,6 +5353,16 @@ function SubmissionCard({ submission, onReview, onInspectStudent, classActivitie
                 {submission.activityType}
               </span>
             )}
+            {Array.isArray(submission.collaborators) && submission.collaborators.length > 0 && !submission.isCoOpCopy && (
+              <span className="text-[10px] px-2.5 py-0.5 rounded-full font-black bg-indigo-500/25 text-indigo-200 border border-indigo-400/50">
+                🤝 Co-Op Squad (+{submission.collaborators.length})
+              </span>
+            )}
+            {submission.isCoOpCopy && (
+              <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-indigo-900/50 text-indigo-300 border border-indigo-600/40">
+                🤝 Co-Op with {submission.coOpLeaderName || 'Teammate'}
+              </span>
+            )}
           </div>
           {onInspectStudent ? (
             <button
@@ -5317,6 +5376,12 @@ function SubmissionCard({ submission, onReview, onInspectStudent, classActivitie
             </button>
           ) : (
             <p className="text-blue-400 font-bold mt-0.5">{submission.playerName}</p>
+          )}
+          {Array.isArray(submission.collaborators) && submission.collaborators.length > 0 && !submission.isCoOpCopy && (
+            <p className="text-xs text-indigo-300 font-semibold mt-1">
+              🤝 Tagged Squad: {submission.collaborators.map(c => c.name || c).join(', ')}{' '}
+              <span className="text-slate-400 font-normal">(Approving awards +{submission.xp} XP to all teammates)</span>
+            </p>
           )}
         </div>
         <span className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded">
@@ -5468,7 +5533,19 @@ function ReviewedSubmissions({ reviewed, onReview, onInspectStudent, classActivi
                   ) : (
                     <p className="font-bold text-white truncate">{sub.playerName}</p>
                   )}
-                  <p className="text-sm text-slate-400 truncate">{sub.activityTitle}</p>
+                  <p className="text-sm text-slate-400 truncate flex items-center gap-1.5">
+                    <span>{sub.activityTitle}</span>
+                    {sub.isCoOpCopy && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-900/60 text-indigo-300 border border-indigo-600/40 font-semibold">
+                        🤝 Co-Op w/ {sub.coOpLeaderName}
+                      </span>
+                    )}
+                    {!sub.isCoOpCopy && Array.isArray(sub.collaborators) && sub.collaborators.length > 0 && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-400/40 font-semibold">
+                        🤝 +{sub.collaborators.length} Squad
+                      </span>
+                    )}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">

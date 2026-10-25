@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, X, Crown, Medal, Award, Flame, Users, ChevronDown, ChevronUp } from 'lucide-react';
-import { LEVELS, ACHIEVEMENTS, GUILDS } from '../data/gameData';
+import { LEVELS, ACHIEVEMENTS, GUILDS, DEFAULT_15_GUILDS, getResolvedAchievements } from '../data/gameData';
 import { realBackend as backend } from '../services/realBackend';
 import Avatar3D from './Avatar3D';
 
@@ -19,11 +19,12 @@ const RANK_ICONS = [
   <Award className="w-6 h-6 text-amber-600" aria-hidden="true" />,
 ];
 
-export default function Leaderboard({ classId, currentPlayerId, onClose }) {
+export default function Leaderboard({ classId, currentPlayerId, onClose, guilds = DEFAULT_15_GUILDS, learningPaths = [] }) {
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState('xp'); // 'xp', 'achievements', 'streak'
   const [expandedPlayer, setExpandedPlayer] = useState(null);
+  const resolvedAchievements = getResolvedAchievements(learningPaths);
 
   useEffect(() => {
     loadLeaderboard();
@@ -104,7 +105,9 @@ export default function Leaderboard({ classId, currentPlayerId, onClose }) {
               const level = getLevelForXp(player.xp);
               const isCurrentPlayer = player.id === currentPlayerId;
               const isExpanded = expandedPlayer === player.id;
-              const guild = player.guild ? GUILDS.find(g => g.id === player.guild) : null;
+              const guild = player.guild
+                ? (guilds || []).find(g => g.id === player.guild) || DEFAULT_15_GUILDS.find(g => g.id === player.guild) || GUILDS.find(g => g.id === player.guild)
+                : null;
 
               return (
                 <div key={player.id}>
@@ -193,7 +196,7 @@ export default function Leaderboard({ classId, currentPlayerId, onClose }) {
                           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Trophies</p>
                           <div className="flex flex-wrap gap-1.5">
                             {player.unlockedAchievements.map(achId => {
-                              const ach = ACHIEVEMENTS.find(a => a.id === achId);
+                              const ach = resolvedAchievements.find(a => a.id === achId) || ACHIEVEMENTS.find(a => a.id === achId);
                               if (!ach) return null;
                               return (
                                 <span

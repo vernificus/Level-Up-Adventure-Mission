@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { LEVELS, ACHIEVEMENTS, DAILY_QUESTS, MYSTERY_REWARDS, LEARNING_PATHS as DEFAULT_PATHS, PATH_COLORS, GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS } from '../data/gameData';
+import { LEVELS, ACHIEVEMENTS, DAILY_QUESTS, MYSTERY_REWARDS, LEARNING_PATHS as DEFAULT_PATHS, PATH_COLORS, GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, getResolvedDailyQuest, getResolvedAchievements } from '../data/gameData';
 import { realBackend as backend } from '../services/realBackend';
 import { useAuth } from '../context/AuthContext';
 
@@ -96,12 +96,20 @@ export function useGameState(overrideClassId) {
   const [classGuilds, setClassGuilds] = useState(GUILDS);
   const [highFiveLimit, setHighFiveLimit] = useState('daily');
   const [allowStudentGuildSelect, setAllowStudentGuildSelect] = useState(true);
+  const [classStudents, setClassStudents] = useState([]);
+  const [classSubmissions, setClassSubmissions] = useState([]);
 
   const loadClassActivities = async () => {
     if (!effectiveClassId) return;
     try {
-      // Fetch the class document once to get both activities and category names
-      const classDoc = await backend.getClass(effectiveClassId);
+      // Fetch the class document, roster, and class submissions for co-op & shared boss HP
+      const [classDoc, rosterList, allClassSubs] = await Promise.all([
+        backend.getClass(effectiveClassId),
+        backend.getStudents(effectiveClassId).catch(() => []),
+        backend.getSubmissions(effectiveClassId).catch(() => []),
+      ]);
+      if (Array.isArray(rosterList)) setClassStudents(rosterList);
+      if (Array.isArray(allClassSubs)) setClassSubmissions(allClassSubs);
       if (!classDoc) return;
 
       if (classDoc.allowStudentGuildSelect !== undefined) {
@@ -324,12 +332,10 @@ export function useGameState(overrideClassId) {
     return nextLevel ? nextLevel.xpRequired : currentLevel.xpRequired;
   }, [getCurrentLevel]);
 
-  // Get today's daily quest
+  // Get today's daily quest (dynamically bound to class STEM categories)
   const getDailyQuest = useCallback(() => {
-    const today = new Date();
-    const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 86400000);
-    return DAILY_QUESTS[dayOfYear % DAILY_QUESTS.length];
-  }, []);
+    return getResolvedDailyQuest(learningPaths, new Date());
+  }, [learningPaths]);
 
   // Check if daily quest matches activity
   const checkDailyQuestMatch = useCallback((activity, pathId) => {
@@ -342,8 +348,9 @@ export function useGameState(overrideClassId) {
   // Check and unlock achievements
   const checkAchievements = useCallback((updatedState) => {
     const newAchievements = [];
+    const resolvedList = getResolvedAchievements(learningPaths);
 
-    ACHIEVEMENTS.forEach(achievement => {
+    resolvedList.forEach(achievement => {
       if (updatedState.unlockedAchievements.includes(achievement.id)) return;
 
       let unlocked = false;
@@ -379,15 +386,21 @@ export function useGameState(overrideClassId) {
         case 'collab_3':
           unlocked = updatedState.collaborationCount >= 3;
           break;
-        case 'creator_5':
-          unlocked = (updatedState.pathCompletions?.path3 || 0) >= 5;
+        case 'creator_5': {
+          const targetId = achievement.targetPathId || 'path3';
+          unlocked = ((updatedState.pathCompletions?.[targetId] || 0) >= 5) || ((updatedState.pathCompletions?.path3 || 0) >= 5);
           break;
-        case 'wordsmith_5':
-          unlocked = (updatedState.pathCompletions?.path1 || 0) >= 5;
+        }
+        case 'wordsmith_5': {
+          const targetId = achievement.targetPathId || 'path1';
+          unlocked = ((updatedState.pathCompletions?.[targetId] || 0) >= 5) || ((updatedState.pathCompletions?.path1 || 0) >= 5);
           break;
-        case 'data_5':
-          unlocked = (updatedState.pathCompletions?.path2 || 0) >= 5;
+        }
+        case 'data_5': {
+          const targetId = achievement.targetPathId || 'path2';
+          unlocked = ((updatedState.pathCompletions?.[targetId] || 0) >= 5) || ((updatedState.pathCompletions?.path2 || 0) >= 5);
           break;
+        }
         case 'level_5':
         case 'level_10':
         case 'level_15':
@@ -479,10 +492,12 @@ export function useGameState(overrideClassId) {
       isBoss: false,
       activityDesc: activity.desc || '',
       activitySteps: activity.steps || [],
-      activityProTip: activity.proTip || ''
+      activityProTip: activity.proTip || '',
+      collaborators: Array.isArray(submissionData.collaborators) ? submissionData.collaborators : [],
     });
 
     setSubmissions(prev => [...prev, newSubmission]);
+    setClassSubmissions(prev => [...prev, newSubmission]);
     return newSubmission;
   }, [user, gameState.playerName, submissions]);
 
@@ -513,10 +528,12 @@ export function useGameState(overrideClassId) {
       isBoss: true,
       activityDesc: boss.desc || '',
       activityRequirements: boss.requirements || '',
-      activitySteps: boss.steps || []
+      activitySteps: boss.steps || [],
+      collaborators: Array.isArray(submissionData.collaborators) ? submissionData.collaborators : [],
     });
 
     setSubmissions(prev => [...prev, newSubmission]);
+    setClassSubmissions(prev => [...prev, newSubmission]);
     return newSubmission;
   }, [user, gameState.playerName, submissions]);
 
@@ -525,7 +542,13 @@ export function useGameState(overrideClassId) {
     if (user && user.role === 'student') {
       const interval = setInterval(async () => {
         try {
-          const subs = await backend.getStudentSubmissions(user.id);
+          const [subs, allClassSubs] = await Promise.all([
+            backend.getStudentSubmissions(user.id),
+            effectiveClassId ? backend.getSubmissions(effectiveClassId).catch(() => null) : Promise.resolve(null),
+          ]);
+          if (Array.isArray(allClassSubs)) {
+            setClassSubmissions(allClassSubs);
+          }
 
           if (!Array.isArray(subs)) {
             console.warn('Invalid submissions data received');
@@ -555,7 +578,7 @@ export function useGameState(overrideClassId) {
       }, 3000);
       return () => clearInterval(interval);
     }
-  }, [user]);
+  }, [user, effectiveClassId]);
 
 
   const processReward = (submission) => {
@@ -587,11 +610,14 @@ export function useGameState(overrideClassId) {
           checkAndSetAchievements(updatedState);
           return updatedState;
        } else {
+          // After-school STEM club friendly streak logic:
+          // Since clubs typically meet 1-3 times per week, any activity completed on a new calendar day
+          // within 8 days of the previous club session increments the student's session streak!
           let newStreak = prev.currentStreak;
           if (prev.lastActivityDate !== today) {
              const diff = (new Date(today) - new Date(prev.lastActivityDate || 0)) / 86400000;
-             if (diff <= 1) newStreak++;
-             else if (diff > 1 && !prev.streakShieldActive) newStreak = 1;
+             if (diff <= 8) newStreak++;
+             else if (diff > 8 && !prev.streakShieldActive) newStreak = 1;
           }
 
           if (isDailyQuestMatch && !prev.dailyQuestCompleted) {
@@ -700,6 +726,8 @@ export function useGameState(overrideClassId) {
     learningPaths, // Export this
     categoriesPerRow, // Export this
     classGuilds, // Export this (supports up to 15 guilds)
+    classStudents, // Export class roster for Co-Op Submissions
+    classSubmissions, // Export class submissions for Shared Boss HP bar
     highFiveLimit, // High-five cooldown frequency limit ('daily' | 'weekly' | 'disabled')
     allowStudentGuildSelect, // Teacher toggle for student self-selection
     spendCoins, // Helper to spend coins on STEM supplies

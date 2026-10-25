@@ -43,13 +43,13 @@ export const XP_REWARDS = {
 export const ACHIEVEMENTS = [
   { id: 'first_mission', title: 'First Mission', desc: 'Complete your first activity', icon: '🚀', xpReward: 50 },
   { id: 'variety_pack', title: 'Variety Pack', desc: 'Try one activity from each path', icon: '🎨', xpReward: 100 },
-  { id: 'streak_3', title: 'On Fire', desc: 'Complete activities 3 days in a row', icon: '🔥', xpReward: 75 },
-  { id: 'streak_5', title: 'Streak Master', desc: 'Complete activities 5 days in a row', icon: '⚡', xpReward: 150 },
-  { id: 'streak_10', title: 'Unstoppable', desc: '10 day streak!', icon: '💎', xpReward: 300 },
+  { id: 'streak_3', title: 'On Fire', desc: 'Complete activities 3 club sessions in a row', icon: '🔥', xpReward: 75 },
+  { id: 'streak_5', title: 'Streak Master', desc: 'Complete activities 5 club sessions in a row', icon: '⚡', xpReward: 150 },
+  { id: 'streak_10', title: 'Unstoppable', desc: '10 session streak!', icon: '💎', xpReward: 300 },
   { id: 'collab_3', title: 'Team Player', desc: 'Complete 3 Collaboration activities', icon: '🤝', xpReward: 100 },
-  { id: 'creator_5', title: 'Creator Elite', desc: 'Complete 5 Creator path activities', icon: '🎬', xpReward: 150 },
-  { id: 'wordsmith_5', title: 'Word Wizard', desc: 'Complete 5 Wordsmith activities', icon: '📚', xpReward: 150 },
-  { id: 'data_5', title: 'Data Champion', desc: 'Complete 5 Data Scientist activities', icon: '📊', xpReward: 150 },
+  { id: 'creator_5', title: 'Creator Elite', desc: 'Complete 5 Creator path activities', icon: '🎬', xpReward: 150, pathIndex: 2, defaultPathId: 'path3' },
+  { id: 'wordsmith_5', title: 'Word Wizard', desc: 'Complete 5 Wordsmith activities', icon: '📚', xpReward: 150, pathIndex: 0, defaultPathId: 'path1' },
+  { id: 'data_5', title: 'Data Champion', desc: 'Complete 5 Data Scientist activities', icon: '📊', xpReward: 150, pathIndex: 1, defaultPathId: 'path2' },
   { id: 'level_5', title: 'Rising Star', desc: 'Reach Level 5', icon: '⭐', xpReward: 200 },
   { id: 'level_10', title: 'Immortal Warrior', desc: 'Reach Level 10', icon: '🏅', xpReward: 500 },
   { id: 'level_15', title: 'Sage of Knowledge', desc: 'Reach Level 15', icon: '🔮', xpReward: 750 },
@@ -60,6 +60,37 @@ export const ACHIEVEMENTS = [
   { id: 'guild_hero', title: 'Guild Hero', desc: 'Contribute 500 XP to your guild', icon: '🛡️', xpReward: 150 },
   { id: 'completionist', title: 'Completionist', desc: 'Complete all 6 regular activities', icon: '🏆', xpReward: 250 },
 ];
+
+/**
+ * Dynamically adapts path-specific achievements (wordsmith_5, data_5, creator_5)
+ * to the class's actual custom STEM / choice board category names.
+ */
+export function getResolvedAchievements(learningPaths = []) {
+  const validPaths = Array.isArray(learningPaths) && learningPaths.length > 0 ? learningPaths : null;
+  if (!validPaths) return ACHIEVEMENTS;
+
+  const cleanTitle = (rawTitle) => (rawTitle || '').replace(/^The\s+/i, '').trim() || 'Category';
+
+  return ACHIEVEMENTS.map((ach) => {
+    if (typeof ach.pathIndex === 'number') {
+      const targetPath = validPaths[ach.pathIndex] || validPaths.find(p => p.id === ach.defaultPathId);
+      if (targetPath && targetPath.title) {
+        const shortName = cleanTitle(targetPath.title);
+        const suffix = ach.pathIndex === 0 ? 'Master' : ach.pathIndex === 1 ? 'Champion' : 'Elite';
+        const icons = ['🔧', '💻', '🚀'];
+        const isDefaultName = ['Wordsmith', 'Data Scientist', 'Creator'].includes(shortName);
+        return {
+          ...ach,
+          targetPathId: targetPath.id,
+          title: isDefaultName ? ach.title : `${shortName} ${suffix}`,
+          desc: `Complete 5 ${shortName} activities`,
+          icon: isDefaultName ? ach.icon : (icons[ach.pathIndex] || ach.icon),
+        };
+      }
+    }
+    return ach;
+  });
+}
 
 // Team Guilds - Palette of up to 15 guilds with customizable names, colors, mottos, and bot pictures
 export const DEFAULT_15_GUILDS = [
@@ -532,14 +563,40 @@ export const AVATAR_ITEMS = {
 
 // Daily Quests (rotate based on day)
 export const DAILY_QUESTS = [
-  { id: 'dq1', title: 'Voice Master', desc: 'Complete a High Tech activity', targetType: 'High Tech', multiplier: 2 },
-  { id: 'dq2', title: 'Artistic Soul', desc: 'Complete a Low Tech activity', targetType: 'Low Tech', multiplier: 2 },
-  { id: 'dq3', title: 'Team Spirit', desc: 'Complete a Collaboration activity', targetType: 'Collaboration', multiplier: 2 },
-  { id: 'dq4', title: 'Self Discovery', desc: 'Complete a Self-Reflection activity', targetType: 'Self-Reflection', multiplier: 2 },
-  { id: 'dq5', title: 'Word Warrior', desc: 'Complete any Wordsmith activity', targetPath: 'path1', multiplier: 1.5 },
-  { id: 'dq6', title: 'Data Explorer', desc: 'Complete any Data Scientist activity', targetPath: 'path2', multiplier: 1.5 },
-  { id: 'dq7', title: 'Creative Genius', desc: 'Complete any Creator activity', targetPath: 'path3', multiplier: 1.5 },
+  { id: 'dq1', title: 'High-Tech Specialist', desc: 'Complete a High Tech activity', targetType: 'High Tech', multiplier: 2 },
+  { id: 'dq2', title: 'Maker & Builder', desc: 'Complete a Low Tech activity', targetType: 'Low Tech', multiplier: 2 },
+  { id: 'dq3', title: 'Squad Synergy', desc: 'Complete a Collaboration activity', targetType: 'Collaboration', multiplier: 2 },
+  { id: 'dq4', title: 'Engineer Logbook', desc: 'Complete a Self-Reflection activity', targetType: 'Self-Reflection', multiplier: 2 },
+  { id: 'dq5', title: 'Word Warrior', desc: 'Complete any Wordsmith activity', targetPath: 'path1', pathIndex: 0, multiplier: 1.5 },
+  { id: 'dq6', title: 'Data Explorer', desc: 'Complete any Data Scientist activity', targetPath: 'path2', pathIndex: 1, multiplier: 1.5 },
+  { id: 'dq7', title: 'Creative Genius', desc: 'Complete any Creator activity', targetPath: 'path3', pathIndex: 2, multiplier: 1.5 },
 ];
+
+/**
+ * Resolves today's daily quest, dynamically binding path-based quests
+ * to the class's actual custom STEM / choice board categories.
+ */
+export function getResolvedDailyQuest(learningPaths = [], today = new Date()) {
+  const validPaths = Array.isArray(learningPaths) && learningPaths.length > 0 ? learningPaths : [];
+  const cleanTitle = (rawTitle) => (rawTitle || '').replace(/^The\s+/i, '').trim() || 'Category';
+
+  const typeQuests = DAILY_QUESTS.filter(q => q.targetType);
+  const dynamicPathQuests = validPaths.map((p, idx) => {
+    const shortName = cleanTitle(p.title);
+    const suffixes = ['Mission', 'Explorer', 'Specialist', 'Vanguard', 'Challenger', 'Ace'];
+    return {
+      id: `dq_path_${p.id}`,
+      title: `${shortName} ${suffixes[idx % suffixes.length]}`,
+      desc: `Complete any ${shortName} activity`,
+      targetPath: p.id,
+      multiplier: 1.5,
+    };
+  });
+
+  const pool = dynamicPathQuests.length > 0 ? [...typeQuests, ...dynamicPathQuests] : DAILY_QUESTS;
+  const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 86400000);
+  return pool[dayOfYear % pool.length];
+}
 
 // Weekly Boss Challenges
 export const BOSS_CHALLENGES = [

@@ -754,15 +754,36 @@ export default function TeacherPortal({
     if (!selectedClass) return;
     setSavingCategories(true);
     try {
-      await backend.updateClass(selectedClass.id, {
+      const updates = {
         categoryNames,
         categorySubtitles,
         categoryOrder,
         categoriesPerRow
-      });
+      };
+
+      // Also sync activities array if present, so stored activities stay sorted with correct colors matching categoryOrder
+      if (Array.isArray(selectedClass.activities) && selectedClass.activities.length > 0) {
+        const sorted = [...selectedClass.activities].sort((a, b) => {
+          const idxA = categoryOrder.indexOf(a.id);
+          const idxB = categoryOrder.indexOf(b.id);
+          if (idxA === -1 && idxB === -1) return 0;
+          if (idxA === -1) return 1;
+          if (idxB === -1) return -1;
+          return idxA - idxB;
+        });
+        const updatedActivities = sorted.map((p, idx) => ({
+          ...p,
+          title: categoryNames[p.id] || p.title,
+          subtitle: categorySubtitles[p.id] !== undefined ? categorySubtitles[p.id] : (p.subtitle || ''),
+          color: PATH_COLORS[idx % PATH_COLORS.length],
+        }));
+        updates.activities = updatedActivities;
+      }
+
+      await backend.updateClass(selectedClass.id, updates);
       // Update local class data
-      setSelectedClass(prev => ({ ...prev, categoryNames, categorySubtitles, categoryOrder, categoriesPerRow }));
-      setClasses(prev => prev.map(c => c.id === selectedClass.id ? { ...c, categoryNames, categorySubtitles, categoryOrder, categoriesPerRow } : c));
+      setSelectedClass(prev => ({ ...prev, ...updates }));
+      setClasses(prev => prev.map(c => c.id === selectedClass.id ? { ...c, ...updates } : c));
       alert('Category settings & layout saved!');
     } catch (error) {
       alert('Error saving categories: ' + error.message);

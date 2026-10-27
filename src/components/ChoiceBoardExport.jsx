@@ -54,6 +54,29 @@ export default function ChoiceBoardExport({ classId, className }) {
           }
         });
       }
+
+      // Filter out removed categories
+      if (classDoc.categoryNames && Object.keys(classDoc.categoryNames).length > 0) {
+        loaded = loaded.filter(p => p.id in classDoc.categoryNames);
+      }
+
+      // Sort by categoryOrder if available
+      if (Array.isArray(classDoc.categoryOrder) && classDoc.categoryOrder.length > 0) {
+        loaded.sort((a, b) => {
+          const idxA = classDoc.categoryOrder.indexOf(a.id);
+          const idxB = classDoc.categoryOrder.indexOf(b.id);
+          if (idxA === -1 && idxB === -1) return 0;
+          if (idxA === -1) return 1;
+          if (idxB === -1) return -1;
+          return idxA - idxB;
+        });
+      }
+
+      // Ensure colors match category column display order
+      loaded = loaded.map((path, idx) => ({
+        ...path,
+        color: PATH_COLORS[idx % PATH_COLORS.length],
+      }));
     }
 
     return loaded;

@@ -21,7 +21,7 @@ import {
   arrayRemove
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
-import { LEVELS, GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, DEFAULT_STEM_SUPPLIES, GUILD_LEVELS, GUILD_CHALLENGES, BOSS_CHALLENGES, DEFAULT_PATHS, getGuildLevelInfo, getHighFiveCooldownStatus } from "../data/gameData";
+import { LEVELS, GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, DEFAULT_STEM_SUPPLIES, GUILD_LEVELS, GUILD_CHALLENGES, BOSS_CHALLENGES, DEFAULT_PATHS, PATH_COLORS, getGuildLevelInfo, getHighFiveCooldownStatus } from "../data/gameData";
 
 function calculateLevelAndBonusCoins(oldXp, newXp) {
   const oldLevel = LEVELS.reduce((acc, l) => oldXp >= l.xpRequired ? l : acc, LEVELS[0]);
@@ -508,12 +508,12 @@ export const realBackend = {
       throw new Error("A valid Class ID is required to save activities.");
     }
     try {
-      const sanitizedActivities = (activities || []).map(path => ({
+      const sanitizedActivities = (activities || []).map((path, idx) => ({
         id: path.id || '',
         title: path.title || '',
         subtitle: path.subtitle || '',
         icon: path.icon || 'BookOpen',
-        color: path.color || 'bg-blue-600',
+        color: PATH_COLORS[idx % PATH_COLORS.length] || path.color || 'bg-blue-600',
         options: (path.options || []).map(opt => {
           const cleanOpt = {
             id: opt.id || `opt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -2261,8 +2261,12 @@ export const realBackend = {
 
       const updatePromises = classIds.map(classId => {
         const classRef = doc(db, "classes", classId);
-        const templatePaths = templateData.activities || [];
-        const templateOrder = templateData.categoryOrder || templatePaths.map(p => p.id);
+        const rawTemplatePaths = templateData.activities || [];
+        const templateOrder = templateData.categoryOrder || rawTemplatePaths.map(p => p.id);
+        const templatePaths = rawTemplatePaths.map((p, idx) => ({
+          ...p,
+          color: PATH_COLORS[idx % PATH_COLORS.length],
+        }));
         return updateDoc(classRef, {
           activities: templatePaths,
           categoryNames: templateData.categoryNames || {},
@@ -2304,14 +2308,18 @@ export const realBackend = {
 
       if (mode === 'overwrite') {
         const order = activitiesToImport.map(p => p.id);
+        const normalizedActivities = activitiesToImport.map((p, idx) => ({
+          ...p,
+          color: PATH_COLORS[idx % PATH_COLORS.length],
+        }));
         await updateDoc(classRef, {
-          activities: activitiesToImport,
+          activities: normalizedActivities,
           categoryNames: categoryNames,
           categorySubtitles: categorySubtitles,
           categoryOrder: order,
           updatedAt: serverTimestamp()
         });
-        return { success: true, activities: activitiesToImport, categoryNames, categorySubtitles, categoryOrder: order };
+        return { success: true, activities: normalizedActivities, categoryNames, categorySubtitles, categoryOrder: order };
       }
 
       let currentActivities = classData.activities && classData.activities.length > 0

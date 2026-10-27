@@ -379,8 +379,9 @@ export default function ActivityEditor({
         });
       }
 
-      paths = paths.map(path => ({
+      paths = paths.map((path, idx) => ({
         ...path,
+        color: PATH_COLORS[idx % PATH_COLORS.length],
         options: (path.options || []).map(opt => ({
           ...opt,
           steps: normalizeSteps(opt.steps),
@@ -458,9 +459,10 @@ export default function ActivityEditor({
             }
           }
 
-          // Normalize all steps to object form
-          paths = paths.map(path => ({
+          // Normalize all steps to object form and ensure colors match categoryOrder
+          paths = paths.map((path, idx) => ({
             ...path,
+            color: PATH_COLORS[idx % PATH_COLORS.length],
             options: path.options.map(opt => ({
               ...opt,
               steps: normalizeSteps(opt.steps),

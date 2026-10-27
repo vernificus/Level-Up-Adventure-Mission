@@ -511,10 +511,11 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
     const templateData = {
       title: templateTitle.trim(),
       description: templateDesc.trim(),
-      activities: templatePaths.map(p => ({
+      activities: templatePaths.map((p, idx) => ({
         ...p,
         title: finalNames[p.id] || p.title,
-        subtitle: finalSubtitles[p.id] !== undefined ? finalSubtitles[p.id] : (p.subtitle || '')
+        subtitle: finalSubtitles[p.id] !== undefined ? finalSubtitles[p.id] : (p.subtitle || ''),
+        color: PATH_COLORS[idx % PATH_COLORS.length],
       })),
       categoryNames: finalNames,
       categorySubtitles: finalSubtitles,
@@ -2106,7 +2107,13 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                               onClick={() => {
                                 const catName = templateCategoryNames[path.id] || path.title || `Category ${idx + 1}`;
                                 if (!window.confirm(`Remove category "${catName}"? Any activities in this category will be removed from this template.`)) return;
-                                setTemplatePaths(prev => prev.filter(p => p.id !== path.id));
+                                setTemplatePaths(prev => {
+                                  const filtered = prev.filter(p => p.id !== path.id);
+                                  return filtered.map((p, cIdx) => ({
+                                    ...p,
+                                    color: PATH_COLORS[cIdx % PATH_COLORS.length]
+                                  }));
+                                });
                                 setTemplateCategoryNames(prev => { const next = { ...prev }; delete next[path.id]; return next; });
                                 setTemplateCategorySubtitles(prev => { const next = { ...prev }; delete next[path.id]; return next; });
                               }}

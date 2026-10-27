@@ -176,6 +176,12 @@ export function useGameState(overrideClassId) {
         });
       }
 
+      // Ensure category colors match their column display order (matching TeacherPortal borderColors)
+      paths = paths.map((path, idx) => ({
+        ...path,
+        color: PATH_COLORS[idx % PATH_COLORS.length],
+      }));
+
       setLearningPaths(paths);
     } catch (e) {
       console.error("Failed to load class activities", e);

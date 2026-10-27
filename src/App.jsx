@@ -8,7 +8,7 @@ import {
 import { useGameState } from './hooks/useGameState';
 import {
   LEVELS, ACHIEVEMENTS, GUILDS, AVATAR_ITEMS, BOSS_CHALLENGES, LEARNING_PATHS, GUILD_CHALLENGES,
-  GUILD_TROPHIES, GUILD_BANNERS, getResolvedAchievements
+  GUILD_TROPHIES, GUILD_BANNERS, PATH_COLORS, getResolvedAchievements
 } from './data/gameData';
 import { compressImageFile } from './utils/imageUtils';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -1792,6 +1792,7 @@ function AchievementModal({ achievement, onClose }) {
 // ============== ACTIVITY CARD ==============
 function ActivityCard({
   path,
+  cardColor,
   selectedOption,
   onSelect,
   completedActivities = [],
@@ -1800,10 +1801,11 @@ function ActivityCard({
   rejectedActivities = []
 }) {
   const IconComponent = IconMap[path.icon] || BookOpen;
+  const headerColor = cardColor || path.color || 'bg-blue-600';
 
   return (
     <section className="flex flex-col gap-4" aria-labelledby={`path-title-${path.id}`}>
-      <div className={`flex items-center gap-3 p-4 rounded-t-xl ${path.color}`}>
+      <div className={`flex items-center gap-3 p-4 rounded-t-xl ${headerColor}`}>
         <IconComponent className="w-6 h-6" aria-hidden="true" />
         <div>
           <h2 id={`path-title-${path.id}`} className="font-black uppercase italic leading-none">{path.title}</h2>
@@ -2274,10 +2276,11 @@ function GameContent({ emulatedClassId } = {}) {
           }`}
           aria-label="Learning paths"
         >
-          {learningPaths.map((path) => (
+          {learningPaths.map((path, idx) => (
             <ActivityCard
               key={path.id}
               path={path}
+              cardColor={path.color || PATH_COLORS[idx % PATH_COLORS.length]}
               selectedOption={selectedPath[path.id]}
               onSelect={handleSelect}
               completedActivities={gameState.completedActivities}

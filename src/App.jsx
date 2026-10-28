@@ -3,7 +3,7 @@ import {
   Gamepad2, Mic, BarChart3, Palette, CheckCircle2, Trophy, Rocket, Info, X, PlayCircle,
   Star, Gift, Swords, Users, User, Sparkles, Zap, Shield, ShieldCheck, Crown, Target, Building2,
   Upload, Link, Link2, Clock, CheckCheck, XCircle, ClipboardList, Lock, Eye, FileText, LogOut,
-  MessageSquare, Pencil, BookOpen, Award, ChevronDown, ChevronUp, RotateCcw, ExternalLink, Filter, Camera
+  MessageSquare, Pencil, BookOpen, Award, ChevronDown, ChevronUp, RotateCcw, RefreshCw, ExternalLink, Filter, Camera, Video
 } from 'lucide-react';
 import { useGameState } from './hooks/useGameState';
 import {
@@ -484,13 +484,25 @@ function SubmissionForm({
   const [selectedCollaborators, setSelectedCollaborators] = useState([]);
   const [showCoOpPicker, setShowCoOpPicker] = useState(false);
 
-  // Camera capture states
+  // Camera capture states (Photo)
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState('');
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const fileInputRef = useRef(null);
   const cameraFileInputRef = useRef(null);
+
+  // In-app Video recording states (Chromebook video)
+  const [videoActive, setVideoActive] = useState(false);
+  const [videoRecording, setVideoRecording] = useState(false);
+  const [videoDuration, setVideoDuration] = useState(0);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState(null);
+  const liveVideoRef = useRef(null);
+  const videoStreamRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const videoChunksRef = useRef([]);
+  const videoTimerRef = useRef(null);
+  const videoFileInputRef = useRef(null);
 
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
@@ -500,13 +512,28 @@ function SubmissionForm({
     setCameraActive(false);
   }, []);
 
+  const stopVideoStream = useCallback(() => {
+    if (videoTimerRef.current) {
+      clearInterval(videoTimerRef.current);
+      videoTimerRef.current = null;
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      try { mediaRecorderRef.current.stop(); } catch {}
+    }
+    if (videoStreamRef.current) {
+      videoStreamRef.current.getTracks().forEach(track => track.stop());
+      videoStreamRef.current = null;
+    }
+    setVideoActive(false);
+    setVideoRecording(false);
+  }, []);
+
   useEffect(() => {
     return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
+      stopCamera();
+      stopVideoStream();
     };
-  }, []);
+  }, [stopCamera, stopVideoStream]);
 
   const startCamera = async () => {
     setCameraError('');
@@ -558,6 +585,147 @@ function SubmissionForm({
     setFileName(`club-build-${new Date().toISOString().slice(0, 10)}.jpg`);
     setFileType('image/jpeg');
     stopCamera();
+  };
+
+  const startVideoCamera = async () => {
+    setCameraError('');
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setCameraError('Webcam recording not supported on this browser. You can upload a recorded video file instead.');
+        return;
+      }
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 640, max: 854 },
+            height: { ideal: 480, max: 480 },
+            frameRate: { ideal: 24, max: 30 },
+            facingMode: 'user'
+          },
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true
+          }
+        });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      }
+      videoStreamRef.current = stream;
+      setVideoActive(true);
+      setTimeout(() => {
+        if (liveVideoRef.current) {
+          liveVideoRef.current.srcObject = stream;
+        }
+      }, 50);
+    } catch (err) {
+      console.warn('Video camera access failed:', err);
+      setCameraError('Could not access webcam & microphone. Check browser permissions or upload a video file.');
+    }
+  };
+
+  const startVideoRecording = () => {
+    if (!videoStreamRef.current) return;
+    videoChunksRef.current = [];
+    setVideoDuration(0);
+
+    let mimeType = 'video/webm;codecs=vp8,opus';
+    if (typeof MediaRecorder !== 'undefined') {
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = MediaRecorder.isTypeSupported('video/webm')
+          ? 'video/webm'
+          : (MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4' : '');
+      }
+    }
+
+    try {
+      const options = {
+        ...(mimeType ? { mimeType } : {}),
+        videoBitsPerSecond: 600000, // 600 kbps: high quality 480p STEM demos while keeping sizes ~2MB
+        audioBitsPerSecond: 64000   // 64 kbps: clean student voice audio
+      };
+      let recorder;
+      try {
+        recorder = new MediaRecorder(videoStreamRef.current, options);
+      } catch {
+        recorder = new MediaRecorder(videoStreamRef.current, mimeType ? { mimeType } : undefined);
+      }
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          videoChunksRef.current.push(e.data);
+        }
+      };
+      recorder.onstop = () => {
+        const finalType = recorder.mimeType || mimeType || 'video/webm';
+        const blob = new Blob(videoChunksRef.current, { type: finalType });
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setFileData(reader.result);
+          setFileName(`chromebook-video-${new Date().toISOString().slice(0, 10)}.webm`);
+          setFileType(finalType);
+        };
+        reader.readAsDataURL(blob);
+        const previewUrl = URL.createObjectURL(blob);
+        setVideoPreviewUrl(previewUrl);
+        stopVideoStream();
+      };
+
+      mediaRecorderRef.current = recorder;
+      recorder.start(1000);
+      setVideoRecording(true);
+
+      const maxSeconds = 45;
+      videoTimerRef.current = setInterval(() => {
+        setVideoDuration(prev => {
+          if (prev >= maxSeconds - 1) {
+            stopVideoRecording();
+            return maxSeconds;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+    } catch (err) {
+      console.error('MediaRecorder start error:', err);
+      setCameraError('Recording failed: ' + err.message);
+    }
+  };
+
+  const stopVideoRecording = () => {
+    if (videoTimerRef.current) {
+      clearInterval(videoTimerRef.current);
+      videoTimerRef.current = null;
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (e) {
+        console.warn('Error stopping recorder', e);
+      }
+    }
+    setVideoRecording(false);
+  };
+
+  const handleVideoFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) {
+      alert('Video file is too large. Please select a video under 20MB to preserve the class Free Tier storage.');
+      return;
+    }
+    setIsProcessing(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setFileData(event.target.result);
+      setFileName(file.name);
+      setFileType(file.type || 'video/mp4');
+      setVideoPreviewUrl(URL.createObjectURL(file));
+      setIsProcessing(false);
+    };
+    reader.onerror = () => {
+      alert('Failed to read video file.');
+      setIsProcessing(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   // Eligible teammates for Co-Op tagging (prioritize same guild first)
@@ -635,7 +803,7 @@ function SubmissionForm({
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (submissionType === 'link' && !linkValue.trim()) {
       alert('Please enter a link to your work');
       return;
@@ -644,31 +812,45 @@ function SubmissionForm({
       alert(submissionType === 'camera' ? 'Please snap or select a photo of your build first!' : 'Please select a file');
       return;
     }
+    if (submissionType === 'video' && !fileData) {
+      alert('Please record or choose a short video of your build first!');
+      return;
+    }
     if (submissionType === 'text' && !textValue.trim()) {
       alert('Please type your response');
       return;
     }
 
     stopCamera();
+    stopVideoStream();
 
-    const isFileOrPhoto = submissionType === 'file' || submissionType === 'camera';
+    const isFileMedia = submissionType === 'file' || submissionType === 'camera' || submissionType === 'video';
     let content;
     if (submissionType === 'link') content = linkValue.trim();
-    else if (isFileOrPhoto) content = fileData;
+    else if (isFileMedia) content = fileData;
     else content = textValue.trim();
 
-    onSubmit({
-      type: isFileOrPhoto ? 'file' : submissionType,
-      content,
-      fileName: isFileOrPhoto ? (fileName || 'photo.jpg') : null,
-      fileType: isFileOrPhoto ? (fileType || 'image/jpeg') : null,
-      note: note.trim(),
-      collaborators: selectedCollaborators
-    });
+    setIsProcessing(true);
+    try {
+      await onSubmit({
+        type: submissionType === 'video' ? 'video' : (isFileMedia ? 'file' : submissionType),
+        content,
+        fileName: isFileMedia ? (fileName || (submissionType === 'video' ? 'chromebook-video.webm' : 'photo.jpg')) : null,
+        fileType: isFileMedia ? (fileType || (submissionType === 'video' ? 'video/webm' : 'image/jpeg')) : null,
+        note: note.trim(),
+        collaborators: selectedCollaborators
+      });
+    } catch (err) {
+      console.error('Submission failed:', err);
+      alert(err.message || 'Submission failed. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const typeButtons = [
     { type: 'camera', icon: Camera, label: 'Take Photo' },
+    { type: 'video', icon: Video, label: 'Record Video' },
     { type: 'file', icon: Upload, label: 'Upload File' },
     { type: 'link', icon: Link, label: 'Paste Link' },
     { type: 'text', icon: MessageSquare, label: 'Type Response' },
@@ -749,13 +931,14 @@ function SubmissionForm({
         </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5" role="group" aria-label="Submission type">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-5" role="group" aria-label="Submission type">
         {typeButtons.map(({ type, icon: Icon, label }) => (
           <button
             key={type}
             type="button"
             onClick={() => {
               if (type !== 'camera') stopCamera();
+              if (type !== 'video') stopVideoStream();
               setSubmissionType(type);
             }}
             className={`py-2.5 px-2 rounded-lg font-bold flex items-center justify-center gap-1.5 text-xs sm:text-sm transition-colors ${
@@ -848,6 +1031,115 @@ function SubmissionForm({
                   className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 border border-slate-600"
                 >
                   <Upload className="w-4 h-4" /> Open Device Camera / Choose Photo
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {submissionType === 'video' && (
+        <div className="mb-4 bg-slate-900/70 border border-slate-700 rounded-xl p-4 text-center">
+          <input
+            type="file"
+            ref={videoFileInputRef}
+            onChange={handleVideoFileChange}
+            className="sr-only"
+            accept="video/*"
+          />
+
+          {fileData && fileType?.startsWith('video/') ? (
+            <div className="space-y-3">
+              <video
+                src={videoPreviewUrl || fileData}
+                controls
+                className="max-h-60 mx-auto rounded-lg border-2 border-emerald-500 bg-black"
+              />
+              <p className="text-xs text-emerald-400 font-bold">
+                ✓ Video ready to submit ({fileName || 'video.webm'})
+              </p>
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFileData(null);
+                    setFileName('');
+                    setFileType('');
+                    setVideoPreviewUrl(null);
+                    startVideoCamera();
+                  }}
+                  className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs font-bold flex items-center gap-1.5"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" /> Retake Video
+                </button>
+              </div>
+            </div>
+          ) : videoActive ? (
+            <div className="space-y-3">
+              <div className="relative max-w-md mx-auto">
+                <video
+                  ref={liveVideoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full max-h-64 rounded-lg border-2 border-red-500 bg-black mx-auto object-cover"
+                />
+                {videoRecording && (
+                  <div className="absolute top-3 left-3 flex items-center gap-2 bg-red-600 text-white text-xs font-black px-2.5 py-1 rounded-full shadow animate-pulse">
+                    <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                    REC {Math.floor(videoDuration / 60)}:{(videoDuration % 60).toString().padStart(2, '0')} / 0:45
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-center gap-2">
+                {!videoRecording ? (
+                  <button
+                    type="button"
+                    onClick={startVideoRecording}
+                    className="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-black uppercase rounded-xl flex items-center gap-2 text-sm shadow-lg"
+                  >
+                    <span className="w-3 h-3 rounded-full bg-white" /> Start Recording
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={stopVideoRecording}
+                    className="px-5 py-2.5 bg-red-700 hover:bg-red-600 text-white font-black uppercase rounded-xl flex items-center gap-2 text-sm shadow-lg animate-bounce"
+                  >
+                    <span className="w-3 h-3 rounded-sm bg-white" /> Stop Recording ({videoDuration}s)
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={stopVideoStream}
+                  className="px-3 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold rounded-xl text-xs"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3 py-2">
+              <Video className="w-10 h-10 text-red-400 mx-auto" aria-hidden="true" />
+              <p className="text-sm font-bold text-white">Record a Short Video Demo with Your Chromebook Camera!</p>
+              <p className="text-xs text-slate-400">Record up to 45 seconds demonstrating your STEM build or robotics project.</p>
+              {cameraError && (
+                <p className="text-xs text-amber-300 bg-amber-950/60 border border-amber-700/50 p-2 rounded-lg">{cameraError}</p>
+              )}
+              <div className="flex flex-wrap justify-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={startVideoCamera}
+                  className="px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl text-xs uppercase flex items-center gap-1.5"
+                >
+                  <Video className="w-4 h-4" /> Start Camera & Mic
+                </button>
+                <button
+                  type="button"
+                  onClick={() => videoFileInputRef.current?.click()}
+                  className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 border border-slate-600"
+                >
+                  <Upload className="w-4 h-4" /> Upload Recorded Video
                 </button>
               </div>
             </div>
@@ -1034,7 +1326,7 @@ function SubmissionForm({
           className="flex-1 py-3 bg-yellow-500 text-slate-900 font-black uppercase rounded-xl hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
         >
           {isProcessing ? (
-            <>Processing...</>
+            <><RefreshCw className="w-5 h-5 animate-spin" aria-hidden="true" /> Saving & Uploading...</>
           ) : (
             <><Rocket className="w-5 h-5" aria-hidden="true" /> Submit</>
           )}
@@ -2095,6 +2387,7 @@ function GameContent({ emulatedClassId } = {}) {
     allowStudentGuildSelect,
     spendCoins,
     recordHighFive,
+    claimGuildChallenge,
     getCurrentLevel,
     getNextLevelXp,
     getDailyQuest,
@@ -2356,6 +2649,7 @@ function GameContent({ emulatedClassId } = {}) {
           gameState={{ id: user?.id, name: gameState.playerName, ...gameState }}
           onStateUpdate={refreshClassData}
           onRecordHighFive={recordHighFive}
+          onClaimGuildChallenge={claimGuildChallenge}
           guilds={classGuilds}
           spendCoins={spendCoins}
           highFiveLimit={highFiveLimit}

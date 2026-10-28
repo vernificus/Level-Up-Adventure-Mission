@@ -20,9 +20,17 @@ import {
   arrayUnion,
   arrayRemove
 } from "firebase/firestore";
-import { auth, db } from "./firebase";
+import { auth, db, storage } from "./firebase";
+import { ref as storageRef, uploadString, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { LEVELS, GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, DEFAULT_STEM_SUPPLIES, GUILD_LEVELS, GUILD_CHALLENGES, BOSS_CHALLENGES, DEFAULT_PATHS, PATH_COLORS, getGuildLevelInfo, getHighFiveCooldownStatus } from "../data/gameData";
 import { calculateLevelAndBonusCoins, calculatePathMastersProgress } from "../utils/gameUtils.js";
+import {
+  generateStoragePath,
+  isMediaPayload,
+  shouldPruneSubmission,
+  calculateClassStorageUsage,
+  DEFAULT_PRUNE_AGE_DAYS
+} from "../utils/storageUtils.js";
 import { isAdminUser } from "../utils/authUtils.js";
 
 export const realBackend = {
@@ -177,6 +185,7 @@ export const realBackend = {
         unlockedAchievements: [],
         guild: null,
         guildXpContributed: 0,
+        claimedGuildChallenges: [],
         avatar: { color: 'default', hat: 'none', accessory: 'none', face: 'happy' },
         ownedItems: ['default', 'none', 'happy'],
         dailyQuestCompleted: false,
@@ -790,22 +799,189 @@ export const realBackend = {
     }
   },
 
+  // ================= CLOUD STORAGE & COST-ZERO OPTIMIZATION =================
+  async uploadSubmissionMedia(classId, studentId, fileData, fileName = 'submission-media', fileType = 'application/octet-stream') {
+    try {
+      // 1. If already an HTTP/HTTPS URL, no upload needed
+      if (typeof fileData === 'string' && (fileData.startsWith('http://') || fileData.startsWith('https://'))) {
+        return { downloadUrl: fileData, storagePath: null };
+      }
+
+      // 2. Check if it's a data URL or Blob/File
+      const isDataUrl = typeof fileData === 'string' && fileData.startsWith('data:');
+      const isBlob = typeof Blob !== 'undefined' && fileData instanceof Blob;
+      if (!isDataUrl && !isBlob) {
+        return { downloadUrl: fileData, storagePath: null };
+      }
+
+      if (!storage) {
+        console.warn("Firebase storage is not initialized; using inline fallback");
+        return { downloadUrl: fileData, storagePath: null };
+      }
+
+      // 3. Generate clean storage path in Firebase Cloud Storage
+      const path = generateStoragePath(classId, studentId, fileName);
+      const fileRef = storageRef(storage, path);
+
+      const mime = fileType || (isDataUrl ? fileData.slice(5, fileData.indexOf(';')) : 'application/octet-stream');
+
+      if (isDataUrl) {
+        await uploadString(fileRef, fileData, 'data_url', {
+          contentType: mime
+        });
+      } else {
+        await uploadBytes(fileRef, fileData, {
+          contentType: mime
+        });
+      }
+
+      const downloadUrl = await getDownloadURL(fileRef);
+      return { downloadUrl, storagePath: path };
+    } catch (error) {
+      console.warn("Storage upload failed or offline, falling back:", error);
+      const sizeEstimate = typeof fileData === 'string' ? fileData.length : (fileData?.size || 0);
+      // Fallback: If under 750KB, keep inline so student work is not lost
+      if (sizeEstimate < 750 * 1024) {
+        return { downloadUrl: fileData, storagePath: null };
+      }
+      throw new Error(`Media upload failed (${error.message || 'Storage error'}). Please try again or submit a link.`);
+    }
+  },
+
   async createSubmission(studentId, classId, submissionData) {
     try {
+      let finalContent = submissionData.submissionContent || submissionData.content || '';
+      let storagePath = submissionData.storagePath || null;
+      let mediaUploaded = false;
+
+      // Extract raw media payload if present (video, photo, or heavy file)
+      const rawPayload = submissionData.fileData || finalContent;
+      if (isMediaPayload(rawPayload)) {
+        try {
+          const uploadResult = await this.uploadSubmissionMedia(
+            classId,
+            studentId,
+            rawPayload,
+            submissionData.fileName || (submissionData.submissionType === 'video' ? 'video.webm' : 'media.jpg'),
+            submissionData.fileType || (submissionData.submissionType === 'video' ? 'video/webm' : 'image/jpeg')
+          );
+          if (uploadResult && uploadResult.downloadUrl) {
+            finalContent = uploadResult.downloadUrl;
+            storagePath = uploadResult.storagePath;
+            mediaUploaded = true;
+          }
+        } catch (uploadErr) {
+          console.warn("Could not offload media to Firebase Storage:", uploadErr);
+          if (typeof rawPayload === 'string' && rawPayload.length > 800 * 1024) {
+            throw uploadErr;
+          }
+        }
+      }
+
       const newSubmission = {
         studentId,
         classId,
         ...submissionData,
+        submissionContent: finalContent,
+        ...(storagePath ? { storagePath } : {}),
+        mediaStoredInCloud: mediaUploaded,
         submittedAt: new Date().toISOString(),
         status: 'pending',
         teacherFeedback: ''
       };
+
+      // Strip bulky base64 fileData from the Firestore doc to keep document under 1 KB
+      if (mediaUploaded && newSubmission.fileData) {
+        delete newSubmission.fileData;
+      }
 
       const docRef = await addDoc(collection(db, "submissions"), newSubmission);
       return { id: docRef.id, ...newSubmission };
     } catch (error) {
       console.error("Error creating submission:", error);
       throw error;
+    }
+  },
+
+  async deleteSubmission(submissionId) {
+    try {
+      const docRef = doc(db, "submissions", submissionId);
+      const subSnap = await getDoc(docRef);
+      if (subSnap.exists()) {
+        const subData = subSnap.data();
+        if (subData.storagePath && storage) {
+          try {
+            await deleteObject(storageRef(storage, subData.storagePath));
+          } catch (storageErr) {
+            console.warn("Could not delete file from Cloud Storage:", storageErr);
+          }
+        }
+        await deleteDoc(docRef);
+      }
+      return { success: true };
+    } catch (error) {
+      console.error("Error deleting submission:", error);
+      throw error;
+    }
+  },
+
+  async pruneOldSubmissionsMedia(classId, daysOld = DEFAULT_PRUNE_AGE_DAYS) {
+    try {
+      const q = query(
+        collection(db, "submissions"),
+        where("classId", "==", classId),
+        where("status", "==", "approved")
+      );
+      const querySnapshot = await getDocs(q);
+      const cutoffMs = Date.now() - (daysOld * 24 * 60 * 60 * 1000);
+      let prunedCount = 0;
+      let freedBytesEstimated = 0;
+
+      for (const docSnap of querySnapshot.docs) {
+        const sub = { id: docSnap.id, ...docSnap.data() };
+        if (!shouldPruneSubmission(sub, cutoffMs)) continue;
+
+        if (sub.storagePath && storage) {
+          try {
+            await deleteObject(storageRef(storage, sub.storagePath));
+            freedBytesEstimated += 2.5 * 1024 * 1024;
+          } catch (storageErr) {
+            console.warn(`Could not delete storage file ${sub.storagePath}:`, storageErr);
+          }
+        } else if (typeof sub.submissionContent === 'string' && sub.submissionContent.startsWith('data:')) {
+          freedBytesEstimated += sub.submissionContent.length;
+        }
+
+        await updateDoc(doc(db, "submissions", docSnap.id), {
+          submissionContent: '[Archived: Media pruned to maintain free tier quota. Student XP, coins, and grades remain intact.]',
+          mediaPruned: true,
+          prunedAt: new Date().toISOString(),
+          storagePath: null
+        });
+        prunedCount++;
+      }
+
+      return {
+        success: true,
+        prunedCount,
+        freedBytesEstimated,
+        freedMb: (freedBytesEstimated / (1024 * 1024)).toFixed(1)
+      };
+    } catch (error) {
+      console.error("Error pruning old media submissions:", error);
+      throw error;
+    }
+  },
+
+  async getClassStorageEstimate(classId) {
+    try {
+      const q = query(collection(db, "submissions"), where("classId", "==", classId));
+      const querySnapshot = await getDocs(q);
+      const subs = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      return calculateClassStorageUsage(subs);
+    } catch (error) {
+      console.error("Error getting class storage estimate:", error);
+      return calculateClassStorageUsage([]);
     }
   },
 
@@ -1577,20 +1753,32 @@ export const realBackend = {
       if (!studentDoc.exists()) throw new Error('Student not found');
 
       const sData = studentDoc.data();
-      const claimed = sData.claimedGuildChallenges || [];
+      const claimed = Array.isArray(sData.claimedGuildChallenges) ? sData.claimedGuildChallenges : [];
       if (claimed.includes(challengeId)) {
-        return { alreadyClaimed: true };
+        return { alreadyClaimed: true, claimedGuildChallenges: claimed };
       }
 
+      const numRewardXp = typeof rewardXp === 'number' ? rewardXp : (Number(rewardXp) || 100);
+      const numRewardCoins = typeof rewardCoins === 'number' ? rewardCoins : (Number(rewardCoins) || 50);
+      const updatedClaimed = Array.from(new Set([...claimed, challengeId]));
+
       const updates = {
-        xp: (sData.xp || 0) + (rewardXp || 100),
-        coins: (sData.coins || 0) + (rewardCoins || 50),
-        guildXpContributed: (sData.guildXpContributed || 0) + (rewardXp || 100),
-        claimedGuildChallenges: [...claimed, challengeId]
+        xp: (sData.xp || 0) + numRewardXp,
+        coins: (sData.coins || 0) + numRewardCoins,
+        guildXpContributed: (sData.guildXpContributed || 0) + (sData.guild || guildId ? numRewardXp : 0),
+        claimedGuildChallenges: updatedClaimed
       };
 
       await updateDoc(studentRef, updates);
-      return { success: true, rewardXp, rewardCoins };
+      return {
+        success: true,
+        rewardXp: numRewardXp,
+        rewardCoins: numRewardCoins,
+        xp: updates.xp,
+        coins: updates.coins,
+        guildXpContributed: updates.guildXpContributed,
+        claimedGuildChallenges: updatedClaimed
+      };
     } catch (error) {
       console.error("Error claiming guild reward:", error);
       throw error;
@@ -1655,7 +1843,7 @@ export const realBackend = {
   },
 
   // ================= GUILD REWARDS (TEACHER) =================
-  async rewardGuild(classId, guildId, rewardType, rewardValue) {
+  async rewardGuild(classId, guildId, rewardType, rewardValue, rewardMode = 'grant') {
     try {
       const students = await this.getStudents(classId);
       const guildMembers = students.filter(s => s.guild === guildId);
@@ -1670,15 +1858,19 @@ export const realBackend = {
           updates.coins = Math.max(0, (student.coins || 0) + rewardValue);
         } else if (rewardType === 'achievement') {
           const current = student.unlockedAchievements || [];
-          if (!current.includes(rewardValue)) {
-            updates.unlockedAchievements = [...current, rewardValue];
+          if (rewardMode === 'deduct') {
+            updates.unlockedAchievements = current.filter(a => a !== rewardValue);
+          } else {
+            if (!current.includes(rewardValue)) {
+              updates.unlockedAchievements = [...current, rewardValue];
+            }
           }
         }
         if (Object.keys(updates).length > 0) {
           await updateDoc(doc(db, "students", student.id), updates);
         }
       }
-      return guildMembers.length;
+      return { success: true, updatedCount: guildMembers.length };
     } catch (error) {
       console.error("Error rewarding/adjusting guild:", error);
       throw error;
@@ -1686,7 +1878,7 @@ export const realBackend = {
   },
 
   // Reset or adjust exploit XP for all members of a guild
-  async resetGuildMembersXp(classId, guildId, { resetTotalXp = false, resetSpiritFlame = false, xpDeduction = null } = {}) {
+  async resetGuildMembersXp(classId, guildId, { resetTotalXp = false, resetSpiritFlame = false, xpDeduction = null, resetChallenges = false } = {}) {
     try {
       const students = await this.getStudents(classId);
       const guildMembers = students.filter(s => s.guild === guildId);
@@ -1702,6 +1894,9 @@ export const realBackend = {
             updates.xp = 0;
           }
         }
+        if (resetChallenges) {
+          updates.claimedGuildChallenges = [];
+        }
         await updateDoc(doc(db, "students", student.id), updates);
       }
 
@@ -1709,7 +1904,7 @@ export const realBackend = {
         await this.updateGuildHall(classId, guildId, { spiritFlame: 0, recentCheers: [] });
       }
 
-      return guildMembers.length;
+      return { success: true, updatedCount: guildMembers.length };
     } catch (error) {
       console.error("Error resetting guild members XP:", error);
       throw error;

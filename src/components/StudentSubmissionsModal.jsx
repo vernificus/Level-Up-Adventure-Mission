@@ -4,7 +4,7 @@ import {
   MessageSquare, Sparkles, Filter, Search, ArrowUpDown,
   Printer, ChevronLeft, ChevronRight, Award, Trophy,
   AlertCircle, Check, RotateCcw, Calendar, User, BookOpen,
-  Zap, AlertTriangle
+  Zap, AlertTriangle, Video
 } from 'lucide-react';
 import { LEVELS } from '../data/gameData';
 import { FileViewer } from './FileViewer';
@@ -490,6 +490,7 @@ export default function StudentSubmissionsModal({
               <option value="text">✍️ Written</option>
               <option value="link">🔗 Links</option>
               <option value="file">📎 Files</option>
+              <option value="video">🎥 Video</option>
               <option value="boss">⚔️ Boss</option>
             </select>
 
@@ -623,7 +624,8 @@ export default function StudentSubmissionsModal({
                         {sub.submissionType === 'text' && <><MessageSquare className="w-3.5 h-3.5 text-purple-400" /> Written Response</>}
                         {sub.submissionType === 'link' && <><ExternalLink className="w-3.5 h-3.5 text-blue-400" /> Submitted Link</>}
                         {sub.submissionType === 'file' && <><FileText className="w-3.5 h-3.5 text-green-400" /> Attached File</>}
-                        {!['text', 'link', 'file'].includes(sub.submissionType) && <>Submission Work</>}
+                        {sub.submissionType === 'video' && <><Video className="w-3.5 h-3.5 text-red-400" /> Video Recording</>}
+                        {!['text', 'link', 'file', 'video'].includes(sub.submissionType) && <>Submission Work</>}
                       </p>
 
                       {sub.submissionType === 'link' ? (

@@ -1,6 +1,44 @@
 import { LEVELS, LEARNING_PATHS as DEFAULT_PATHS, PATH_COLORS } from '../data/gameData.js';
 
 /**
+ * Returns canonical initial game state for a student player.
+ * @returns {Object} Default student game state
+ */
+export function getDefaultGameState() {
+  return {
+    playerName: '',
+    xp: 0,
+    coins: 100,
+    completedActivities: [],
+    completedBossChallenges: [],
+    claimedGuildChallenges: [],
+    currentStreak: 0,
+    lastActivityDate: null,
+    streakShieldActive: false,
+    unlockedAchievements: [],
+    guild: null,
+    guildXpContributed: 0,
+    avatar: {
+      color: 'default',
+      hat: 'none',
+      accessory: 'none',
+      face: 'happy',
+    },
+    ownedItems: ['default', 'none', 'happy'],
+    dailyQuestCompleted: false,
+    lastDailyQuestDate: null,
+    mysteryBoxesOpened: 0,
+    pendingMysteryBoxes: 0,
+    doubleXpActive: false,
+    totalActivitiesCompleted: 0,
+    collaborationCount: 0,
+    pathCompletions: {},
+    lastActivityReset: null,
+    highFivesSent: {},
+  };
+}
+
+/**
  * Returns the level configuration object for a given XP amount.
  * @param {number} xp - Student XP amount
  * @param {Array} levels - Optional level list, defaults to canonical LEVELS
@@ -38,7 +76,7 @@ export function calculateLevelAndBonusCoins(oldXp = 0, newXp = 0, levels = LEVEL
       }
     }
   }
-  return { oldLevel, newLevel, bonusCoins };
+  return { oldLevel, newLevel, bonusCoins, leveledUp: newLevel.level > oldLevel.level };
 }
 
 /**
@@ -304,4 +342,59 @@ export function calculatePathMastersProgress(members = [], defaultPaths = DEFAUL
 
   return Object.keys(pathCounts).filter(pid => pathCounts[pid] >= threshold).length;
 }
+
+/**
+ * Pure state reducer calculating updated game state when a guild challenge is claimed.
+ * Awards reward XP, coins, guild XP contributed, updates claimedGuildChallenges,
+ * and optionally awards bonus level coins if a level boundary is crossed.
+ * @param {Object} prev - Current game state
+ * @param {Object} challenge - Guild challenge { id, reward, coinReward, ... }
+ * @param {Object|Array} [optionsOrLevels] - Options object or levels array
+ * @returns {Object} Updated game state
+ */
+export function calculateGuildChallengeRewardState(prev, challenge, optionsOrLevels = {}) {
+  if (!challenge || !challenge.id) return prev;
+  const currentClaimed = Array.isArray(prev.claimedGuildChallenges) ? prev.claimedGuildChallenges : [];
+  if (currentClaimed.includes(challenge.id)) {
+    return prev;
+  }
+
+  const options = Array.isArray(optionsOrLevels)
+    ? { applyLevelBonus: true, levels: optionsOrLevels }
+    : optionsOrLevels;
+
+  const rewardXp = Number(challenge.reward) || 100;
+  const rewardCoins = Number(challenge.coinReward) || 50;
+  const oldXp = Number(prev.xp) || 0;
+  const newXp = oldXp + rewardXp;
+  const oldCoins = Number(prev.coins) || 0;
+
+  let bonusCoins = 0;
+  let levelInfo = null;
+  if (options.applyLevelBonus) {
+    const levels = options.levels || LEVELS;
+    const res = calculateLevelAndBonusCoins(oldXp, newXp, levels);
+    bonusCoins = res.bonusCoins || 0;
+    levelInfo = res;
+  }
+
+  const newCoins = oldCoins + rewardCoins + bonusCoins;
+  const oldGuildXp = Number(prev.guildXpContributed) || 0;
+  const newGuildXp = oldGuildXp + rewardXp;
+
+  const updatedState = {
+    ...prev,
+    xp: newXp,
+    coins: newCoins,
+    guildXpContributed: prev.guild || options.forceGuildXp || oldGuildXp > 0 || prev.guildXpContributed !== undefined ? newGuildXp : prev.guildXpContributed,
+    claimedGuildChallenges: [...currentClaimed, challenge.id]
+  };
+
+  if (levelInfo) {
+    updatedState._levelInfo = levelInfo;
+  }
+
+  return updatedState;
+}
+
 

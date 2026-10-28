@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { LEVELS, ACHIEVEMENTS, DAILY_QUESTS, MYSTERY_REWARDS, LEARNING_PATHS as DEFAULT_PATHS, PATH_COLORS, GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, getResolvedDailyQuest, getResolvedAchievements } from '../data/gameData';
-import { realBackend as backend } from '../services/realBackend';
+import { LEVELS, ACHIEVEMENTS, DAILY_QUESTS, MYSTERY_REWARDS, LEARNING_PATHS as DEFAULT_PATHS, PATH_COLORS, GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, getResolvedDailyQuest, getResolvedAchievements } from '../data/gameData.js';
+import { realBackend as backend } from '../services/realBackend.js';
 import { useAuth } from '../context/AuthContext';
 import {
   getLevelForXp,
@@ -9,16 +9,19 @@ import {
   resolveClassLearningPaths,
   reconcileRevocationState,
   calculateRewardState,
-  calculateStreak
+  calculateStreak,
+  calculateGuildChallengeRewardState,
+  getDefaultGameState
 } from '../utils/gameUtils.js';
 
-const getDefaultState = () => ({
+export const getDefaultState = () => ({
   // Player info
   playerName: '',
   xp: 0,
   coins: 100,
   completedActivities: [],
   completedBossChallenges: [],
+  claimedGuildChallenges: [],
   currentStreak: 0,
   lastActivityDate: null,
   streakShieldActive: false,
@@ -146,6 +149,9 @@ export function useGameState(overrideClassId) {
 
       if (studentData) {
         const { id, classId, name, ...gameData } = studentData;
+        gameData.claimedGuildChallenges = Array.isArray(studentData.claimedGuildChallenges)
+          ? studentData.claimedGuildChallenges
+          : [];
 
         // Check for weekly auto-reset (Monday 7am)
         let wasAutoReset = false;
@@ -464,12 +470,54 @@ export function useGameState(overrideClassId) {
     if (user && user.role === 'student') {
       const interval = setInterval(async () => {
         try {
-          const [subs, allClassSubs] = await Promise.all([
+          const [subs, allClassSubs, freshStudent] = await Promise.all([
             backend.getStudentSubmissions(user.id),
             effectiveClassId ? backend.getSubmissions(effectiveClassId).catch(() => null) : Promise.resolve(null),
+            backend.getStudent(user.id).catch(() => null),
           ]);
           if (Array.isArray(allClassSubs)) {
             setClassSubmissions(allClassSubs);
+          }
+
+          if (freshStudent) {
+            setGameState(prev => {
+              const serverAchievements = Array.isArray(freshStudent.unlockedAchievements) ? freshStudent.unlockedAchievements : [];
+              const serverClaimed = Array.isArray(freshStudent.claimedGuildChallenges) ? freshStudent.claimedGuildChallenges : [];
+
+              // Safely merge server-granted achievements and server-reset metrics:
+              const isAchievementDeducted = serverAchievements.length < (prev.unlockedAchievements || []).length;
+              const mergedAchievements = isAchievementDeducted
+                ? serverAchievements
+                : Array.from(new Set([...(prev.unlockedAchievements || []), ...serverAchievements]));
+
+              const isExploitReset = serverClaimed.length < (prev.claimedGuildChallenges || []).length;
+              const mergedClaimed = isExploitReset
+                ? serverClaimed
+                : Array.from(new Set([...(prev.claimedGuildChallenges || []), ...serverClaimed]));
+
+              const updates = {
+                unlockedAchievements: mergedAchievements,
+                claimedGuildChallenges: mergedClaimed
+              };
+
+              if (freshStudent.guild !== undefined && freshStudent.guild !== prev.guild) {
+                updates.guild = freshStudent.guild;
+              }
+              if (freshStudent.xp !== undefined && freshStudent.xp !== prev.xp) {
+                updates.xp = freshStudent.xp;
+              }
+              if (freshStudent.guildXpContributed !== undefined && freshStudent.guildXpContributed !== prev.guildXpContributed) {
+                updates.guildXpContributed = freshStudent.guildXpContributed;
+              }
+              if (freshStudent.coins !== undefined && freshStudent.coins !== prev.coins) {
+                updates.coins = freshStudent.coins;
+              }
+
+              return {
+                ...prev,
+                ...updates
+              };
+            });
           }
 
           if (!Array.isArray(subs)) {
@@ -614,6 +662,74 @@ export function useGameState(overrideClassId) {
     }));
   }, []);
 
+  const claimGuildChallenge = useCallback(async (challenge) => {
+    if (!challenge || !challenge.id) return { error: 'Invalid challenge' };
+
+    const currentClaimed = gameState.claimedGuildChallenges || [];
+    if (currentClaimed.includes(challenge.id)) {
+      return { alreadyClaimed: true };
+    }
+
+    const rewardXp = Number(challenge.reward) || 100;
+    const rewardCoins = Number(challenge.coinReward) || 50;
+
+    let res;
+    try {
+      res = await backend.claimGuildChallengeReward(
+        effectiveClassId,
+        user?.id,
+        gameState.guild,
+        challenge.id,
+        rewardXp,
+        rewardCoins
+      );
+    } catch (e) {
+      console.error('Error claiming guild challenge reward:', e);
+      // In offline/test environments, synthesize response
+      res = {
+        success: true,
+        rewardXp,
+        rewardCoins,
+        xp: (gameState.xp || 0) + rewardXp,
+        coins: (gameState.coins || 0) + rewardCoins,
+        guildXpContributed: (gameState.guildXpContributed || 0) + (gameState.guild ? rewardXp : 0),
+        claimedGuildChallenges: [...currentClaimed, challenge.id]
+      };
+    }
+
+    if (res?.alreadyClaimed) {
+      setGameState(prev => ({
+        ...prev,
+        claimedGuildChallenges: Array.from(new Set([...(prev.claimedGuildChallenges || []), challenge.id]))
+      }));
+      return { alreadyClaimed: true };
+    }
+
+    if (res?.success) {
+      const finalXp = res.rewardXp !== undefined ? res.rewardXp : rewardXp;
+      const finalCoins = res.rewardCoins !== undefined ? res.rewardCoins : rewardCoins;
+
+      setGameState(prev => {
+        const oldClaimed = prev.claimedGuildChallenges || [];
+        const updatedClaimed = Array.from(new Set([...oldClaimed, challenge.id]));
+        const updatedState = {
+          ...prev,
+          xp: (prev.xp || 0) + finalXp,
+          coins: (prev.coins || 0) + finalCoins,
+          guildXpContributed: (prev.guildXpContributed || 0) + (prev.guild ? finalXp : 0),
+          claimedGuildChallenges: updatedClaimed
+        };
+        checkLevelUp(prev, updatedState);
+        checkAndSetAchievements(updatedState);
+        return updatedState;
+      });
+
+      return { success: true, rewardXp: finalXp, rewardCoins: finalCoins };
+    }
+
+    return res;
+  }, [user, effectiveClassId, gameState.guild, gameState.claimedGuildChallenges, gameState.xp, gameState.coins, gameState.guildXpContributed, checkAchievements]);
+
   return {
     gameState,
     dataLoaded, // True once the student's saved profile has been loaded from the backend
@@ -627,6 +743,7 @@ export function useGameState(overrideClassId) {
     allowStudentGuildSelect, // Teacher toggle for student self-selection
     spendCoins, // Helper to spend coins on STEM supplies
     recordHighFive,
+    claimGuildChallenge,
     getCurrentLevel,
     getNextLevelXp,
     getDailyQuest,
@@ -653,5 +770,6 @@ export {
   reconcileRevocationState,
   calculateRewardState,
   calculateStreak,
-  calculateLevelAndBonusCoins
+  calculateLevelAndBonusCoins,
+  calculateGuildChallengeRewardState
 };

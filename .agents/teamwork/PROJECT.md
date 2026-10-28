@@ -60,13 +60,22 @@
 | 40 | Responsive & Accessible Navigation | Mobile category chips, horizontal tab scrolling, WCAG focus rings | M2 | survey |
 | 41 | Automated Regression Prevention | Vitest test suites verifying fixed bugs, utilities, and components | M3 | survey |
 | 42 | Clean Build & Production Verification | Ensure zero build errors, zero warnings, and clean bundle packaging | M3 | survey |
+| 43 | Guild Challenge Persistence & Loading | Persist and restore claimedGuildChallenges from student profile on mount | M1-Followup | follow-up |
+| 44 | Guild Immediate State Sync & Duplicate Guard | Immediate XP/coin/guildXP sync on claim & duplicate rejection | M1-Followup | follow-up |
+| 45 | Teacher Guild Reset & Grant Sync | Multi-member guild achievement reflection and teacher reset | M1-Followup | follow-up |
+| 46 | Chromebook MediaRecorder Video Component | In-app video recording with camera preview, timer countdown, controls | M2-Followup | follow-up |
+| 47 | Video Submission Preview & Storage | Review playback, retake, size limits/compression, payload integration | M2-Followup | follow-up |
+| 48 | Video Review Queue Playback | HTML5 video controls in FileViewer, StudentSubmissionsModal, TeacherPortal | M2-Followup | follow-up |
+| 49 | Rendering & List Optimization | Memoize heavy lists, avoid unnecessary re-renders in App, GuildPanel, ClubArena | M3-Followup | follow-up |
+| 50 | Media Stream Teardown Lifecycle | Cleanly stop all camera/mic tracks on unmount/close/tab switch | M3-Followup | follow-up |
+| 51 | Verification & Automated Test Suite Pass | Zero test regressions (node tests/runAllTests.js) and clean npm run build | M3-Followup | follow-up |
 
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| M1 | Bug Remediation & Redundancy Removal (R1) | Remove `mockBackend.js`, extract `textUtils.js` and `gameUtils.js`, fix 9 core bugs (progress wipe, boss level-up, double XP/streak shield consumption, guild mutation, revocation desync, Path Masters calculation, document importer docx guard, bulk roster single-column) | none | DONE |
-| M2 | Ease of Use & Usability Enhancements (R2) | Implement real-time roster search, password reveal toggle, teacher batch approval, rejection revision guidance prompt, mobile category filter chips, tab horizontal scrolling, redeemed reward log, accessible focus rings | M1 | IN_PROGRESS |
-| M3 | Quality Assurance, Automated Testing & Verification (R3) | Setup Vitest and Testing Library, write unit/integration/E2E test suites for all bug areas, new utilities, and enhancements; execute full build and test pass; forensic audit | M1, M2 | PLANNED |
+| M1-Followup | Guild Achievement & Challenge Redemption Reliability (R1) | Fix claimedGuildChallenges persistence/loading in GuildPanel.jsx, useGameState.js, realBackend.js, immediate state updates, duplicate guards, teacher reset reflection in TeacherPortal.jsx | none | IN_PROGRESS |
+| M2-Followup | In-App Chromebook Camera Video Recording & Submission (R2) | HTML5 MediaRecorder in App.jsx, preview/countdown/review, size limits, HTML5 video playback in FileViewer.jsx, StudentSubmissionsModal.jsx, TeacherPortal.jsx | M1-Followup | PLANNED |
+| M3-Followup | Site Efficiency & Rendering Optimization, Tests, and Build (R3) | Memoization & rendering optimization in App.jsx, GuildPanel.jsx, ClubArenaModal.jsx, media stream teardown, node tests/runAllTests.js pass, clean npm run build | M1-Followup, M2-Followup | PLANNED |
 
 ## Interface Contracts
 ### `src/utils/textUtils.js`

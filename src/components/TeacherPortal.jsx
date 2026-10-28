@@ -7,7 +7,7 @@ import {
   Share2, UserPlus, X, Mail, MessageSquare, Sparkles, Star, Trophy, ChevronDown, ChevronUp, BarChart3, Eye, Zap, Building2, Layers, Shield, ShieldCheck,
   Camera, Upload, Package, ShoppingBag, Swords, Check, Settings, Image as ImageIcon, Award, Crown, Pencil, User, AlertTriangle,
   Filter, Search, FileText, ExternalLink, Printer, GripVertical, UserX, ArrowRightLeft, Lock,
-  Archive, ArchiveRestore, CheckSquare, Square
+  Archive, ArchiveRestore, CheckSquare, Square, Video, HardDrive
 } from 'lucide-react';
 import {
   LEVELS, ACHIEVEMENTS, GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, GUILD_TROPHIES,
@@ -33,6 +33,7 @@ import {
   resolveRevisionFeedback,
   QUICK_REVISION_CHIPS
 } from '../utils/portalUtils';
+import { calculateClassStorageUsage } from '../utils/storageUtils';
 
 
 export default function TeacherPortal({
@@ -137,6 +138,39 @@ export default function TeacherPortal({
   const [showGuideModal, setShowGuideModal] = useState(false);
   const [showClubArena, setShowClubArena] = useState(false);
   const [arenaStemPurchases, setArenaStemPurchases] = useState([]);
+  const [showStorageModal, setShowStorageModal] = useState(false);
+  const [pruningMedia, setPruningMedia] = useState(false);
+  const [pruneResult, setPruneResult] = useState(null);
+
+  const storageStats = useMemo(() => {
+    return calculateClassStorageUsage(submissions || []);
+  }, [submissions]);
+
+  const handlePruneMedia = async (daysOld = 60) => {
+    if (!selectedClass?.id) return;
+    const confirmMsg = `Prune approved media older than ${daysOld} days?\n\n` +
+      `• All student XP, earned coins, levels, badges, and completed activities are 100% PRESERVED.\n` +
+      `• Teacher feedback and submission history remain intact.\n` +
+      `• Heavy video and photo files will be removed from Cloud Storage to maintain your $0 Free Tier.\n\n` +
+      `Proceed with pruning?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setPruningMedia(true);
+    setPruneResult(null);
+    try {
+      const res = await backend.pruneOldSubmissionsMedia(selectedClass.id, daysOld);
+      setPruneResult(res);
+      if (typeof backend.getSubmissions === 'function') {
+        const updatedSubs = await backend.getSubmissions(selectedClass.id);
+        if (updatedSubs) setSubmissions(updatedSubs);
+      }
+    } catch (err) {
+      console.error('Pruning failed:', err);
+      alert('Media pruning failed: ' + err.message);
+    } finally {
+      setPruningMedia(false);
+    }
+  };
 
   const loadArenaData = async () => {
     if (!selectedClass?.id) return;
@@ -1441,6 +1475,14 @@ export default function TeacherPortal({
                         <Award className="w-4 h-4" /> Levels & Gold Guide
                       </button>
                       <ChoiceBoardExport classId={selectedClass.id} className={selectedClass.name} />
+                      <button
+                        type="button"
+                        onClick={() => setShowStorageModal(true)}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 rounded-lg text-sm font-bold transition-colors"
+                        title="Free Tier Cloud Storage Monitor & Pruning (Keep costs at $0)"
+                      >
+                        <HardDrive className="w-4 h-4" /> Storage: $0 Free Tier
+                      </button>
                       <div>
                         <button
                           onClick={handleResetClassActivities}
@@ -2048,9 +2090,26 @@ export default function TeacherPortal({
                             </button>
                           </div>
 
-                          {/* Quick Actions / Filter by Student */}
+                          {/* Quick Actions / Filter by Student & Storage Monitor */}
                           {submissionsViewMode === 'queue' && (
-                            <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex items-center gap-2.5 flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() => setShowStorageModal(true)}
+                                className="flex items-center gap-1.5 px-3 py-2 bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-emerald-500/50 rounded-xl text-xs text-slate-300 font-semibold transition-colors cursor-pointer"
+                                title="Click to view Cloud Storage quota & media pruning controls"
+                              >
+                                <HardDrive className="w-3.5 h-3.5 text-emerald-400" />
+                                <span>Storage:</span>
+                                <span className="text-emerald-400 font-bold">{storageStats.estimatedMb} MB</span>
+                                <span className="text-slate-500">/ 5GB ($0)</span>
+                                {storageStats.eligibleForPruningCount > 0 && (
+                                  <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                                    {storageStats.eligibleForPruningCount} to prune
+                                  </span>
+                                )}
+                              </button>
+
                               <span className="text-xs text-slate-400 font-semibold flex items-center gap-1">
                                 <Filter className="w-3.5 h-3.5 text-green-400" /> Filter Student:
                               </span>
@@ -3177,6 +3236,18 @@ export default function TeacherPortal({
             activeBoss={activeBoss}
           />
         )}
+
+        <FreeTierStorageModal
+          isOpen={showStorageModal}
+          onClose={() => {
+            setShowStorageModal(false);
+            setPruneResult(null);
+          }}
+          storageStats={storageStats}
+          onPrune={handlePruneMedia}
+          isPruning={pruningMedia}
+          pruneResult={pruneResult}
+        />
       </div>
   );
 }
@@ -3381,8 +3452,10 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
     const confirmMsg = `Reset high-five exploit XP for ALL members in "${guildName}"?\n\nThis will reset each member's XP and Guild Contributed XP to 0.\n(If you prefer to deduct a specific amount, click the Gift icon and choose "Deduct / Exploit Penalty" instead).`;
     if (!window.confirm(confirmMsg)) return;
     try {
-      const res = await backend.resetGuildMembersXp(classId, guildId, { resetTotalXp: true });
-      alert(`Exploit XP reset to 0 for ${res.updatedCount} members of ${guildName}!`);
+      const resetChallenges = window.confirm(`Would you also like to reset Claimed Guild Challenges for all members in "${guildName}"?`);
+      const res = await backend.resetGuildMembersXp(classId, guildId, { resetTotalXp: true, resetChallenges });
+      const updatedCount = res?.updatedCount ?? res ?? 0;
+      alert(`Exploit XP reset to 0 for ${updatedCount} members of ${guildName}!`);
       loadGuildData();
       if (onStudentsUpdated) onStudentsUpdated();
     } catch (err) {
@@ -3403,10 +3476,13 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
         if (!rewardAchievement) { alert('Select an achievement'); setGivingReward(false); return; }
         value = rewardAchievement;
       }
-      const count = await backend.rewardGuild(classId, rewardGuild, rewardType, value);
+      const res = await backend.rewardGuild(classId, rewardGuild, rewardType, value, rewardMode);
+      const count = res?.updatedCount ?? res ?? 0;
       const guildName = activeGuilds.find(g => g.id === rewardGuild)?.name || rewardGuild;
       const actionVerb = rewardMode === 'deduct' ? 'deducted from' : 'given to';
-      alert(`${Math.abs(value)} ${rewardType.toUpperCase()} ${actionVerb} ${count} members of ${guildName}!`);
+      const label = rewardType === 'achievement' ? 'trophy' : rewardType.toUpperCase();
+      const displayVal = rewardType === 'achievement' ? value : Math.abs(value);
+      alert(`${displayVal} ${label} ${actionVerb} ${count} members of ${guildName}!`);
       setRewardGuild(null);
       setRewardAmount('');
       setRewardAchievement('');
@@ -5100,7 +5176,6 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                 type="button"
                 onClick={() => {
                   setRewardMode('deduct');
-                  if (rewardType === 'achievement') setRewardType('xp');
                 }}
                 className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all ${
                   rewardMode === 'deduct' ? 'bg-red-600 text-white shadow' : 'text-slate-400 hover:text-white'
@@ -5130,7 +5205,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
               <div className="p-3 mb-4 rounded-xl bg-red-950/40 border border-red-700/50 flex items-start gap-2.5 text-xs text-red-300">
                 <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
                 <span>
-                  <strong>Exploit Penalty Mode:</strong> This will subtract the specified amount from each member's total XP and contributed Guild XP (minimum 0).
+                  <strong>Exploit Penalty Mode:</strong> This will subtract the specified amount from each member's total XP and contributed Guild XP (minimum 0), or remove the selected trophy/achievement.
                 </span>
               </div>
             )}
@@ -5142,11 +5217,9 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
               <button onClick={() => setRewardType('coins')} className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 min-h-[44px] ${rewardType === 'coins' ? (rewardMode === 'deduct' ? 'bg-red-600 text-white' : 'bg-yellow-600 text-white') : 'bg-slate-700 text-slate-300'}`}>
                 <Star className="w-4 h-4" aria-hidden="true" /> Coins
               </button>
-              {rewardMode === 'grant' && (
-                <button onClick={() => setRewardType('achievement')} className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 min-h-[44px] ${rewardType === 'achievement' ? 'bg-purple-600 text-white' : 'bg-slate-700 text-slate-300'}`}>
-                  <Trophy className="w-4 h-4" aria-hidden="true" /> Trophy
-                </button>
-              )}
+              <button onClick={() => setRewardType('achievement')} className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 min-h-[44px] ${rewardType === 'achievement' ? (rewardMode === 'deduct' ? 'bg-red-600 text-white' : 'bg-purple-600 text-white') : 'bg-slate-700 text-slate-300'}`}>
+                <Trophy className="w-4 h-4" aria-hidden="true" /> Trophy
+              </button>
             </div>
 
             {(rewardType === 'xp' || rewardType === 'coins') && (
@@ -5166,9 +5239,11 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
               </div>
             )}
 
-            {rewardType === 'achievement' && rewardMode === 'grant' && (
+            {rewardType === 'achievement' && (
               <div className="mb-4">
-                <label htmlFor="guild-reward-achievement" className="block text-sm text-slate-400 mb-1">Select Achievement to unlock for all members</label>
+                <label htmlFor="guild-reward-achievement" className="block text-sm text-slate-400 mb-1">
+                  {rewardMode === 'deduct' ? 'Select Achievement to remove from all members' : 'Select Achievement to unlock for all members'}
+                </label>
                 <select
                   id="guild-reward-achievement"
                   value={rewardAchievement}
@@ -5673,7 +5748,8 @@ function SubmissionCard({
           {submission.submissionType === 'text' && <><MessageSquare className="w-3.5 h-3.5 text-purple-400" aria-hidden="true" /> Student Written Response:</>}
           {submission.submissionType === 'link' && <><ExternalLink className="w-3.5 h-3.5 text-blue-400" aria-hidden="true" /> Student Submission Link:</>}
           {submission.submissionType === 'file' && <><FileText className="w-3.5 h-3.5 text-green-400" aria-hidden="true" /> Attached File:</>}
-          {!['text', 'link', 'file'].includes(submission.submissionType) && <>Student Submitted Work:</>}
+          {submission.submissionType === 'video' && <><Video className="w-3.5 h-3.5 text-red-400" aria-hidden="true" /> Recorded Video:</>}
+          {!['text', 'link', 'file', 'video'].includes(submission.submissionType) && <>Student Submitted Work:</>}
         </p>
         {submission.submissionType === 'link' ? (
           <a href={submission.submissionContent} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline break-all block p-2 bg-slate-800 rounded">
@@ -5944,7 +6020,8 @@ function ReviewedSubmissions({ reviewed, onReview, onInspectStudent, classActivi
                     {sub.submissionType === 'text' && <><MessageSquare className="w-3.5 h-3.5 text-purple-400" aria-hidden="true" /> Student Written Response:</>}
                     {sub.submissionType === 'link' && <><ExternalLink className="w-3.5 h-3.5 text-blue-400" aria-hidden="true" /> Student Submission Link:</>}
                     {sub.submissionType === 'file' && <><FileText className="w-3.5 h-3.5 text-green-400" aria-hidden="true" /> Attached File:</>}
-                    {!['text', 'link', 'file'].includes(sub.submissionType) && <>Student Submitted Work:</>}
+                    {sub.submissionType === 'video' && <><Video className="w-3.5 h-3.5 text-red-400" aria-hidden="true" /> Recorded Video:</>}
+                    {!['text', 'link', 'file', 'video'].includes(sub.submissionType) && <>Student Submitted Work:</>}
                   </p>
                   {sub.submissionType === 'link' ? (
                     <a href={sub.submissionContent} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline break-all block p-2 bg-slate-800 rounded">
@@ -6055,5 +6132,153 @@ function ReviewedSubmissions({ reviewed, onReview, onInspectStudent, classActivi
         </button>
       )}
     </>
+  );
+}
+
+// ============== FREE TIER STORAGE & PRUNING MODAL ==============
+function FreeTierStorageModal({ isOpen, onClose, storageStats, onPrune, isPruning, pruneResult }) {
+  if (!isOpen) return null;
+
+  const usagePercent = storageStats?.usagePercent || 0;
+  const barColor = usagePercent > 90 ? 'bg-red-500' : usagePercent > 70 ? 'bg-amber-500' : 'bg-emerald-500';
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="storage-modal-title">
+      <div className="bg-slate-900 border border-slate-700 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="p-5 bg-slate-800/90 border-b border-slate-700/80 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <HardDrive className="w-6 h-6" aria-hidden="true" />
+            </div>
+            <div>
+              <h2 id="storage-modal-title" className="text-lg font-black uppercase italic text-white flex items-center gap-2">
+                <span>Free Tier Storage Monitor</span>
+                <span className="text-xs not-italic font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                  $0 / Month Guaranteed
+                </span>
+              </h2>
+              <p className="text-xs text-slate-400">Firebase Cloud Storage quota management & automatic media lifecycle</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-700/50 transition-colors cursor-pointer"
+            aria-label="Close storage modal"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-6 overflow-y-auto">
+          {/* Storage Quota Progress */}
+          <div className="bg-slate-950 p-5 rounded-xl border border-slate-800 space-y-3">
+            <div className="flex items-center justify-between text-sm font-bold">
+              <span className="text-slate-300">Firebase Cloud Storage Usage</span>
+              <span className="text-emerald-400">{storageStats?.estimatedMb || '0.0'} MB / 5,120 MB ({usagePercent}%)</span>
+            </div>
+            <div className="w-full bg-slate-800 rounded-full h-3.5 overflow-hidden">
+              <div
+                className={`h-full ${barColor} transition-all duration-500 rounded-full`}
+                style={{ width: `${Math.max(2, Math.min(100, usagePercent))}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between text-xs text-slate-400">
+              <span>Remaining Free Space: <strong className="text-white">{storageStats?.freeTierRemainingMb || '5120'} MB</strong></span>
+              <span>Daily Bandwidth Allowance: <strong className="text-white">1,024 MB / day</strong></span>
+            </div>
+          </div>
+
+          {/* Media Breakdown Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-slate-800/60 p-3.5 rounded-xl border border-slate-700/60 text-center">
+              <span className="text-xs text-slate-400 block font-semibold mb-1">🎥 Videos</span>
+              <span className="text-xl font-black text-white">{storageStats?.videoCount || 0}</span>
+              <span className="text-[10px] text-slate-500 block mt-0.5">~600 kbps (480p)</span>
+            </div>
+            <div className="bg-slate-800/60 p-3.5 rounded-xl border border-slate-700/60 text-center">
+              <span className="text-xs text-slate-400 block font-semibold mb-1">📷 Photos</span>
+              <span className="text-xl font-black text-white">{storageStats?.photoCount || 0}</span>
+              <span className="text-[10px] text-slate-500 block mt-0.5">Auto-compressed</span>
+            </div>
+            <div className="bg-slate-800/60 p-3.5 rounded-xl border border-slate-700/60 text-center">
+              <span className="text-xs text-slate-400 block font-semibold mb-1">☁️ In Cloud</span>
+              <span className="text-xl font-black text-cyan-400">{storageStats?.cloudStoredCount || 0}</span>
+              <span className="text-[10px] text-slate-500 block mt-0.5">Offloaded files</span>
+            </div>
+            <div className="bg-slate-800/60 p-3.5 rounded-xl border border-slate-700/60 text-center">
+              <span className="text-xs text-slate-400 block font-semibold mb-1">🗄️ Pruned/Archived</span>
+              <span className="text-xl font-black text-amber-400">{storageStats?.prunedCount || 0}</span>
+              <span className="text-[10px] text-slate-500 block mt-0.5">Grades preserved</span>
+            </div>
+          </div>
+
+          {/* How It Keeps Costs At $0 */}
+          <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-xl p-4 text-xs space-y-2 text-emerald-200">
+            <h4 className="font-bold text-sm text-emerald-300 flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" /> How Level Up Mission Keeps Your Costs at $0:
+            </h4>
+            <ul className="list-disc list-inside space-y-1 text-slate-300 pl-1">
+              <li><strong className="text-emerald-300">Targeted Bitrate Capping:</strong> Student Chromebook video recordings are capped at 600 kbps (480p) and 45 seconds, producing high-clarity STEM demonstrations at only ~2 MB per video.</li>
+              <li><strong className="text-emerald-300">Direct Cloud Offload:</strong> Large media files are stored in Firebase Storage instead of Firestore documents, keeping database documents under 1 KB and bypassing Firestore document size limits.</li>
+              <li><strong className="text-emerald-300">Grade & Progress Protection:</strong> Pruning removes heavy media files from Cloud Storage, but never touches student XP, coins, levels, badges, completed activity records, or teacher feedback.</li>
+            </ul>
+          </div>
+
+          {/* Prune Action Card */}
+          <div className="bg-slate-800/90 border border-slate-700 rounded-xl p-4 space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h4 className="font-bold text-white text-sm flex items-center gap-2">
+                  <Archive className="w-4 h-4 text-amber-400" />
+                  Prune Media Older Than 60 Days
+                </h4>
+                <p className="text-xs text-slate-400 mt-1">
+                  Reclaim Cloud Storage space by removing heavy video and photo payloads from approved submissions older than 60 days. All student grades, badges, and records remain 100% intact.
+                </p>
+              </div>
+              <div className="text-right shrink-0">
+                <span className="text-xs text-slate-400 block">Eligible to Prune</span>
+                <span className="text-base font-black text-amber-300">{storageStats?.eligibleForPruningCount || 0} submissions</span>
+                <span className="text-[10px] text-slate-400 block">Reclaims ~{storageStats?.reclaimableMb || '0.0'} MB</span>
+              </div>
+            </div>
+
+            {pruneResult && (
+              <div className="p-3 bg-emerald-900/30 border border-emerald-500/40 rounded-lg text-xs text-emerald-300 flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>Successfully pruned {pruneResult.prunedCount} submissions and reclaimed {pruneResult.freedMb} MB of Cloud Storage!</span>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => onPrune(60)}
+              disabled={isPruning || !storageStats?.eligibleForPruningCount}
+              className="w-full py-2.5 px-4 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 font-black uppercase text-xs rounded-lg transition-colors flex items-center justify-center gap-2 shadow cursor-pointer"
+            >
+              {isPruning ? (
+                <><RefreshCw className="w-4 h-4 animate-spin" /> Pruning Media...</>
+              ) : (
+                <><Archive className="w-4 h-4" /> Prune Approved Media Older Than 60 Days ({storageStats?.eligibleForPruningCount || 0})</>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 bg-slate-800/90 border-t border-slate-700/80 flex justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

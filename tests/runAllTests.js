@@ -10,7 +10,9 @@ const suites = [
   './bugFixes.test.js',
   './adversarialStateLogic.test.js',
   './boundaryStress.test.js',
-  './portalUtils.test.js'
+  './portalUtils.test.js',
+  './guildChallengeReliability.test.js',
+  './costZeroStorage.test.js'
 ];
 
 try {

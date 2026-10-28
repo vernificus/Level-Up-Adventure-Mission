@@ -25,7 +25,8 @@ export default function GuildPanel({
   guilds = GUILDS,
   spendCoins,
   highFiveLimit = 'daily',
-  allowStudentGuildSelect = true
+  allowStudentGuildSelect = true,
+  onClaimGuildChallenge
 }) {
   const availableGuilds = guilds && guilds.length > 0 ? guilds : GUILDS;
 
@@ -45,7 +46,22 @@ export default function GuildPanel({
   
   const [cheeredMembers, setCheeredMembers] = useState({});
   const [toastMessage, setToastMessage] = useState(null);
-  const [claimedRewards, setClaimedRewards] = useState({});
+  const [claimedRewards, setClaimedRewards] = useState(() => {
+    const map = {};
+    if (Array.isArray(gameState?.claimedGuildChallenges)) {
+      gameState.claimedGuildChallenges.forEach(id => { map[id] = true; });
+    }
+    return map;
+  });
+  const [claimingChallengeId, setClaimingChallengeId] = useState(null);
+
+  useEffect(() => {
+    const map = {};
+    if (Array.isArray(gameState?.claimedGuildChallenges)) {
+      gameState.claimedGuildChallenges.forEach(id => { map[id] = true; });
+    }
+    setClaimedRewards(map);
+  }, [gameState?.claimedGuildChallenges]);
 
   // Bot Picture Modal State
   const [showBotPicModal, setShowBotPicModal] = useState(false);
@@ -167,19 +183,27 @@ export default function GuildPanel({
   };
 
   const handleClaimReward = async (challenge) => {
-    if (claimedRewards[challenge.id]) return;
+    if (!challenge || !challenge.id || claimedRewards[challenge.id] || (gameState?.claimedGuildChallenges || []).includes(challenge.id) || claimingChallengeId) return;
+    setClaimingChallengeId(challenge.id);
     try {
-      const res = await backend.claimGuildChallengeReward(
-        classId,
-        gameState?.id,
-        currentGuild,
-        challenge.id,
-        challenge.reward,
-        challenge.coinReward
-      );
-      if (res.alreadyClaimed) {
-        showToast('You have already claimed this guild reward!');
+      let res;
+      if (onClaimGuildChallenge) {
+        res = await onClaimGuildChallenge(challenge);
       } else {
+        res = await backend.claimGuildChallengeReward(
+          classId,
+          gameState?.id,
+          currentGuild,
+          challenge.id,
+          challenge.reward,
+          challenge.coinReward
+        );
+      }
+
+      if (res?.alreadyClaimed) {
+        setClaimedRewards(prev => ({ ...prev, [challenge.id]: true }));
+        showToast('You have already claimed this guild reward!');
+      } else if (res?.success) {
         setClaimedRewards(prev => ({ ...prev, [challenge.id]: true }));
         showToast(`🎉 Claimed +${challenge.reward} XP and +${challenge.coinReward} Coins for completing "${challenge.title}"!`);
         if (onStateUpdate) onStateUpdate();
@@ -187,6 +211,8 @@ export default function GuildPanel({
       }
     } catch (e) {
       alert('Error claiming reward: ' + e.message);
+    } finally {
+      setClaimingChallengeId(null);
     }
   };
 
@@ -1001,7 +1027,7 @@ export default function GuildPanel({
                   <div className="space-y-3">
                     {(myGuildData?.challenges || GUILD_CHALLENGES).map(ch => {
                       const isComplete = ch.completed;
-                      const isClaimed = claimedRewards[ch.id];
+                      const isClaimed = Boolean(claimedRewards[ch.id] || (gameState?.claimedGuildChallenges || []).includes(ch.id));
                       return (
                         <div
                           key={ch.id}
@@ -1036,10 +1062,11 @@ export default function GuildPanel({
                           <div className="flex items-center gap-2">
                             {isComplete && !isClaimed && (
                               <button
+                                disabled={claimingChallengeId === ch.id}
                                 onClick={() => handleClaimReward(ch)}
-                                className="w-full sm:w-auto px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition-colors shadow min-h-[44px]"
+                                className="w-full sm:w-auto px-4 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-black rounded-xl text-xs transition-colors shadow min-h-[44px]"
                               >
-                                Claim Reward!
+                                {claimingChallengeId === ch.id ? 'Claiming...' : 'Claim Reward!'}
                               </button>
                             )}
                             {isClaimed && (

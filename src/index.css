@@ -35,12 +35,32 @@
     }
   }
 
+  /* Avatar 3D idle animation */
+  .avatar-3d-animate {
+    animation: avatar-idle 3s ease-in-out infinite;
+  }
+
+  @keyframes avatar-idle {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.015); }
+  }
+
+  .avatar-3d-animate:hover {
+    animation: avatar-hover 0.4s ease-out forwards;
+  }
+
+  @keyframes avatar-hover {
+    0% { transform: scale(1) perspective(400px) rotateY(0deg); }
+    100% { transform: scale(1.05) perspective(400px) rotateY(5deg); }
+  }
+
   /* WCAG 2.3.3: Respect reduced motion preferences */
   @media (prefers-reduced-motion: reduce) {
     .animate-in,
     .animate-pulse,
     .animate-bounce,
-    .animate-spin {
+    .animate-spin,
+    .avatar-3d-animate {
       animation: none !important;
       transition: none !important;
     }

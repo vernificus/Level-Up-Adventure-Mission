@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { LEVELS, ACHIEVEMENTS, DAILY_QUESTS, MYSTERY_REWARDS, LEARNING_PATHS as DEFAULT_PATHS } from '../data/gameData';
+import { LEVELS, ACHIEVEMENTS, DAILY_QUESTS, MYSTERY_REWARDS, LEARNING_PATHS as DEFAULT_PATHS, PATH_COLORS, GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, getResolvedDailyQuest, getResolvedAchievements } from '../data/gameData';
 import { realBackend as backend } from '../services/realBackend';
 import { useAuth } from '../context/AuthContext';
 
 const getDefaultState = () => ({
+
   // Player info
   playerName: '',
   xp: 0,
@@ -30,8 +31,9 @@ const getDefaultState = () => ({
   doubleXpActive: false,
   totalActivitiesCompleted: 0,
   collaborationCount: 0,
-  pathCompletions: { path1: 0, path2: 0, path3: 0 },
+  pathCompletions: {},
   lastActivityReset: null,
+  highFivesSent: {},
 });
 
 // Get the most recent Monday at 7:00 AM (local time)
@@ -50,15 +52,17 @@ function getMostRecentMonday7am() {
 }
 
 // Check if activities should be auto-reset (weekly Monday 7am)
-function shouldAutoReset(lastResetIso) {
+function shouldAutoReset(lastResetIso, autoResetEnabled = true) {
+  if (autoResetEnabled === false) return false;
+  if (!lastResetIso) return false; // CRITICAL FIX: never wipe on initial/subsequent login if never set
   const monday7am = getMostRecentMonday7am();
-  if (!lastResetIso) return true; // never reset before
   const lastReset = new Date(lastResetIso);
   return lastReset < monday7am;
 }
 
-export function useGameState() {
+export function useGameState(overrideClassId) {
   const { user } = useAuth();
+  const effectiveClassId = user?.classId || overrideClassId;
 
   const [gameState, setGameState] = useState(getDefaultState());
   const [submissions, setSubmissions] = useState([]);
@@ -70,21 +74,59 @@ export function useGameState() {
   const [showMysteryReward, setShowMysteryReward] = useState(null);
 
   const [dataLoaded, setDataLoaded] = useState(false);
+  const processedSubmissionIds = useRef(new Set());
 
   // Load data from "Backend" on mount
   useEffect(() => {
     if (user && user.role === 'student') {
       loadUserData();
       loadClassActivities();
+    } else if (user && (user.role === 'teacher' || user.role === 'admin')) {
+      setGameState(prev => ({
+        ...prev,
+        playerName: user.name ? `${user.name} (Student Demo)` : 'Student Demo'
+      }));
+      if (effectiveClassId) {
+        loadClassActivities();
+      }
     }
-  }, [user]);
+  }, [user, effectiveClassId]);
+
+  const [categoriesPerRow, setCategoriesPerRow] = useState('auto');
+  const [classGuilds, setClassGuilds] = useState(GUILDS);
+  const [highFiveLimit, setHighFiveLimit] = useState('daily');
+  const [allowStudentGuildSelect, setAllowStudentGuildSelect] = useState(true);
+  const [classStudents, setClassStudents] = useState([]);
+  const [classSubmissions, setClassSubmissions] = useState([]);
 
   const loadClassActivities = async () => {
-    if (!user.classId) return;
+    if (!effectiveClassId) return;
     try {
-      // Fetch the class document once to get both activities and category names
-      const classDoc = await backend.getClass(user.classId);
+      // Fetch the class document, roster, and class submissions for co-op & shared boss HP
+      const [classDoc, rosterList, allClassSubs] = await Promise.all([
+        backend.getClass(effectiveClassId),
+        backend.getStudents(effectiveClassId).catch(() => []),
+        backend.getSubmissions(effectiveClassId).catch(() => []),
+      ]);
+      if (Array.isArray(rosterList)) setClassStudents(rosterList);
+      if (Array.isArray(allClassSubs)) setClassSubmissions(allClassSubs);
       if (!classDoc) return;
+
+      if (classDoc.allowStudentGuildSelect !== undefined) {
+        setAllowStudentGuildSelect(classDoc.allowStudentGuildSelect !== false);
+      }
+
+      if (classDoc.highFiveLimit) {
+        setHighFiveLimit(classDoc.highFiveLimit);
+      }
+
+      if (classDoc.categoriesPerRow) {
+        setCategoriesPerRow(classDoc.categoriesPerRow);
+      }
+
+      if (classDoc.guilds && Array.isArray(classDoc.guilds) && classDoc.guilds.length > 0) {
+        setClassGuilds(classDoc.guilds);
+      }
 
       // Start with custom activities if saved, otherwise keep defaults
       let paths = classDoc.activities && classDoc.activities.length > 0
@@ -98,7 +140,47 @@ export function useGameState() {
           title: classDoc.categoryNames?.[path.id] || path.title,
           subtitle: classDoc.categorySubtitles?.[path.id] || path.subtitle,
         }));
+
+        // Add any extra categories that don't have activity paths yet
+        if (classDoc.categoryNames) {
+          const existingIds = new Set(paths.map(p => p.id));
+          Object.keys(classDoc.categoryNames).forEach(key => {
+            if (!existingIds.has(key)) {
+              paths.push({
+                id: key,
+                title: classDoc.categoryNames[key],
+                subtitle: classDoc.categorySubtitles?.[key] || '',
+                icon: 'BookOpen',
+                color: PATH_COLORS[(paths.length) % PATH_COLORS.length],
+                options: [],
+              });
+            }
+          });
+        }
       }
+
+      // Filter out any paths that were removed by the teacher in categoryNames
+      if (classDoc.categoryNames && Object.keys(classDoc.categoryNames).length > 0) {
+        paths = paths.filter(p => p.id in classDoc.categoryNames);
+      }
+
+      // Sort according to custom categoryOrder if specified
+      if (Array.isArray(classDoc.categoryOrder) && classDoc.categoryOrder.length > 0) {
+        paths.sort((a, b) => {
+          const idxA = classDoc.categoryOrder.indexOf(a.id);
+          const idxB = classDoc.categoryOrder.indexOf(b.id);
+          if (idxA === -1 && idxB === -1) return 0;
+          if (idxA === -1) return 1;
+          if (idxB === -1) return -1;
+          return idxA - idxB;
+        });
+      }
+
+      // Ensure category colors match their column display order (matching TeacherPortal borderColors)
+      paths = paths.map((path, idx) => ({
+        ...path,
+        color: PATH_COLORS[idx % PATH_COLORS.length],
+      }));
 
       setLearningPaths(paths);
     } catch (e) {
@@ -109,15 +191,111 @@ export function useGameState() {
   const loadUserData = async () => {
     try {
       const studentData = await backend.getStudent(user.id);
+      let classDoc = null;
+      if (effectiveClassId) {
+        try {
+          classDoc = await backend.getClass(effectiveClassId);
+        } catch (e) {
+          console.error("Failed to fetch class doc for reset config", e);
+        }
+      }
+      const autoResetEnabled = classDoc ? classDoc.autoResetWeekly !== false : true;
+
+      // Fetch student submissions right away
+      const subs = (await backend.getStudentSubmissions(user.id)) || [];
+      setSubmissions(subs);
+
       if (studentData) {
         const { id, classId, name, ...gameData } = studentData;
 
         // Check for weekly auto-reset (Monday 7am)
-        if (shouldAutoReset(gameData.lastActivityReset)) {
+        let wasAutoReset = false;
+        if (!gameData.lastActivityReset) {
+          // Initialize timestamp to current time so future Mondays are evaluated properly without wiping current work
+          gameData.lastActivityReset = new Date().toISOString();
+          backend.updateStudent(user.id, { lastActivityReset: gameData.lastActivityReset });
+        } else if (shouldAutoReset(gameData.lastActivityReset, autoResetEnabled)) {
+          wasAutoReset = true;
           gameData.completedActivities = [];
           gameData.lastActivityReset = new Date().toISOString();
           // Persist the reset to backend
           await backend.resetStudentActivities(user.id);
+        }
+
+        // RECONCILIATION:
+        // Ensure any activities approved by teacher are recognized in completedActivities
+        const approvedNonBossSubs = subs.filter(s => s.status === 'approved' && !s.isBoss);
+        const validApprovedSubs = wasAutoReset
+          ? approvedNonBossSubs.filter(s => new Date(s.reviewedAt || s.submittedAt || 0) >= new Date(gameData.lastActivityReset))
+          : approvedNonBossSubs;
+
+        const approvedActivityIds = validApprovedSubs.map(s => s.activityId);
+        const mergedCompleted = Array.from(new Set([
+          ...(gameData.completedActivities || []),
+          ...approvedActivityIds
+        ]));
+        gameData.completedActivities = mergedCompleted;
+
+        // Also reconcile completedBossChallenges
+        const approvedBossSubs = subs.filter(s => s.status === 'approved' && s.isBoss);
+        const approvedBossIds = approvedBossSubs.map(s => s.activityId);
+        const mergedBosses = Array.from(new Set([
+          ...(gameData.completedBossChallenges || []),
+          ...approvedBossIds
+        ]));
+        gameData.completedBossChallenges = mergedBosses;
+
+        // Tally all approved submissions XP
+        const allApprovedSubs = subs.filter(s => s.status === 'approved');
+        const approvedXpTotal = allApprovedSubs.reduce(
+          (sum, s) => sum + (Number(s.xp) || (s.isBoss ? 300 : 100)),
+          0
+        );
+
+        let didReconcileXp = false;
+        if ((gameData.xp || 0) < approvedXpTotal) {
+          const oldXp = gameData.xp || 0;
+          gameData.xp = approvedXpTotal;
+          // Calculate bonus coins from levels gained
+          const oldLevel = LEVELS.reduce((acc, l) => oldXp >= l.xpRequired ? l : acc, LEVELS[0]);
+          const newLevel = LEVELS.reduce((acc, l) => approvedXpTotal >= l.xpRequired ? l : acc, LEVELS[0]);
+          let bonusCoins = 0;
+          if (newLevel.level > oldLevel.level) {
+            for (let lvl = oldLevel.level + 1; lvl <= newLevel.level; lvl++) {
+              const lvlData = LEVELS.find(l => l.level === lvl);
+              if (lvlData?.coinReward) bonusCoins += lvlData.coinReward;
+            }
+          }
+          if (bonusCoins > 0) {
+            gameData.coins = (gameData.coins || 100) + bonusCoins;
+          }
+          if (gameData.guild) {
+            gameData.guildXpContributed = Math.max(gameData.guildXpContributed || 0, approvedXpTotal);
+          }
+          didReconcileXp = true;
+        }
+
+        const expectedTotalActivities = Math.max(
+          gameData.totalActivitiesCompleted || 0,
+          allApprovedSubs.length,
+          mergedCompleted.length
+        );
+        gameData.totalActivitiesCompleted = expectedTotalActivities;
+
+        // Populate processedSubmissionIds with all currently approved subs so they don't double-trigger
+        allApprovedSubs.forEach(s => {
+          if (s.id) processedSubmissionIds.current.add(s.id);
+        });
+
+        if (didReconcileXp || mergedCompleted.length !== (studentData.completedActivities || []).length) {
+          backend.updateStudent(user.id, {
+            xp: gameData.xp,
+            coins: gameData.coins,
+            completedActivities: mergedCompleted,
+            completedBossChallenges: mergedBosses,
+            totalActivitiesCompleted: gameData.totalActivitiesCompleted,
+            guildXpContributed: gameData.guildXpContributed
+          }).catch(err => console.warn('Could not persist reconciled student XP:', err));
         }
 
         setGameState(prev => ({
@@ -126,9 +304,6 @@ export function useGameState() {
           playerName: name || prev.playerName
         }));
       }
-
-      const subs = await backend.getStudentSubmissions(user.id);
-      setSubmissions(subs);
     } catch (error) {
       console.error("Error loading user data:", error);
     } finally {
@@ -163,12 +338,10 @@ export function useGameState() {
     return nextLevel ? nextLevel.xpRequired : currentLevel.xpRequired;
   }, [getCurrentLevel]);
 
-  // Get today's daily quest
+  // Get today's daily quest (dynamically bound to class STEM categories)
   const getDailyQuest = useCallback(() => {
-    const today = new Date();
-    const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 86400000);
-    return DAILY_QUESTS[dayOfYear % DAILY_QUESTS.length];
-  }, []);
+    return getResolvedDailyQuest(learningPaths, new Date());
+  }, [learningPaths]);
 
   // Check if daily quest matches activity
   const checkDailyQuestMatch = useCallback((activity, pathId) => {
@@ -181,8 +354,9 @@ export function useGameState() {
   // Check and unlock achievements
   const checkAchievements = useCallback((updatedState) => {
     const newAchievements = [];
+    const resolvedList = getResolvedAchievements(learningPaths);
 
-    ACHIEVEMENTS.forEach(achievement => {
+    resolvedList.forEach(achievement => {
       if (updatedState.unlockedAchievements.includes(achievement.id)) return;
 
       let unlocked = false;
@@ -191,11 +365,21 @@ export function useGameState() {
         case 'first_mission':
           unlocked = updatedState.totalActivitiesCompleted >= 1;
           break;
-        case 'variety_pack':
-          unlocked = updatedState.pathCompletions.path1 > 0 &&
-                     updatedState.pathCompletions.path2 > 0 &&
-                     updatedState.pathCompletions.path3 > 0;
+        case 'variety_pack': {
+          // Unlocked when the student has completed at least one activity from every available path
+          const completions = updatedState.pathCompletions || {};
+          const activePathIds = (learningPaths && learningPaths.length > 0)
+            ? learningPaths.map(p => p.id)
+            : Object.keys(completions);
+          if (activePathIds.length > 0) {
+            const completedPaths = activePathIds.filter(id => (completions[id] || 0) > 0).length;
+            unlocked = completedPaths >= activePathIds.length;
+          } else {
+            const completedPaths = Object.values(completions).filter(c => c > 0).length;
+            unlocked = completedPaths >= 1;
+          }
           break;
+        }
         case 'streak_3':
           unlocked = updatedState.currentStreak >= 3;
           break;
@@ -208,19 +392,31 @@ export function useGameState() {
         case 'collab_3':
           unlocked = updatedState.collaborationCount >= 3;
           break;
-        case 'creator_5':
-          unlocked = updatedState.pathCompletions.path3 >= 5;
+        case 'creator_5': {
+          const targetId = achievement.targetPathId || 'path3';
+          unlocked = ((updatedState.pathCompletions?.[targetId] || 0) >= 5) || ((updatedState.pathCompletions?.path3 || 0) >= 5);
           break;
-        case 'wordsmith_5':
-          unlocked = updatedState.pathCompletions.path1 >= 5;
+        }
+        case 'wordsmith_5': {
+          const targetId = achievement.targetPathId || 'path1';
+          unlocked = ((updatedState.pathCompletions?.[targetId] || 0) >= 5) || ((updatedState.pathCompletions?.path1 || 0) >= 5);
           break;
-        case 'data_5':
-          unlocked = updatedState.pathCompletions.path2 >= 5;
+        }
+        case 'data_5': {
+          const targetId = achievement.targetPathId || 'path2';
+          unlocked = ((updatedState.pathCompletions?.[targetId] || 0) >= 5) || ((updatedState.pathCompletions?.path2 || 0) >= 5);
           break;
+        }
         case 'level_5':
+        case 'level_10':
+        case 'level_15':
+        case 'level_20':
+        case 'level_25': {
+          const requiredLevel = parseInt(achievement.id.split('_')[1]);
           const level = LEVELS.reduce((acc, l) => updatedState.xp >= l.xpRequired ? l : acc, LEVELS[0]);
-          unlocked = level.level >= 5;
+          unlocked = level.level >= requiredLevel;
           break;
+        }
         case 'boss_slayer':
           unlocked = updatedState.completedBossChallenges.length >= 1;
           break;
@@ -243,7 +439,7 @@ export function useGameState() {
     });
 
     return newAchievements;
-  }, []);
+  }, [learningPaths]);
 
   const checkAndSetAchievements = (updatedState) => {
       const newAchievements = checkAchievements(updatedState);
@@ -258,8 +454,17 @@ export function useGameState() {
       const oldLevel = LEVELS.reduce((acc, l) => oldState.xp >= l.xpRequired ? l : acc, LEVELS[0]);
       const newLevelData = LEVELS.reduce((acc, l) => newState.xp >= l.xpRequired ? l : acc, LEVELS[0]);
       if (newLevelData.level > oldLevel.level) {
+        // Grant coin rewards for each level gained
+        let totalCoins = 0;
+        for (let lvl = oldLevel.level + 1; lvl <= newLevelData.level; lvl++) {
+          const levelData = LEVELS.find(l => l.level === lvl);
+          if (levelData?.coinReward) totalCoins += levelData.coinReward;
+        }
+        if (totalCoins > 0) {
+          newState.coins = (newState.coins || 0) + totalCoins;
+        }
         setTimeout(() => {
-          setNewLevel(newLevelData);
+          setNewLevel({ ...newLevelData, coinsEarned: totalCoins });
           setShowLevelUp(true);
         }, 500);
       }
@@ -290,10 +495,15 @@ export function useGameState() {
       submissionNote: submissionData.note,
       fileName: submissionData.fileName,
       fileType: submissionData.fileType,
-      isBoss: false
+      isBoss: false,
+      activityDesc: activity.desc || '',
+      activitySteps: activity.steps || [],
+      activityProTip: activity.proTip || '',
+      collaborators: Array.isArray(submissionData.collaborators) ? submissionData.collaborators : [],
     });
 
     setSubmissions(prev => [...prev, newSubmission]);
+    setClassSubmissions(prev => [...prev, newSubmission]);
     return newSubmission;
   }, [user, gameState.playerName, submissions]);
 
@@ -321,10 +531,15 @@ export function useGameState() {
       submissionNote: submissionData.note,
       fileName: submissionData.fileName,
       fileType: submissionData.fileType,
-      isBoss: true
+      isBoss: true,
+      activityDesc: boss.desc || '',
+      activityRequirements: boss.requirements || '',
+      activitySteps: boss.steps || [],
+      collaborators: Array.isArray(submissionData.collaborators) ? submissionData.collaborators : [],
     });
 
     setSubmissions(prev => [...prev, newSubmission]);
+    setClassSubmissions(prev => [...prev, newSubmission]);
     return newSubmission;
   }, [user, gameState.playerName, submissions]);
 
@@ -333,7 +548,13 @@ export function useGameState() {
     if (user && user.role === 'student') {
       const interval = setInterval(async () => {
         try {
-          const subs = await backend.getStudentSubmissions(user.id);
+          const [subs, allClassSubs] = await Promise.all([
+            backend.getStudentSubmissions(user.id),
+            effectiveClassId ? backend.getSubmissions(effectiveClassId).catch(() => null) : Promise.resolve(null),
+          ]);
+          if (Array.isArray(allClassSubs)) {
+            setClassSubmissions(allClassSubs);
+          }
 
           if (!Array.isArray(subs)) {
             console.warn('Invalid submissions data received');
@@ -363,11 +584,8 @@ export function useGameState() {
       }, 3000);
       return () => clearInterval(interval);
     }
-  }, [user]);
+  }, [user, effectiveClassId]);
 
-  // Track which submission IDs we've already processed rewards for (to avoid double-counting
-  // the same approved submission during polling). This is an in-memory set, not persisted.
-  const processedSubmissionIds = useRef(new Set());
 
   const processReward = (submission) => {
     // Skip if we already processed this exact submission (prevents double-counting from polls)
@@ -398,11 +616,14 @@ export function useGameState() {
           checkAndSetAchievements(updatedState);
           return updatedState;
        } else {
+          // After-school STEM club friendly streak logic:
+          // Since clubs typically meet 1-3 times per week, any activity completed on a new calendar day
+          // within 8 days of the previous club session increments the student's session streak!
           let newStreak = prev.currentStreak;
           if (prev.lastActivityDate !== today) {
              const diff = (new Date(today) - new Date(prev.lastActivityDate || 0)) / 86400000;
-             if (diff <= 1) newStreak++;
-             else if (diff > 1 && !prev.streakShieldActive) newStreak = 1;
+             if (diff <= 8) newStreak++;
+             else if (diff > 8 && !prev.streakShieldActive) newStreak = 1;
           }
 
           if (isDailyQuestMatch && !prev.dailyQuestCompleted) {
@@ -417,6 +638,7 @@ export function useGameState() {
              xp: prev.xp + xpEarned,
              completedActivities: [...new Set([...prev.completedActivities, submission.activityId])],
              totalActivitiesCompleted: newTotal,
+             guildXpContributed: prev.guild ? (prev.guildXpContributed || 0) + xpEarned : prev.guildXpContributed,
              currentStreak: newStreak,
              lastActivityDate: today,
              dailyQuestCompleted: isDailyQuestMatch ? true : prev.dailyQuestCompleted,
@@ -473,12 +695,28 @@ export function useGameState() {
   }, [gameState.pendingMysteryBoxes, checkAchievements]);
 
   const buyAvatarItem = useCallback((itemId, cost) => {
+     // Reward redemptions (prefixed with reward_) only deduct coins
+     if (itemId.startsWith('reward_')) {
+        if (gameState.coins >= cost) {
+          setGameState(prev => ({ ...prev, coins: prev.coins - cost }));
+          return true;
+        }
+        return false;
+     }
      if (gameState.coins >= cost && !gameState.ownedItems.includes(itemId)) {
         setGameState(prev => ({ ...prev, coins: prev.coins - cost, ownedItems: [...prev.ownedItems, itemId] }));
         return true;
      }
      return false;
   }, [gameState.coins, gameState.ownedItems]);
+
+  const spendCoins = useCallback((amount) => {
+    if (gameState.coins >= amount) {
+      setGameState(prev => ({ ...prev, coins: prev.coins - amount }));
+      return true;
+    }
+    return false;
+  }, [gameState.coins]);
 
   const equipAvatarItem = useCallback((category, itemId) => {
       setGameState(prev => ({ ...prev, avatar: { ...prev.avatar, [category]: itemId } }));
@@ -492,6 +730,13 @@ export function useGameState() {
     gameState,
     submissions,
     learningPaths, // Export this
+    categoriesPerRow, // Export this
+    classGuilds, // Export this (supports up to 15 guilds)
+    classStudents, // Export class roster for Co-Op Submissions
+    classSubmissions, // Export class submissions for Shared Boss HP bar
+    highFiveLimit, // High-five cooldown frequency limit ('daily' | 'weekly' | 'disabled')
+    allowStudentGuildSelect, // Teacher toggle for student self-selection
+    spendCoins, // Helper to spend coins on STEM supplies
     getCurrentLevel,
     getNextLevelXp,
     getDailyQuest,

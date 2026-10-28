@@ -7,13 +7,43 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Load user from session storage on mount
+  // Load user from session storage on mount and refresh organization data from Firestore
   useEffect(() => {
-    const savedUser = sessionStorage.getItem('lvlup_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    setLoading(false);
+    const syncUser = async () => {
+      const savedUserStr = sessionStorage.getItem('lvlup_user');
+      if (savedUserStr) {
+        try {
+          const parsed = JSON.parse(savedUserStr);
+          setUser(parsed);
+
+          // If the user is a teacher or admin, refresh their latest organization & role from Firestore
+          if (parsed && parsed.id && parsed.role !== 'student') {
+            backend.getTeacher(parsed.id).then(freshDoc => {
+              if (freshDoc) {
+                setUser(prev => {
+                  if (!prev || prev.id !== parsed.id) return prev;
+                  const updated = {
+                    ...prev,
+                    role: freshDoc.role || prev.role || 'teacher',
+                    organizationId: freshDoc.organizationId || null,
+                    organizationName: freshDoc.organizationName || ''
+                  };
+                  sessionStorage.setItem('lvlup_user', JSON.stringify(updated));
+                  return updated;
+                });
+              }
+            }).catch(err => {
+              console.warn("Could not refresh teacher profile:", err);
+            });
+          }
+        } catch (e) {
+          console.error("Error reading saved user session:", e);
+        }
+      }
+      setLoading(false);
+    };
+
+    syncUser();
   }, []);
 
   const loginTeacher = async (email, password) => {
@@ -27,9 +57,9 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const registerTeacher = async (name, email, password) => {
+  const registerTeacher = async (name, email, password, organizationId = null, organizationName = '') => {
     try {
-      const teacher = await backend.registerTeacher(name, email, password);
+      const teacher = await backend.registerTeacher(name, email, password, organizationId, organizationName);
       setUser(teacher);
       sessionStorage.setItem('lvlup_user', JSON.stringify(teacher));
       return { success: true };

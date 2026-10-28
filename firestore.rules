@@ -11,21 +11,38 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
-    function isTeacherOfClass(classId) {
-      // Get the class document to check the teacherId or coTeacherIds
+    function isAdmin() {
+      return isAuthenticated() && (
+        (request.auth.token.email != null && (
+          request.auth.token.email.lower() == 'matthew.harbert@lcps.org' ||
+          request.auth.token.email.lower() == 'propellevelup@lcps.org'
+        )) ||
+        (exists(/databases/$(database)/documents/teachers/$(request.auth.uid)) &&
+         (get(/databases/$(database)/documents/teachers/$(request.auth.uid)).data.get('role', '') == 'admin' ||
+          get(/databases/$(database)/documents/teachers/$(request.auth.uid)).data.get('role', '') == 'super_admin' ||
+          get(/databases/$(database)/documents/teachers/$(request.auth.uid)).data.get('role', '') == 'super admin'))
+      );
+    }
+
+    function isClassTeacherOrCoTeacher(classId) {
       let classData = get(/databases/$(database)/documents/classes/$(classId)).data;
       return classData.teacherId == request.auth.uid
-        || (classData.coTeacherIds != null && request.auth.uid in classData.coTeacherIds);
+        || ('coTeacherIds' in classData && classData.coTeacherIds is list && request.auth.uid in classData.coTeacherIds);
+    }
+
+    function isTeacherOfClass(classId) {
+      return isAdmin() || isClassTeacherOrCoTeacher(classId);
     }
 
     // =========================================================
 
     // TEACHERS
     // Any authenticated user can read teacher profiles (needed for co-teacher lookups)
-    // Only the teacher can write their own profile
+    // Teachers can write their own profile, Admins can write any teacher profile
     match /teachers/{teacherId} {
       allow read: if isAuthenticated();
-      allow write: if isOwner(teacherId);
+      allow create: if isAuthenticated();
+      allow update, delete: if isOwner(teacherId) || isAdmin();
     }
 
     // CLASSES
@@ -34,15 +51,18 @@ service cloud.firestore {
       allow read: if true;
 
       // Only authenticated users can create classes
-      allow create: if isAuthenticated() && request.resource.data.teacherId == request.auth.uid;
+      allow create: if isAuthenticated();
 
-      // Teachers and co-teachers can update anything.
+      // Teachers, co-teachers, and admins can update anything.
       // Students (unauthenticated or not owner) can ONLY update 'studentCount'.
-      allow update: if (isAuthenticated() && (resource.data.teacherId == request.auth.uid
-                    || (resource.data.coTeacherIds != null && request.auth.uid in resource.data.coTeacherIds))) ||
+      allow update: if (isAuthenticated() && (
+                      isAdmin()
+                      || resource.data.teacherId == request.auth.uid
+                      || ('coTeacherIds' in resource.data && resource.data.coTeacherIds is list && request.auth.uid in resource.data.coTeacherIds)
+                    )) ||
                     (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['studentCount']));
 
-      allow delete: if isAuthenticated() && resource.data.teacherId == request.auth.uid;
+      allow delete: if isAuthenticated() && (isAdmin() || resource.data.teacherId == request.auth.uid);
     }
 
     // STUDENTS
@@ -53,14 +73,42 @@ service cloud.firestore {
       allow create: if true;
       allow read: if true;
       allow update: if true;
+      allow delete: if isAuthenticated();
     }
 
     // SUBMISSIONS
     match /submissions/{submissionId} {
       allow create: if true;
       allow read: if true;
-      // Teachers and co-teachers can review submissions
+      // Teachers, co-teachers, and admins can review submissions
       allow update: if isAuthenticated() && isTeacherOfClass(resource.data.classId);
+    }
+
+    // CUSTOM REWARDS (subcollection of classes)
+    match /classes/{classId}/customRewards/{rewardId} {
+      allow read: if true;
+      allow create, update, delete: if isAuthenticated() && isTeacherOfClass(classId);
+    }
+
+    // REWARD REDEMPTIONS (subcollection of classes)
+    match /classes/{classId}/redemptions/{redemptionId} {
+      allow read: if true;
+      allow create: if true; // Students (unauthenticated) can redeem
+      allow update: if isAuthenticated() && isTeacherOfClass(classId);
+    }
+
+    // GUILD HALLS (subcollection of classes)
+    match /classes/{classId}/guildHalls/{guildId} {
+      allow read: if true;
+      allow create, update: if true; // Students send cheers, update bot photo/castle; teachers award trophies
+      allow delete: if isAuthenticated() && isTeacherOfClass(classId);
+    }
+
+    // STEM PURCHASES
+    match /stem_purchases/{purchaseId} {
+      allow read: if true;
+      allow create: if true; // Students purchase items
+      allow update, delete: if isAuthenticated(); // Teachers and admins fulfill or remove purchases
     }
 
     // ACTIVITY LIBRARY
@@ -71,8 +119,24 @@ service cloud.firestore {
       // Authenticated teachers can create new activities
       allow create: if isAuthenticated();
 
-      // Only the author can update or delete their activity
-      allow update, delete: if isAuthenticated() && resource.data.authorId == request.auth.uid;
+      // The author or system admins can update or delete library activities
+      allow update, delete: if isAuthenticated() && (isAdmin() || resource.data.authorId == request.auth.uid);
+    }
+
+    // ORGANIZATIONS
+    match /organizations/{orgId} {
+      // Anyone can read organizations (needed for teacher registration dropdown/code search)
+      allow read: if true;
+      // Authenticated users can create/update/delete organizations
+      allow create, update, delete: if isAuthenticated();
+    }
+
+    // ORGANIZATION CHOICE BOARD TEMPLATES
+    match /orgTemplates/{templateId} {
+      // Authenticated users can read and write organization templates
+      allow read, write: if isAuthenticated();
     }
   }
 }
+
+

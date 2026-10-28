@@ -1,13 +1,31 @@
 // XP and Leveling System
+// coinReward: coins granted when a student reaches this level
 export const LEVELS = [
-  { level: 1, title: 'Rookie', xpRequired: 0, color: 'text-slate-400' },
-  { level: 2, title: 'Apprentice', xpRequired: 200, color: 'text-green-400' },
-  { level: 3, title: 'Challenger', xpRequired: 500, color: 'text-blue-400' },
-  { level: 4, title: 'Warrior', xpRequired: 900, color: 'text-purple-400' },
-  { level: 5, title: 'Champion', xpRequired: 1400, color: 'text-yellow-400' },
-  { level: 6, title: 'Master', xpRequired: 2000, color: 'text-orange-400' },
-  { level: 7, title: 'Legend', xpRequired: 2800, color: 'text-red-400' },
-  { level: 8, title: 'Mythic', xpRequired: 3800, color: 'text-pink-400' },
+  { level: 1, title: 'Rookie', xpRequired: 0, color: 'text-slate-400', coinReward: 0 },
+  { level: 2, title: 'Apprentice', xpRequired: 200, color: 'text-green-400', coinReward: 25 },
+  { level: 3, title: 'Challenger', xpRequired: 500, color: 'text-blue-400', coinReward: 50 },
+  { level: 4, title: 'Warrior', xpRequired: 900, color: 'text-purple-400', coinReward: 75 },
+  { level: 5, title: 'Champion', xpRequired: 1400, color: 'text-yellow-400', coinReward: 100 },
+  { level: 6, title: 'Master', xpRequired: 2000, color: 'text-orange-400', coinReward: 125 },
+  { level: 7, title: 'Legend', xpRequired: 2800, color: 'text-red-400', coinReward: 150 },
+  { level: 8, title: 'Mythic', xpRequired: 3800, color: 'text-pink-400', coinReward: 200 },
+  { level: 9, title: 'Titan', xpRequired: 5000, color: 'text-cyan-400', coinReward: 200 },
+  { level: 10, title: 'Immortal', xpRequired: 6500, color: 'text-emerald-400', coinReward: 250 },
+  { level: 11, title: 'Sentinel', xpRequired: 8200, color: 'text-blue-300', coinReward: 250 },
+  { level: 12, title: 'Vanguard', xpRequired: 10100, color: 'text-violet-400', coinReward: 275 },
+  { level: 13, title: 'Warden', xpRequired: 12200, color: 'text-amber-400', coinReward: 275 },
+  { level: 14, title: 'Overlord', xpRequired: 14500, color: 'text-rose-400', coinReward: 300 },
+  { level: 15, title: 'Sage', xpRequired: 17000, color: 'text-teal-400', coinReward: 350 },
+  { level: 16, title: 'Archon', xpRequired: 19800, color: 'text-indigo-400', coinReward: 350 },
+  { level: 17, title: 'Paragon', xpRequired: 22800, color: 'text-lime-400', coinReward: 375 },
+  { level: 18, title: 'Sovereign', xpRequired: 26000, color: 'text-fuchsia-400', coinReward: 375 },
+  { level: 19, title: 'Ascendant', xpRequired: 29500, color: 'text-sky-400', coinReward: 400 },
+  { level: 20, title: 'Eternal', xpRequired: 33500, color: 'text-yellow-300', coinReward: 500 },
+  { level: 21, title: 'Celestial', xpRequired: 38000, color: 'text-purple-300', coinReward: 500 },
+  { level: 22, title: 'Transcendent', xpRequired: 43000, color: 'text-orange-300', coinReward: 500 },
+  { level: 23, title: 'Apex', xpRequired: 48500, color: 'text-red-300', coinReward: 500 },
+  { level: 24, title: 'Infinite', xpRequired: 55000, color: 'text-pink-300', coinReward: 500 },
+  { level: 25, title: 'Godlike', xpRequired: 62000, color: 'text-amber-300', coinReward: 1000 },
 ];
 
 export const XP_REWARDS = {
@@ -25,75 +43,560 @@ export const XP_REWARDS = {
 export const ACHIEVEMENTS = [
   { id: 'first_mission', title: 'First Mission', desc: 'Complete your first activity', icon: '🚀', xpReward: 50 },
   { id: 'variety_pack', title: 'Variety Pack', desc: 'Try one activity from each path', icon: '🎨', xpReward: 100 },
-  { id: 'streak_3', title: 'On Fire', desc: 'Complete activities 3 days in a row', icon: '🔥', xpReward: 75 },
-  { id: 'streak_5', title: 'Streak Master', desc: 'Complete activities 5 days in a row', icon: '⚡', xpReward: 150 },
-  { id: 'streak_10', title: 'Unstoppable', desc: '10 day streak!', icon: '💎', xpReward: 300 },
+  { id: 'streak_3', title: 'On Fire', desc: 'Complete activities 3 club sessions in a row', icon: '🔥', xpReward: 75 },
+  { id: 'streak_5', title: 'Streak Master', desc: 'Complete activities 5 club sessions in a row', icon: '⚡', xpReward: 150 },
+  { id: 'streak_10', title: 'Unstoppable', desc: '10 session streak!', icon: '💎', xpReward: 300 },
   { id: 'collab_3', title: 'Team Player', desc: 'Complete 3 Collaboration activities', icon: '🤝', xpReward: 100 },
-  { id: 'creator_5', title: 'Creator Elite', desc: 'Complete 5 Creator path activities', icon: '🎬', xpReward: 150 },
-  { id: 'wordsmith_5', title: 'Word Wizard', desc: 'Complete 5 Wordsmith activities', icon: '📚', xpReward: 150 },
-  { id: 'data_5', title: 'Data Champion', desc: 'Complete 5 Data Scientist activities', icon: '📊', xpReward: 150 },
+  { id: 'creator_5', title: 'Creator Elite', desc: 'Complete 5 Creator path activities', icon: '🎬', xpReward: 150, pathIndex: 2, defaultPathId: 'path3' },
+  { id: 'wordsmith_5', title: 'Word Wizard', desc: 'Complete 5 Wordsmith activities', icon: '📚', xpReward: 150, pathIndex: 0, defaultPathId: 'path1' },
+  { id: 'data_5', title: 'Data Champion', desc: 'Complete 5 Data Scientist activities', icon: '📊', xpReward: 150, pathIndex: 1, defaultPathId: 'path2' },
   { id: 'level_5', title: 'Rising Star', desc: 'Reach Level 5', icon: '⭐', xpReward: 200 },
+  { id: 'level_10', title: 'Immortal Warrior', desc: 'Reach Level 10', icon: '🏅', xpReward: 500 },
+  { id: 'level_15', title: 'Sage of Knowledge', desc: 'Reach Level 15', icon: '🔮', xpReward: 750 },
+  { id: 'level_20', title: 'Eternal Champion', desc: 'Reach Level 20', icon: '👑', xpReward: 1000 },
+  { id: 'level_25', title: 'Godlike', desc: 'Reach the max level!', icon: '💠', xpReward: 2000 },
   { id: 'boss_slayer', title: 'Boss Slayer', desc: 'Complete your first Boss Challenge', icon: '👑', xpReward: 200 },
   { id: 'lucky_draw', title: 'Lucky Draw', desc: 'Open 5 Mystery Boxes', icon: '🎁', xpReward: 100 },
   { id: 'guild_hero', title: 'Guild Hero', desc: 'Contribute 500 XP to your guild', icon: '🛡️', xpReward: 150 },
   { id: 'completionist', title: 'Completionist', desc: 'Complete all 6 regular activities', icon: '🏆', xpReward: 250 },
 ];
 
-// Team Guilds
-export const GUILDS = [
-  { id: 'dragons', name: 'Fire Dragons', color: 'bg-red-600', emoji: '🐉', motto: 'Burn bright, learn fast!' },
-  { id: 'wolves', name: 'Shadow Wolves', color: 'bg-purple-600', emoji: '🐺', motto: 'Together we hunt knowledge!' },
-  { id: 'phoenix', name: 'Golden Phoenix', color: 'bg-yellow-600', emoji: '🦅', motto: 'Rise from every challenge!' },
-  { id: 'sharks', name: 'Ocean Sharks', color: 'bg-blue-600', emoji: '🦈', motto: 'Dive deep into learning!' },
+/**
+ * Dynamically adapts path-specific achievements (wordsmith_5, data_5, creator_5)
+ * to the class's actual custom STEM / choice board category names.
+ */
+export function getResolvedAchievements(learningPaths = []) {
+  const validPaths = Array.isArray(learningPaths) && learningPaths.length > 0 ? learningPaths : null;
+  if (!validPaths) return ACHIEVEMENTS;
+
+  const cleanTitle = (rawTitle) => (rawTitle || '').replace(/^The\s+/i, '').trim() || 'Category';
+
+  return ACHIEVEMENTS.map((ach) => {
+    if (typeof ach.pathIndex === 'number') {
+      const targetPath = validPaths[ach.pathIndex] || validPaths.find(p => p.id === ach.defaultPathId);
+      if (targetPath && targetPath.title) {
+        const shortName = cleanTitle(targetPath.title);
+        const suffix = ach.pathIndex === 0 ? 'Master' : ach.pathIndex === 1 ? 'Champion' : 'Elite';
+        const icons = ['🔧', '💻', '🚀'];
+        const isDefaultName = ['Wordsmith', 'Data Scientist', 'Creator'].includes(shortName);
+        return {
+          ...ach,
+          targetPathId: targetPath.id,
+          title: isDefaultName ? ach.title : `${shortName} ${suffix}`,
+          desc: `Complete 5 ${shortName} activities`,
+          icon: isDefaultName ? ach.icon : (icons[ach.pathIndex] || ach.icon),
+        };
+      }
+    }
+    return ach;
+  });
+}
+
+// Team Guilds - Palette of up to 15 guilds with customizable names, colors, mottos, and bot pictures
+export const DEFAULT_15_GUILDS = [
+  {
+    id: 'dragons',
+    name: 'Fire Dragons',
+    color: 'bg-red-600',
+    borderColor: 'border-red-500',
+    gradient: 'from-red-600 to-orange-600',
+    emoji: '🐉',
+    motto: 'Burn bright, learn fast!',
+    symbol: 'Flame & Claws',
+    exclusiveItem: 'dragon_horns',
+    botPictureUrl: '',
+  },
+  {
+    id: 'wolves',
+    name: 'Shadow Wolves',
+    color: 'bg-purple-600',
+    borderColor: 'border-purple-500',
+    gradient: 'from-purple-600 to-indigo-600',
+    emoji: '🐺',
+    motto: 'Together we hunt knowledge!',
+    symbol: 'Moon & Fang',
+    exclusiveItem: 'wolf_cowl',
+    botPictureUrl: '',
+  },
+  {
+    id: 'phoenix',
+    name: 'Golden Phoenix',
+    color: 'bg-yellow-600',
+    borderColor: 'border-yellow-500',
+    gradient: 'from-yellow-500 to-amber-600',
+    emoji: '🦅',
+    motto: 'Rise from every challenge!',
+    symbol: 'Sun & Feather',
+    exclusiveItem: 'phoenix_crest',
+    botPictureUrl: '',
+  },
+  {
+    id: 'sharks',
+    name: 'Ocean Sharks',
+    color: 'bg-blue-600',
+    borderColor: 'border-blue-500',
+    gradient: 'from-blue-600 to-cyan-600',
+    emoji: '🦈',
+    motto: 'Dive deep into learning!',
+    symbol: 'Tide & Fin',
+    exclusiveItem: 'shark_fin',
+    botPictureUrl: '',
+  },
+  {
+    id: 'titans',
+    name: 'Iron Titans',
+    color: 'bg-slate-600',
+    borderColor: 'border-slate-400',
+    gradient: 'from-slate-600 to-zinc-500',
+    emoji: '🤖',
+    motto: 'Unbreakable code, unstoppable bots!',
+    symbol: 'Gear & Anvil',
+    exclusiveItem: 'cape',
+    botPictureUrl: '',
+  },
+  {
+    id: 'falcons',
+    name: 'Cyber Falcons',
+    color: 'bg-cyan-600',
+    borderColor: 'border-cyan-400',
+    gradient: 'from-cyan-600 to-blue-500',
+    emoji: '⚡',
+    motto: 'Swift as lightning, sharp as lasers!',
+    symbol: 'Lightning & Talon',
+    exclusiveItem: 'lightning',
+    botPictureUrl: '',
+  },
+  {
+    id: 'vipers',
+    name: 'Quantum Vipers',
+    color: 'bg-emerald-600',
+    borderColor: 'border-emerald-400',
+    gradient: 'from-emerald-600 to-teal-500',
+    emoji: '🐍',
+    motto: 'Precision strikes, silent victories!',
+    symbol: 'Serpent & Helix',
+    exclusiveItem: 'glasses',
+    botPictureUrl: '',
+  },
+  {
+    id: 'griffins',
+    name: 'Solar Griffins',
+    color: 'bg-amber-600',
+    borderColor: 'border-amber-400',
+    gradient: 'from-amber-600 to-yellow-500',
+    emoji: '🦁',
+    motto: 'Courage under the sun, honor in victory!',
+    symbol: 'Wing & Shield',
+    exclusiveItem: 'shield',
+    botPictureUrl: '',
+  },
+  {
+    id: 'bears',
+    name: 'Cosmic Bears',
+    color: 'bg-indigo-600',
+    borderColor: 'border-indigo-400',
+    gradient: 'from-indigo-600 to-purple-500',
+    emoji: '🐻',
+    motto: 'Strength across the galaxy!',
+    symbol: 'Constellation & Paw',
+    exclusiveItem: 'star',
+    botPictureUrl: '',
+  },
+  {
+    id: 'owls',
+    name: 'Astro Owls',
+    color: 'bg-teal-600',
+    borderColor: 'border-teal-400',
+    gradient: 'from-teal-600 to-emerald-500',
+    emoji: '🦉',
+    motto: 'Wisdom through observation, mastery through data!',
+    symbol: 'Eye & Feather',
+    exclusiveItem: 'wizard',
+    botPictureUrl: '',
+  },
+  {
+    id: 'cheetahs',
+    name: 'Nebula Cheetahs',
+    color: 'bg-orange-600',
+    borderColor: 'border-orange-500',
+    gradient: 'from-orange-600 to-amber-500',
+    emoji: '🐆',
+    motto: 'Accelerating beyond the speed of thought!',
+    symbol: 'Comet & Paw',
+    exclusiveItem: 'lightning',
+    botPictureUrl: '',
+  },
+  {
+    id: 'krakens',
+    name: 'Abyss Krakens',
+    color: 'bg-sky-600',
+    borderColor: 'border-sky-400',
+    gradient: 'from-sky-600 to-indigo-600',
+    emoji: '🦑',
+    motto: 'Unleash unstoppable curiosity from the depths!',
+    symbol: 'Tentacle & Vortex',
+    exclusiveItem: 'shark_fin',
+    botPictureUrl: '',
+  },
+  {
+    id: 'foxes',
+    name: 'Solar Foxes',
+    color: 'bg-rose-600',
+    borderColor: 'border-rose-400',
+    gradient: 'from-rose-600 to-orange-500',
+    emoji: '🦊',
+    motto: 'Clever strategies, radiant triumphs!',
+    symbol: 'Flame & Mask',
+    exclusiveItem: 'star',
+    botPictureUrl: '',
+  },
+  {
+    id: 'mantis',
+    name: 'Cyber Mantis',
+    color: 'bg-lime-600',
+    borderColor: 'border-lime-400',
+    gradient: 'from-lime-600 to-emerald-500',
+    emoji: '🦗',
+    motto: 'Sharp focus, lightning innovation!',
+    symbol: 'Blade & Circuit',
+    exclusiveItem: 'glasses',
+    botPictureUrl: '',
+  },
+  {
+    id: 'pegasus',
+    name: 'Astral Pegasus',
+    color: 'bg-fuchsia-600',
+    borderColor: 'border-fuchsia-400',
+    gradient: 'from-fuchsia-600 to-purple-600',
+    emoji: '🦄',
+    motto: 'Soaring past limits into infinite skies!',
+    symbol: 'Wing & Star',
+    exclusiveItem: 'cape',
+    botPictureUrl: '',
+  },
+];
+
+// Backward-compatible alias
+export const DEFAULT_10_GUILDS = DEFAULT_15_GUILDS;
+
+// Default base guilds (top 4, backward-compatible with legacy classes)
+export const GUILDS = DEFAULT_15_GUILDS.slice(0, 4);
+
+// Default STEM Supplies & Tiered Guild Rewards
+export const DEFAULT_STEM_SUPPLIES = [
+  {
+    id: 'stem_tier1',
+    name: 'Tier 1 STEM Supply Kit',
+    tier: 1,
+    requiredGuildLevel: 1,
+    costCoins: 40,
+    desc: 'Basic structural beams, shafts, and standard hardware connectors for your guild robot.',
+    icon: '⚙️',
+    category: 'supplies',
+  },
+  {
+    id: 'stem_vex_pitch_1',
+    name: 'Extra VEX Pitch Access (15 Mins)',
+    tier: 1,
+    requiredGuildLevel: 1,
+    costCoins: 60,
+    desc: 'Extra 15 minutes of reserved field testing time on the official VEX competition pitch.',
+    icon: '⏱️',
+    category: 'perk',
+  },
+  {
+    id: 'stem_tier2',
+    name: 'Tier 2 STEM Supply Pack',
+    tier: 2,
+    requiredGuildLevel: 3,
+    costCoins: 90,
+    desc: 'High-strength gears, sprocket chains, and specialized motor mounting brackets.',
+    icon: '🔧',
+    category: 'supplies',
+  },
+  {
+    id: 'stem_vex_pitch_2',
+    name: 'Extra VEX Pitch Access (30 Mins)',
+    tier: 2,
+    requiredGuildLevel: 3,
+    costCoins: 120,
+    desc: '30-minute priority block on the VEX field for autonomous coding calibration.',
+    icon: '🤖',
+    category: 'perk',
+  },
+  {
+    id: 'stem_tier3',
+    name: 'Tier 3 Advanced STEM Kit',
+    tier: 3,
+    requiredGuildLevel: 5,
+    costCoins: 160,
+    desc: 'Precision optical sensors, ultrasonic rangefinders, and high-torque gearing sets.',
+    icon: '📡',
+    category: 'supplies',
+  },
+  {
+    id: 'stem_3d_print',
+    name: 'Custom 3D Print Priority Pass',
+    tier: 3,
+    requiredGuildLevel: 5,
+    costCoins: 180,
+    desc: 'Front-of-the-line queue pass for 3D printing custom robot components or attachments.',
+    icon: '🖨️',
+    category: 'perk',
+  },
+  {
+    id: 'stem_tier4',
+    name: 'Tier 4 Master STEM Depot',
+    tier: 4,
+    requiredGuildLevel: 7,
+    costCoins: 240,
+    desc: 'Advanced pneumatic pistons, dual-intake rollers, and omni-directional drive wheels.',
+    icon: '🚀',
+    category: 'supplies',
+  },
+  {
+    id: 'stem_tier5',
+    name: 'Tier 5 Mythic Engineering Cache',
+    tier: 5,
+    requiredGuildLevel: 9,
+    costCoins: 350,
+    desc: 'Pro-grade competition alloy framing, high-speed flywheels, and custom guild vinyl decals.',
+    icon: '💎',
+    category: 'supplies',
+  },
+];
+
+// Guild Progression Levels (1 - 10)
+export const GUILD_LEVELS = [
+  { level: 1, name: 'Novice Clan', minXp: 0, xpRequired: 0, perk: 'Basic Guild Hall & Emblems', perkIcon: '🛡️', themeUnlock: 'default' },
+  { level: 2, name: 'Iron Vanguard', minXp: 1000, xpRequired: 1000, perk: '+5% Coin Surge on Quests', perkIcon: '🪙', themeUnlock: 'flames' },
+  { level: 3, name: 'Bronze Sentinels', minXp: 2500, xpRequired: 2500, perk: 'Daily Guild High-Five Boost (+15 XP)', perkIcon: '⚡', themeUnlock: 'stars' },
+  { level: 4, name: 'Silver Legion', minXp: 5000, xpRequired: 5000, perk: 'Team Mystery Box Luck Surge', perkIcon: '🎁', themeUnlock: 'forest' },
+  { level: 5, name: 'Gold Crusaders', minXp: 8000, xpRequired: 8000, perk: 'Exclusive Guild Avatar Cosmetics', perkIcon: '👑', themeUnlock: 'ocean' },
+  { level: 6, name: 'Platinum Titans', minXp: 12000, xpRequired: 12000, perk: 'Guild Crest Aura & Banner Flair', perkIcon: '✨', themeUnlock: 'crystal' },
+  { level: 7, name: 'Emerald Phoenixes', minXp: 17000, xpRequired: 17000, perk: '+10% Collaboration Activity XP', perkIcon: '🤝', themeUnlock: 'volcano' },
+  { level: 8, name: 'Ruby Conquerors', minXp: 23000, xpRequired: 23000, perk: 'Weekly Team Bonus Mystery Drop', perkIcon: '💎', themeUnlock: 'cyber' },
+  { level: 9, name: 'Diamond Apex', minXp: 30000, xpRequired: 30000, perk: 'Celestial Castle Hall Theme', perkIcon: '🏰', themeUnlock: 'celestial' },
+  { level: 10, name: 'Mythic Immortals', minXp: 40000, xpRequired: 40000, perk: 'Legendary Guild Crown & Immortal Banner', perkIcon: '🌟', themeUnlock: 'mythic' },
+];
+
+export function getGuildLevelInfo(totalXp = 0) {
+  let current = GUILD_LEVELS[0];
+  let next = GUILD_LEVELS[1] || null;
+
+  for (let i = GUILD_LEVELS.length - 1; i >= 0; i--) {
+    const lvlXp = GUILD_LEVELS[i].minXp ?? GUILD_LEVELS[i].xpRequired ?? 0;
+    if (totalXp >= lvlXp) {
+      current = GUILD_LEVELS[i];
+      next = GUILD_LEVELS[i + 1] || null;
+      break;
+    }
+  }
+
+  let progress = 100;
+  let xpNeeded = 0;
+  if (next) {
+    const nextXp = next.minXp ?? next.xpRequired ?? 0;
+    const currentXp = current.minXp ?? current.xpRequired ?? 0;
+    const range = Math.max(1, nextXp - currentXp);
+    const earned = totalXp - currentXp;
+    progress = Math.min(100, Math.max(0, Math.round((earned / range) * 100)));
+    xpNeeded = Math.max(0, nextXp - totalXp);
+  }
+
+  return {
+    level: current.level,
+    name: current.name,
+    perk: current.perk,
+    perkIcon: current.perkIcon,
+    currentXp: totalXp,
+    nextLevelXp: next ? (next.minXp ?? next.xpRequired ?? totalXp) : totalXp,
+    xpNeeded,
+    progress,
+    isMax: !next,
+    unlockedThemes: GUILD_LEVELS.filter(l => l.level <= current.level).map(l => l.themeUnlock)
+  };
+}
+
+// Guild Hall Trophy Types (awarded by teachers or earned through guild milestones)
+export const GUILD_TROPHIES = [
+  { id: 'gt_teamwork', title: 'Teamwork Trophy', icon: '🤝', desc: 'Outstanding collaboration' },
+  { id: 'gt_knowledge', title: 'Knowledge Cup', icon: '📚', desc: 'Exceptional learning' },
+  { id: 'gt_creativity', title: 'Creativity Award', icon: '🎨', desc: 'Most creative guild' },
+  { id: 'gt_streak', title: 'Streak Flame', icon: '🔥', desc: 'Best streak consistency' },
+  { id: 'gt_champion', title: 'Champion Shield', icon: '🛡️', desc: 'Weekly challenge champion' },
+  { id: 'gt_mvp', title: 'MVP Crown', icon: '👑', desc: 'Most valuable guild' },
+  { id: 'gt_rising', title: 'Rising Star', icon: '🌟', desc: 'Most improved guild' },
+  { id: 'gt_spirit', title: 'Spirit Award', icon: '💫', desc: 'Best guild spirit' },
+  { id: 'gt_boss', title: 'Titan Slayer', icon: '⚔️', desc: 'Conquered weekly bosses together' },
+  { id: 'gt_level10', title: 'Mythic Hall', icon: '🏰', desc: 'Reached maximum Guild Level 10' },
+];
+
+// Guild Hall Banner Themes (unlocked as guild levels up)
+export const GUILD_BANNERS = [
+  { id: 'default', name: 'Classic Fortress', desc: 'The default stone guild fortress', minLevel: 1 },
+  { id: 'flames', name: 'Inferno Citadel', desc: 'A blazing citadel of determination', minLevel: 2 },
+  { id: 'stars', name: 'Starfield Sanctum', desc: 'A cosmic sanctum of deep knowledge', minLevel: 3 },
+  { id: 'forest', name: 'Enchanted Sylvan', desc: 'An ancient canopy fortress', minLevel: 4 },
+  { id: 'ocean', name: 'Atlantis Depths', desc: 'An aquatic palace of currents', minLevel: 5 },
+  { id: 'crystal', name: 'Prismatic Caverns', desc: 'A sparkling crystal redoubt', minLevel: 6 },
+  { id: 'volcano', name: 'Volcanic Caldera', desc: 'Molten magma battlegrounds', minLevel: 7 },
+  { id: 'cyber', name: 'Cyber Neon Nexus', desc: 'Futuristic high-tech command center', minLevel: 8 },
+  { id: 'celestial', name: 'Celestial Spire', desc: 'Floating spire among the clouds', minLevel: 9 },
+  { id: 'mythic', name: 'Mythic Pantheon', desc: 'The golden realm of immortal champions', minLevel: 10 },
+];
+
+// Guild Challenges (weekly collaborative goals for entire guild)
+export const GUILD_CHALLENGES = [
+  {
+    id: 'gc1',
+    title: 'Knowledge Blitz',
+    desc: 'Guild members complete 10 activities total this week',
+    target: 10,
+    type: 'activities',
+    reward: 120,
+    coinReward: 50,
+    emoji: '⚔️'
+  },
+  {
+    id: 'gc2',
+    title: 'Streak Squad',
+    desc: 'At least 3 guild members hold a 3+ day streak',
+    target: 3,
+    type: 'streakers',
+    reward: 150,
+    coinReward: 75,
+    emoji: '🔥'
+  },
+  {
+    id: 'gc3',
+    title: 'Path Masters',
+    desc: 'Guild members complete at least 2 activities from every learning path',
+    target: 6,
+    type: 'paths',
+    reward: 140,
+    coinReward: 60,
+    emoji: '🗺️'
+  },
+  {
+    id: 'gc4',
+    title: 'Boss Rush Squad',
+    desc: '2 or more guild members defeat the weekly boss challenge',
+    target: 2,
+    type: 'bosses',
+    reward: 200,
+    coinReward: 100,
+    emoji: '👹'
+  },
+  {
+    id: 'gc5',
+    title: 'Collaboration Crusade',
+    desc: 'Guild members complete 5 Collaboration-type activities together',
+    target: 5,
+    type: 'collab',
+    reward: 160,
+    coinReward: 80,
+    emoji: '🤝'
+  }
 ];
 
 // Avatar Items
+// Rendering is handled by the Avatar3D component based on item IDs.
+// IDs are kept stable for backward compatibility with existing save data.
 export const AVATAR_ITEMS = {
   colors: [
-    { id: 'default', name: 'Classic Blue', value: 'bg-blue-500', cost: 0 },
-    { id: 'green', name: 'Forest Green', value: 'bg-green-500', cost: 50 },
-    { id: 'purple', name: 'Royal Purple', value: 'bg-purple-500', cost: 50 },
-    { id: 'red', name: 'Fire Red', value: 'bg-red-500', cost: 75 },
-    { id: 'yellow', name: 'Golden', value: 'bg-yellow-500', cost: 100 },
-    { id: 'pink', name: 'Bubblegum', value: 'bg-pink-500', cost: 75 },
-    { id: 'rainbow', name: 'Rainbow', value: 'bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500', cost: 200 },
+    { id: 'default', name: 'Ocean Blue', cost: 0 },
+    { id: 'green', name: 'Forest Green', cost: 50 },
+    { id: 'purple', name: 'Royal Purple', cost: 50 },
+    { id: 'red', name: 'Fire Red', cost: 75 },
+    { id: 'yellow', name: 'Golden', cost: 100 },
+    { id: 'pink', name: 'Bubblegum', cost: 75 },
+    { id: 'orange', name: 'Sunset Orange', cost: 75 },
+    { id: 'teal', name: 'Teal Wave', cost: 75 },
+    { id: 'black', name: 'Shadow', cost: 100 },
+    { id: 'white', name: 'Arctic', cost: 100 },
+    { id: 'rainbow', name: 'Rainbow', cost: 200 },
+    { id: 'lava', name: 'Lava Flow', cost: 250 },
+    { id: 'ice', name: 'Ice Crystal', cost: 250 },
+    { id: 'galaxy', name: 'Galaxy', cost: 300 },
   ],
   hats: [
-    { id: 'none', name: 'No Hat', emoji: '', cost: 0 },
-    { id: 'cap', name: 'Baseball Cap', emoji: '🧢', cost: 50 },
-    { id: 'crown', name: 'Crown', emoji: '👑', cost: 150 },
-    { id: 'wizard', name: 'Wizard Hat', emoji: '🎩', cost: 100 },
-    { id: 'party', name: 'Party Hat', emoji: '🎉', cost: 75 },
-    { id: 'headphones', name: 'Headphones', emoji: '🎧', cost: 100 },
+    { id: 'none', name: 'No Hat', cost: 0 },
+    { id: 'cap', name: 'Baseball Cap', cost: 50 },
+    { id: 'crown', name: 'Royal Crown', cost: 150 },
+    { id: 'wizard', name: 'Wizard Hat', cost: 100 },
+    { id: 'party', name: 'Party Hat', cost: 75 },
+    { id: 'headphones', name: 'Headphones', cost: 100 },
+    { id: 'tophat', name: 'Top Hat', cost: 125 },
+    { id: 'viking', name: 'Viking Helm', cost: 175 },
+    { id: 'beanie', name: 'Cozy Beanie', cost: 75 },
+    { id: 'dragon_horns', name: 'Dragon Horns', cost: 200, guildExclusive: 'dragons' },
+    { id: 'wolf_cowl', name: 'Wolf Headdress', cost: 200, guildExclusive: 'wolves' },
+    { id: 'phoenix_crest', name: 'Phoenix Crest', cost: 200, guildExclusive: 'phoenix' },
+    { id: 'shark_fin', name: 'Shark Fin Helm', cost: 200, guildExclusive: 'sharks' },
+    { id: 'mythic_crown', name: 'Mythic Guild Crown', cost: 350 },
   ],
   accessories: [
-    { id: 'none', name: 'None', emoji: '', cost: 0 },
-    { id: 'glasses', name: 'Cool Glasses', emoji: '😎', cost: 50 },
-    { id: 'star', name: 'Star Badge', emoji: '⭐', cost: 75 },
-    { id: 'fire', name: 'Fire Aura', emoji: '🔥', cost: 100 },
-    { id: 'sparkle', name: 'Sparkles', emoji: '✨', cost: 125 },
-    { id: 'lightning', name: 'Lightning', emoji: '⚡', cost: 150 },
+    { id: 'none', name: 'None', cost: 0 },
+    { id: 'glasses', name: 'Cool Shades', cost: 50 },
+    { id: 'star', name: 'Star Badge', cost: 75 },
+    { id: 'fire', name: 'Fire Aura', cost: 100 },
+    { id: 'sparkle', name: 'Sparkles', cost: 125 },
+    { id: 'lightning', name: 'Lightning Bolt', cost: 150 },
+    { id: 'cape', name: 'Hero Cape', cost: 175 },
+    { id: 'shield', name: 'Knight Shield', cost: 200 },
+    { id: 'guild_cloak', name: 'Guild Banner Cloak', cost: 225 },
+    { id: 'phoenix_wings', name: 'Phoenix Wings', cost: 275 },
   ],
   faces: [
-    { id: 'happy', name: 'Happy', emoji: '😊', cost: 0 },
-    { id: 'cool', name: 'Cool', emoji: '😎', cost: 25 },
-    { id: 'excited', name: 'Excited', emoji: '🤩', cost: 50 },
-    { id: 'determined', name: 'Determined', emoji: '😤', cost: 50 },
-    { id: 'smart', name: 'Smart', emoji: '🧐', cost: 75 },
-    { id: 'ninja', name: 'Ninja', emoji: '🥷', cost: 100 },
+    { id: 'happy', name: 'Happy', cost: 0 },
+    { id: 'cool', name: 'Cool', cost: 25 },
+    { id: 'excited', name: 'Excited', cost: 50 },
+    { id: 'determined', name: 'Determined', cost: 50 },
+    { id: 'smart', name: 'Smart', cost: 75 },
+    { id: 'ninja', name: 'Ninja', cost: 100 },
+    { id: 'wink', name: 'Wink', cost: 50 },
+    { id: 'angry', name: 'Battle Cry', cost: 75 },
+    { id: 'sleepy', name: 'Sleepy', cost: 50 },
   ],
 };
 
 // Daily Quests (rotate based on day)
 export const DAILY_QUESTS = [
-  { id: 'dq1', title: 'Voice Master', desc: 'Complete a High Tech activity', targetType: 'High Tech', multiplier: 2 },
-  { id: 'dq2', title: 'Artistic Soul', desc: 'Complete a Low Tech activity', targetType: 'Low Tech', multiplier: 2 },
-  { id: 'dq3', title: 'Team Spirit', desc: 'Complete a Collaboration activity', targetType: 'Collaboration', multiplier: 2 },
-  { id: 'dq4', title: 'Self Discovery', desc: 'Complete a Self-Reflection activity', targetType: 'Self-Reflection', multiplier: 2 },
-  { id: 'dq5', title: 'Word Warrior', desc: 'Complete any Wordsmith activity', targetPath: 'path1', multiplier: 1.5 },
-  { id: 'dq6', title: 'Data Explorer', desc: 'Complete any Data Scientist activity', targetPath: 'path2', multiplier: 1.5 },
-  { id: 'dq7', title: 'Creative Genius', desc: 'Complete any Creator activity', targetPath: 'path3', multiplier: 1.5 },
+  { id: 'dq1', title: 'High-Tech Specialist', desc: 'Complete a High Tech activity', targetType: 'High Tech', multiplier: 2 },
+  { id: 'dq2', title: 'Maker & Builder', desc: 'Complete a Low Tech activity', targetType: 'Low Tech', multiplier: 2 },
+  { id: 'dq3', title: 'Squad Synergy', desc: 'Complete a Collaboration activity', targetType: 'Collaboration', multiplier: 2 },
+  { id: 'dq4', title: 'Engineer Logbook', desc: 'Complete a Self-Reflection activity', targetType: 'Self-Reflection', multiplier: 2 },
+  { id: 'dq5', title: 'Word Warrior', desc: 'Complete any Wordsmith activity', targetPath: 'path1', pathIndex: 0, multiplier: 1.5 },
+  { id: 'dq6', title: 'Data Explorer', desc: 'Complete any Data Scientist activity', targetPath: 'path2', pathIndex: 1, multiplier: 1.5 },
+  { id: 'dq7', title: 'Creative Genius', desc: 'Complete any Creator activity', targetPath: 'path3', pathIndex: 2, multiplier: 1.5 },
 ];
+
+/**
+ * Resolves today's daily quest, dynamically binding path-based quests
+ * to the class's actual custom STEM / choice board categories.
+ */
+export function getResolvedDailyQuest(learningPaths = [], today = new Date()) {
+  const validPaths = Array.isArray(learningPaths) && learningPaths.length > 0 ? learningPaths : [];
+  const cleanTitle = (rawTitle) => (rawTitle || '').replace(/^The\s+/i, '').trim() || 'Category';
+
+  const typeQuests = DAILY_QUESTS.filter(q => q.targetType);
+  const dynamicPathQuests = validPaths.map((p, idx) => {
+    const shortName = cleanTitle(p.title);
+    const suffixes = ['Mission', 'Explorer', 'Specialist', 'Vanguard', 'Challenger', 'Ace'];
+    return {
+      id: `dq_path_${p.id}`,
+      title: `${shortName} ${suffixes[idx % suffixes.length]}`,
+      desc: `Complete any ${shortName} activity`,
+      targetPath: p.id,
+      multiplier: 1.5,
+    };
+  });
+
+  const pool = dynamicPathQuests.length > 0 ? [...typeQuests, ...dynamicPathQuests] : DAILY_QUESTS;
+  const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 86400000);
+  return pool[dayOfYear % pool.length];
+}
 
 // Weekly Boss Challenges
 export const BOSS_CHALLENGES = [
@@ -151,6 +654,19 @@ export const MYSTERY_REWARDS = [
   { id: 'coins_large', name: 'Treasure Trove', desc: '+100 Coins', type: 'coins', value: 100, rarity: 'rare', color: 'text-yellow-400' },
   { id: 'streak_shield', name: 'Streak Shield', desc: 'Protects your streak for 1 day', type: 'item', value: 'streak_shield', rarity: 'rare', color: 'text-orange-400' },
   { id: 'double_xp', name: 'Double XP Token', desc: 'Next activity gives 2x XP', type: 'item', value: 'double_xp', rarity: 'epic', color: 'text-pink-400' },
+];
+
+// Maximum number of categories teachers can create
+export const MAX_CATEGORIES = 6;
+
+// Default color classes for learning paths (cycles if more paths are added)
+export const PATH_COLORS = [
+  'bg-blue-600',
+  'bg-purple-600',
+  'bg-orange-600',
+  'bg-green-600',
+  'bg-pink-600',
+  'bg-teal-600',
 ];
 
 // Learning Paths (activities)
@@ -267,3 +783,63 @@ export const LEARNING_PATHS = [
     ]
   }
 ];
+
+// Alias for convenience / backwards compatibility
+export const DEFAULT_PATHS = LEARNING_PATHS;
+
+/**
+ * Checks if a high-five cooldown is currently active between sender and receiver.
+ * @param {string|Date} lastSentIso - ISO timestamp string of the last high-five sent to this target
+ * @param {string} limit - 'daily' | 'weekly' | 'disabled'
+ * @returns {{ canCheer: boolean, reason?: string, remainingHours?: number, remainingDays?: number }}
+ */
+export function getHighFiveCooldownStatus(lastSentIso, limit = 'daily') {
+  if (limit === 'disabled') {
+    return { canCheer: false, reason: 'High-fives disabled by teacher' };
+  }
+  if (!lastSentIso) {
+    return { canCheer: true };
+  }
+
+  const last = new Date(lastSentIso);
+  const now = new Date();
+  const diffMs = now.getTime() - last.getTime();
+
+  if (isNaN(diffMs)) {
+    return { canCheer: true };
+  }
+
+  if (limit === 'weekly') {
+    // 6-day cooldown ensures once-a-week frequency without clock drift issues
+    const SIX_DAYS_MS = 6 * 24 * 60 * 60 * 1000;
+    if (diffMs < SIX_DAYS_MS) {
+      const daysLeft = Math.max(1, Math.ceil((SIX_DAYS_MS - diffMs) / (24 * 60 * 60 * 1000)));
+      return {
+        canCheer: false,
+        reason: `Available in ${daysLeft}d`,
+        remainingDays: daysLeft
+      };
+    }
+    return { canCheer: true };
+  }
+
+  // Default: 'daily'
+  // Disallow if sent on the same calendar day (local date) OR within 16 hours
+  const isSameCalendarDay = (
+    last.getFullYear() === now.getFullYear() &&
+    last.getMonth() === now.getMonth() &&
+    last.getDate() === now.getDate()
+  );
+  const isWithin16Hours = diffMs < 16 * 60 * 60 * 1000;
+
+  if (isSameCalendarDay || isWithin16Hours) {
+    const hoursLeft = Math.max(1, Math.ceil((16 * 60 * 60 * 1000 - diffMs) / (60 * 60 * 1000)));
+    return {
+      canCheer: false,
+      reason: 'Available again tomorrow',
+      remainingHours: hoursLeft
+    };
+  }
+
+  return { canCheer: true };
+}

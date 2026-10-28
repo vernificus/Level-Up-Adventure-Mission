@@ -1,19 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { BookOpen, Users, LogIn, UserPlus, ArrowRight, GraduationCap, Lock, User, UserCheck } from 'lucide-react';
+import { BookOpen, Users, LogIn, UserPlus, ArrowRight, GraduationCap, Lock, User, UserCheck, Building2, ShieldCheck, Shield } from 'lucide-react';
 import { realBackend as backend } from '../services/realBackend';
+import LegalModal from './LegalModal';
 
 export default function LoginScreen() {
   const { loginTeacher, registerTeacher, loginStudent, signupStudent } = useAuth();
 
-  const [mode, setMode] = useState('select'); // select, teacher-login, teacher-signup, student-join, student-select, student-password, student-signup
+  const [mode, setMode] = useState('select'); // select, teacher-login, teacher-signup, admin-login, student-join, student-select, student-password, student-signup
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [legalModalOpen, setLegalModalOpen] = useState(false);
+  const [legalTab, setLegalTab] = useState('privacy');
 
   // Form states
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+
+  // Organization signup states
+  const [organizations, setOrganizations] = useState([]);
+  const [selectedOrgId, setSelectedOrgId] = useState('');
+  const [selectedOrgName, setSelectedOrgName] = useState('');
 
   // Student states
   const [classCode, setClassCode] = useState('');
@@ -26,6 +34,18 @@ export default function LoginScreen() {
   const [signupName, setSignupName] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
+
+  // Load organizations on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const orgs = await backend.getOrganizations();
+        setOrganizations(orgs);
+      } catch (err) {
+        console.error("Could not fetch organizations for login screen:", err);
+      }
+    })();
+  }, []);
 
   // Auto-fill class code from URL parameter (e.g. ?code=A1B2C3)
   useEffect(() => {
@@ -40,6 +60,9 @@ export default function LoginScreen() {
         setLoading(true);
         try {
           const cls = await backend.getClassByCode(code);
+          if (cls?.archived) {
+            throw new Error('This class has been archived by the teacher. Please contact your teacher for assistance.');
+          }
           setClassInfo(cls);
           const students = await backend.getStudents(cls.id);
           setRoster(students);
@@ -65,7 +88,7 @@ export default function LoginScreen() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const result = await registerTeacher(name, email, password);
+    const result = await registerTeacher(name, email, password, selectedOrgId, selectedOrgName);
     if (!result.success) setError(result.error);
     setLoading(false);
   };
@@ -76,6 +99,9 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const cls = await backend.getClassByCode(classCode.trim().toUpperCase());
+      if (cls?.archived) {
+        throw new Error('This class has been archived by the teacher. Please contact your teacher for assistance.');
+      }
       setClassInfo(cls);
 
       // Fetch roster
@@ -171,7 +197,7 @@ export default function LoginScreen() {
           <nav className="space-y-4" aria-label="Login options">
             <button
               onClick={() => setMode('student-join')}
-              className="w-full p-6 bg-blue-600 hover:bg-blue-500 rounded-xl transition-all hover:scale-[1.02] group text-left relative overflow-hidden"
+              className="w-full p-6 bg-blue-600 hover:bg-blue-500 rounded-xl transition-all hover:scale-[1.02] group text-left relative overflow-hidden shadow-lg"
             >
               <div className="relative z-10">
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
@@ -186,21 +212,38 @@ export default function LoginScreen() {
 
             <button
               onClick={() => setMode('teacher-login')}
-              className="w-full p-6 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-xl transition-all hover:scale-[1.02] group text-left"
+              className="w-full p-6 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-xl transition-all hover:scale-[1.02] group text-left shadow-lg"
             >
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
                 <Users className="w-6 h-6" aria-hidden="true" /> I am a Teacher
               </h3>
-              <p className="text-slate-400 text-sm mt-1">Manage classes and roster</p>
+              <p className="text-slate-400 text-sm mt-1">Manage classes, roster, and choice boards</p>
+            </button>
+
+            <button
+              onClick={() => setMode('admin-login')}
+              className="w-full p-4 bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-yellow-500/50 rounded-xl transition-all group text-left"
+            >
+              <h3 className="text-base font-bold text-yellow-400 flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5" aria-hidden="true" /> Overall System Admin
+              </h3>
+              <p className="text-slate-400 text-xs mt-0.5">Manage organizations, teachers, and template deployment</p>
             </button>
           </nav>
         )}
 
-        {/* Teacher Login */}
-        {mode === 'teacher-login' && (
+        {/* Teacher / Admin Login */}
+        {(mode === 'teacher-login' || mode === 'admin-login') && (
           <form onSubmit={handleTeacherLogin} className="space-y-4" aria-labelledby="teacher-login-heading">
             <BackButton />
-            <h2 id="teacher-login-heading" className="text-xl font-bold text-white text-center mb-6">Teacher Login</h2>
+            <div className="text-center mb-6">
+              <h2 id="teacher-login-heading" className="text-xl font-bold text-white">
+                {mode === 'admin-login' ? 'System Admin Login' : 'Teacher Login'}
+              </h2>
+              {mode === 'admin-login' && (
+                <p className="text-xs text-yellow-400 mt-1">Sign in with administrator credentials</p>
+              )}
+            </div>
 
             <div>
               <label htmlFor="teacher-email" className="block text-sm text-slate-400 mb-1">Email</label>
@@ -272,6 +315,26 @@ export default function LoginScreen() {
                 onChange={e => setEmail(e.target.value)}
                 className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
               />
+            </div>
+
+            <div>
+              <label htmlFor="signup-org" className="block text-sm text-slate-400 mb-1">Organization (School / District)</label>
+              <select
+                id="signup-org"
+                value={selectedOrgId}
+                onChange={e => {
+                  const id = e.target.value;
+                  setSelectedOrgId(id);
+                  const found = organizations.find(o => o.id === id);
+                  setSelectedOrgName(found ? found.name : '');
+                }}
+                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
+              >
+                <option value="">No Organization / Independent</option>
+                {organizations.map(o => (
+                  <option key={o.id} value={o.id}>{o.name} ({o.code})</option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -470,7 +533,44 @@ export default function LoginScreen() {
           </form>
         )}
 
+        {/* Legal & Compliance Footer */}
+        <div className="mt-8 pt-4 border-t border-slate-700/60 text-center text-xs text-slate-400 space-y-2">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+            <button
+              type="button"
+              onClick={() => { setLegalTab('privacy'); setLegalModalOpen(true); }}
+              className="hover:text-blue-400 transition-colors underline underline-offset-2"
+            >
+              Privacy Policy
+            </button>
+            <span className="text-slate-600">•</span>
+            <button
+              type="button"
+              onClick={() => { setLegalTab('terms'); setLegalModalOpen(true); }}
+              className="hover:text-blue-400 transition-colors underline underline-offset-2"
+            >
+              Terms of Service
+            </button>
+            <span className="text-slate-600">•</span>
+            <button
+              type="button"
+              onClick={() => { setLegalTab('compliance'); setLegalModalOpen(true); }}
+              className="hover:text-emerald-400 transition-colors flex items-center gap-1 inline-flex"
+            >
+              <Shield className="w-3 h-3 text-emerald-400" /> FERPA & COPPA Compliant
+            </button>
+          </div>
+          <p className="text-[11px] text-slate-500">
+            Protected under Federal & State Student Privacy Laws. Zero ads & zero data selling.
+          </p>
+        </div>
       </div>
+
+      <LegalModal
+        isOpen={legalModalOpen}
+        onClose={() => setLegalModalOpen(false)}
+        initialTab={legalTab}
+      />
     </div>
   );
 }

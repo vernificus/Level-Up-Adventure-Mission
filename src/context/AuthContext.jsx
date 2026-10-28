@@ -91,16 +91,6 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const joinClassAsStudent = async (classCode, username) => {
-     // Legacy method, might not be used with Roster Mode, but keeping for backward compat if needed
-     // or for "Join by Code" without roster if we enable that.
-     // For now, let's just use it to wrapper backend logic if we had it.
-     // But `backend.joinClass` logic was: find class, create student doc.
-     // We moved to `createStudent` (teacher side) and `loginStudent` (student side).
-     // The 'BookOpen' -> 'Student Join' flow in LoginScreen uses `loginStudent`.
-     return { success: false, error: "Use Roster Login" };
-  };
-
   const logout = () => {
     setUser(null);
     sessionStorage.removeItem('lvlup_user');
@@ -113,7 +103,6 @@ export function AuthProvider({ children }) {
     registerTeacher,
     loginStudent,
     signupStudent,
-    joinClassAsStudent,
     logout
   };
 
@@ -123,6 +112,8 @@ export function AuthProvider({ children }) {
     </AuthContext.Provider>
   );
 }
+
+export { isAdminUser } from '../utils/authUtils.js';
 
 export const useAuth = () => {
   const context = useContext(AuthContext);

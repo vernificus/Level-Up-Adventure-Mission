@@ -11,7 +11,18 @@ import {
   GUILD_TROPHIES, GUILD_BANNERS, PATH_COLORS, getResolvedAchievements
 } from './data/gameData';
 import { compressImageFile } from './utils/imageUtils';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { renderFormattedText } from './utils/textUtils';
+import { getLevelForXp, getMostRecentMonday7am } from './utils/gameUtils';
+import {
+  calculatePathProgressStats,
+  filterLearningPathsByChip,
+  toggleLearningPathFilter,
+  filterAndSortRedemptions,
+  formatRedemptionDate,
+  getRedemptionStatusBadge,
+  formatLiveAnnouncement
+} from './utils/portalUtils';
+import { AuthProvider, useAuth, isAdminUser } from './context/AuthContext';
 import LoginScreen from './components/LoginScreen';
 import TeacherPortal from './components/TeacherPortal';
 import AdminPortal from './components/AdminPortal';
@@ -212,17 +223,7 @@ function BossChallenge({
 
   // Calculate Shared Club Weekly Boss HP from approved class submissions since Monday 7:00am
   const bossTotalHp = Number(currentBoss.totalHP) || 1000;
-  const getWeekStartMs = () => {
-    const now = new Date();
-    const day = now.getDay(); // 0=Sun, 1=Mon
-    const daysSinceMonday = (day + 6) % 7;
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - daysSinceMonday);
-    monday.setHours(7, 0, 0, 0);
-    if (now < monday) monday.setDate(monday.getDate() - 7);
-    return monday.getTime();
-  };
-  const weekStartMs = getWeekStartMs();
+  const weekStartMs = getMostRecentMonday7am().getTime();
 
   const weeklyApproved = (classSubmissions || []).filter(s => {
     if (s.status !== 'approved') return false;
@@ -433,34 +434,6 @@ function BossChallenge({
       )}
     </>
   );
-}
-
-// Render text with basic markdown-style formatting: **bold** and *italic*
-function renderFormattedText(text) {
-  if (!text) return null;
-  const parts = [];
-  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*)/g;
-  let lastIndex = 0;
-  let key = 0;
-  let match;
-
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(<span key={key++}>{text.slice(lastIndex, match.index)}</span>);
-    }
-    if (match[2]) {
-      parts.push(<strong key={key++} className="font-bold text-white">{match[2]}</strong>);
-    } else if (match[3]) {
-      parts.push(<em key={key++} className="italic text-slate-200">{match[3]}</em>);
-    }
-    lastIndex = match.index + match[0].length;
-  }
-
-  if (lastIndex < text.length) {
-    parts.push(<span key={key++}>{text.slice(lastIndex)}</span>);
-  }
-
-  return parts.length > 0 ? parts : text;
 }
 
 // Render a single step, handling both old string format and new object format
@@ -1420,7 +1393,23 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
   const [rewardsShopItems, setRewardsShopItems] = useState([]);
   const [redeemingItem, setRedeemingItem] = useState(null);
   const [redeemConfirm, setRedeemConfirm] = useState(false);
+  const [rewardSubTab, setRewardSubTab] = useState('available');
+  const [redeemedHistory, setRedeemedHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const currentLevel = getCurrentLevel ? getCurrentLevel() : { level: 1 };
+
+  const loadRedeemedHistory = useCallback(async () => {
+    if (!classId) return;
+    setLoadingHistory(true);
+    try {
+      const all = await backend.getRedemptions(classId);
+      setRedeemedHistory(filterAndSortRedemptions(all, userId, gameState?.playerName));
+    } catch (err) {
+      console.error('Error loading redemption history:', err);
+    } finally {
+      setLoadingHistory(false);
+    }
+  }, [classId, userId, gameState?.playerName]);
 
   // Load teacher custom rewards for this class
   useEffect(() => {
@@ -1428,15 +1417,16 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
       backend.getCustomRewards(classId).then(items => {
         setRewardsShopItems(items.filter(i => i.active !== false));
       }).catch(() => {});
+      loadRedeemedHistory();
     }
-  }, [classId]);
+  }, [classId, loadRedeemedHistory]);
 
   const tabs = [
     { id: 'colors', label: 'Skin', icon: '🎨' },
     { id: 'hats', label: 'Headgear', icon: '🎩' },
     { id: 'accessories', label: 'Effects', icon: '✨' },
     { id: 'faces', label: 'Expression', icon: '😎' },
-    ...(rewardsShopItems.length > 0 ? [{ id: 'rewards', label: 'Rewards', icon: '🎁' }] : []),
+    ...((rewardsShopItems.length > 0 || classId) ? [{ id: 'rewards', label: 'Rewards', icon: '🎁' }] : []),
   ];
 
   const items = activeTab === 'rewards' ? [] : (AVATAR_ITEMS[activeTab] || []);
@@ -1481,6 +1471,7 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
       onBuy(`reward_${redeemingItem.id}`, redeemingItem.cost);
       setRedeemConfirm(false);
       setRedeemingItem(null);
+      loadRedeemedHistory();
       alert('Reward redeemed! Your teacher will be notified. Follow the directions to claim your reward.');
     } catch (error) {
       alert('Error redeeming reward: ' + error.message);
@@ -1608,35 +1599,115 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
 
         {/* Rewards tab content */}
         {activeTab === 'rewards' ? (
-          <div className="space-y-3 max-h-64 overflow-y-auto" role="tabpanel" aria-label="Teacher rewards">
-            <p className="text-xs text-slate-400 mb-2">Spend coins on real-world rewards from your teacher!</p>
-            {rewardsShopItems.map(item => (
-              <div key={item.id} className="bg-slate-700 rounded-xl p-4 border border-slate-600 flex items-center gap-4">
-                <div className="flex-shrink-0 w-12 h-12 bg-green-500/20 border-2 border-green-500 rounded-lg flex items-center justify-center text-2xl">
-                  🎁
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-white">{item.name}</p>
-                  <p className="text-xs text-slate-400 line-clamp-2">{item.description}</p>
-                </div>
-                <div className="flex-shrink-0 text-right">
-                  <p className="text-yellow-400 font-bold text-sm">{item.cost} coins</p>
-                  <button
-                    onClick={() => handleRedeemReward(item)}
-                    disabled={gameState.coins < item.cost}
-                    className={`mt-1 px-3 py-1 rounded-lg text-xs font-bold ${
-                      gameState.coins >= item.cost
-                        ? 'bg-green-500 text-slate-900 hover:bg-green-400'
-                        : 'bg-slate-600 text-slate-400 cursor-not-allowed'
-                    }`}
-                  >
-                    {gameState.coins >= item.cost ? 'Redeem' : 'Not enough'}
-                  </button>
-                </div>
+          <div className="space-y-3 max-h-72 overflow-y-auto" role="tabpanel" aria-label="Teacher rewards">
+            <div className="flex items-center justify-between gap-2 border-b border-slate-700 pb-2.5">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRewardSubTab('available')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    rewardSubTab === 'available'
+                      ? 'bg-green-500 text-slate-900 shadow'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  }`}
+                  aria-pressed={rewardSubTab === 'available'}
+                >
+                  🎁 Available Rewards ({rewardsShopItems.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRewardSubTab('history');
+                    loadRedeemedHistory();
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    rewardSubTab === 'history'
+                      ? 'bg-green-500 text-slate-900 shadow'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  }`}
+                  aria-pressed={rewardSubTab === 'history'}
+                >
+                  📜 My Redemptions ({redeemedHistory.length})
+                </button>
               </div>
-            ))}
-            {rewardsShopItems.length === 0 && (
-              <p className="text-slate-500 text-center py-4">No rewards available yet. Ask your teacher!</p>
+              <span className="text-xs text-yellow-400 font-bold hidden sm:inline">
+                🪙 {gameState.coins || 0} Coins
+              </span>
+            </div>
+
+            {rewardSubTab === 'available' ? (
+              <div className="space-y-3">
+                <p className="text-xs text-slate-400 mb-1">Spend coins on real-world rewards from your teacher!</p>
+                {rewardsShopItems.map(item => (
+                  <div key={item.id} className="bg-slate-700 rounded-xl p-4 border border-slate-600 flex items-center gap-4">
+                    <div className="flex-shrink-0 w-12 h-12 bg-green-500/20 border-2 border-green-500 rounded-lg flex items-center justify-center text-2xl">
+                      🎁
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-white">{item.name}</p>
+                      <p className="text-xs text-slate-400 line-clamp-2">{item.description}</p>
+                    </div>
+                    <div className="flex-shrink-0 text-right">
+                      <p className="text-yellow-400 font-bold text-sm">{item.cost} coins</p>
+                      <button
+                        onClick={() => handleRedeemReward(item)}
+                        disabled={gameState.coins < item.cost}
+                        className={`mt-1 px-3 py-1 rounded-lg text-xs font-bold ${
+                          gameState.coins >= item.cost
+                            ? 'bg-green-500 text-slate-900 hover:bg-green-400'
+                            : 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                        }`}
+                      >
+                        {gameState.coins >= item.cost ? 'Redeem' : 'Not enough'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {rewardsShopItems.length === 0 && (
+                  <p className="text-slate-500 text-center py-4">No rewards available yet. Ask your teacher!</p>
+                )}
+              </div>
+            ) : (
+              /* FE-7: Redeemed History View */
+              <div className="space-y-2.5">
+                <p className="text-xs text-slate-400 mb-1">Your past reward redemptions, fulfillment status, and claim instructions.</p>
+                {loadingHistory ? (
+                  <p className="text-slate-400 text-center py-4 text-xs">Loading redemption history...</p>
+                ) : redeemedHistory.length > 0 ? (
+                  redeemedHistory.map(item => {
+                    const dateStr = formatRedemptionDate(item);
+                    const badge = getRedemptionStatusBadge(item.status);
+                    return (
+                      <div key={item.id} className="bg-slate-700/80 rounded-xl p-3.5 border border-slate-600 flex flex-col gap-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">🎁</span>
+                            <div>
+                              <p className="font-bold text-white text-sm">{item.itemName}</p>
+                              <p className="text-xs text-slate-400">Redeemed: {dateStr} • {item.cost} coins</p>
+                            </div>
+                          </div>
+                          <span className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider ${badge.className}`}>
+                            {badge.label}
+                          </span>
+                        </div>
+                        {item.directions && (
+                          <div className="bg-slate-800/80 rounded-lg p-2 text-xs border border-slate-600/50">
+                            <span className="text-yellow-400 font-semibold">How to claim: </span>
+                            <span className="text-slate-300">{item.directions}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-6 text-slate-500">
+                    <p className="text-2xl mb-1">📜</p>
+                    <p className="text-sm font-semibold">No redeemed rewards yet</p>
+                    <p className="text-xs mt-1 text-slate-400">When you redeem rewards from your teacher, they'll show up here with instructions.</p>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         ) : (
@@ -2023,6 +2094,7 @@ function GameContent({ emulatedClassId } = {}) {
     highFiveLimit,
     allowStudentGuildSelect,
     spendCoins,
+    recordHighFive,
     getCurrentLevel,
     getNextLevelXp,
     getDailyQuest,
@@ -2040,6 +2112,7 @@ function GameContent({ emulatedClassId } = {}) {
     setShowAchievement,
     showMysteryReward,
     setShowMysteryReward,
+    dataLoaded,
   } = useGameState(effectiveClassId);
 
   const [selectedPath, setSelectedPath] = useState({});
@@ -2055,6 +2128,51 @@ function GameContent({ emulatedClassId } = {}) {
   const [legalModalTab, setLegalModalTab] = useState('privacy');
   const [activeBoss, setActiveBoss] = useState(null);
   const [showLevelEconomyGuide, setShowLevelEconomyGuide] = useState(false);
+  const [mobileCategoryFilter, setMobileCategoryFilter] = useState('all');
+  const [liveAnnouncement, setLiveAnnouncement] = useState('');
+  const prevXpRef = useRef(gameState.xp);
+  // Becomes true only after the first XP value from the loaded profile has been recorded as the
+  // baseline, so loading a saved profile (e.g. 0 -> 1500 XP) is never announced as "Earned XP".
+  const xpBaselineReadyRef = useRef(false);
+
+  // FE-10: Announce XP, level-up, and achievement unlock events to screen readers
+  useEffect(() => {
+    if (!dataLoaded || !xpBaselineReadyRef.current) {
+      prevXpRef.current = gameState.xp;
+      xpBaselineReadyRef.current = !!dataLoaded;
+      return;
+    }
+    const message = formatLiveAnnouncement('xp', {
+      diff: (gameState.xp || 0) - (prevXpRef.current || 0),
+      totalXp: gameState.xp
+    });
+    if (message) setLiveAnnouncement(message);
+    prevXpRef.current = gameState.xp;
+  }, [gameState.xp, dataLoaded]);
+
+  useEffect(() => {
+    if (showLevelUp && newLevel) {
+      const message = formatLiveAnnouncement('level_up', { newLevel });
+      if (message) setLiveAnnouncement(message);
+    }
+  }, [showLevelUp, newLevel]);
+
+  useEffect(() => {
+    if (showAchievement) {
+      setLiveAnnouncement(formatLiveAnnouncement('achievement', { showAchievement }));
+    }
+  }, [showAchievement]);
+
+  // FE-6: The category chips are only shown on small screens. If the window grows past the
+  // `md` breakpoint while a chip filter is active, reset it so no categories stay hidden.
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return undefined;
+    const mql = window.matchMedia('(min-width: 768px)');
+    const resetOnDesktop = () => { if (mql.matches) setMobileCategoryFilter('all'); };
+    resetOnDesktop();
+    mql.addEventListener?.('change', resetOnDesktop);
+    return () => mql.removeEventListener?.('change', resetOnDesktop);
+  }, []);
 
   const dailyQuest = getDailyQuest();
 
@@ -2204,11 +2322,7 @@ function GameContent({ emulatedClassId } = {}) {
           <section className="mb-6 p-4 rounded-xl bg-gradient-to-r from-yellow-900/40 to-amber-900/40 border-2 border-yellow-500/50" aria-label="Student Spotlight">
             <div className="flex items-center gap-4">
               <div className="flex-shrink-0">
-                <Avatar3D avatar={classSpotlight.avatar} level={(() => {
-                  let lvl = 1;
-                  for (const l of LEVELS) { if (classSpotlight.xp >= l.xpRequired) lvl = l.level; else break; }
-                  return lvl;
-                })()} size="sm" />
+                <Avatar3D avatar={classSpotlight.avatar} level={getLevelForXp(classSpotlight.xp).level} size="sm" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-0.5">
@@ -2241,6 +2355,7 @@ function GameContent({ emulatedClassId } = {}) {
           classId={effectiveClassId}
           gameState={{ id: user?.id, name: gameState.playerName, ...gameState }}
           onStateUpdate={refreshClassData}
+          onRecordHighFive={recordHighFive}
           guilds={classGuilds}
           spendCoins={spendCoins}
           highFiveLimit={highFiveLimit}
@@ -2257,39 +2372,110 @@ function GameContent({ emulatedClassId } = {}) {
           currentGuild={gameState.guild}
         />
 
-        <main
-          id="main-content"
-          className={`grid gap-6 mb-12 ${
-            categoriesPerRow === '1' ? 'grid-cols-1 max-w-2xl mx-auto' :
-            categoriesPerRow === '2' ? 'grid-cols-1 md:grid-cols-2 max-w-5xl mx-auto' :
-            categoriesPerRow === '3' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' :
-            categoriesPerRow === '4' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' :
-            categoriesPerRow === '5' ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5' :
-            categoriesPerRow === '6' ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6' :
-            // Auto / responsive default
-            learningPaths.length === 1 ? 'grid-cols-1 max-w-2xl mx-auto' :
-            learningPaths.length === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-5xl mx-auto' :
-            learningPaths.length === 4 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' :
-            learningPaths.length === 5 ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5' :
-            learningPaths.length >= 6 ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6' :
-            'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-          }`}
-          aria-label="Learning paths"
+        {/* FE-10: Accessible Live Region Announcement for Screen Readers */}
+        <div
+          className="sr-only"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
         >
-          {learningPaths.map((path, idx) => (
-            <ActivityCard
-              key={path.id}
-              path={path}
-              cardColor={path.color || PATH_COLORS[idx % PATH_COLORS.length]}
-              selectedOption={selectedPath[path.id]}
-              onSelect={handleSelect}
-              completedActivities={gameState.completedActivities}
-              pendingActivities={pendingActivities}
-              approvedActivities={approvedActivities}
-              rejectedActivities={rejectedActivities}
-            />
-          ))}
-        </main>
+          {liveAnnouncement}
+        </div>
+
+        {/* FE-6: Mobile Category Filter Chips */}
+        {learningPaths.length > 1 && (
+          <div className="md:hidden mb-4 overflow-x-auto flex-nowrap scrollbar-none flex items-center gap-2 pb-2 px-1" role="toolbar" aria-label="Filter choice board categories">
+            <button
+              type="button"
+              onClick={() => setMobileCategoryFilter('all')}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 flex-shrink-0 ${
+                mobileCategoryFilter === 'all'
+                  ? 'bg-yellow-500 text-slate-900 shadow-md ring-2 ring-yellow-400/50'
+                  : 'bg-slate-800 text-slate-300 border border-slate-700 hover:border-slate-500'
+              }`}
+              aria-pressed={mobileCategoryFilter === 'all'}
+            >
+              <span>All Categories</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                mobileCategoryFilter === 'all' ? 'bg-slate-900/30 text-slate-950 font-black' : 'bg-slate-700 text-slate-300'
+              }`}>
+                {learningPaths.reduce((acc, p) => acc + calculatePathProgressStats(p, gameState.completedActivities, approvedActivities).count, 0)}/
+                {learningPaths.reduce((acc, p) => acc + (p.options || []).length, 0)}
+              </span>
+            </button>
+            {learningPaths.map((path) => {
+              const { count: completedCount, total: totalCount, isComplete } =
+                calculatePathProgressStats(path, gameState.completedActivities, approvedActivities);
+              const isSelected = mobileCategoryFilter === path.id;
+              return (
+                <button
+                  key={path.id}
+                  type="button"
+                  onClick={() => setMobileCategoryFilter(prev => toggleLearningPathFilter(prev, path.id))}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 flex-shrink-0 ${
+                    isSelected
+                      ? 'bg-yellow-500 text-slate-900 shadow-md ring-2 ring-yellow-400/50'
+                      : isComplete
+                      ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-600/60'
+                      : 'bg-slate-800 text-slate-300 border border-slate-700 hover:border-slate-500'
+                  }`}
+                  aria-pressed={isSelected}
+                >
+                  <span>{path.title}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                    isSelected 
+                      ? 'bg-slate-900/30 text-slate-950 font-black' 
+                      : isComplete 
+                      ? 'bg-emerald-800 text-emerald-100' 
+                      : 'bg-slate-700 text-slate-300'
+                  }`}>
+                    {completedCount}/{totalCount}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {(() => {
+          const displayedPaths = filterLearningPathsByChip(learningPaths, mobileCategoryFilter);
+
+          return (
+            <main
+              id="main-content"
+              className={`grid gap-6 mb-12 ${
+                categoriesPerRow === '1' ? 'grid-cols-1 max-w-2xl mx-auto' :
+                categoriesPerRow === '2' ? 'grid-cols-1 md:grid-cols-2 max-w-5xl mx-auto' :
+                categoriesPerRow === '3' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' :
+                categoriesPerRow === '4' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' :
+                categoriesPerRow === '5' ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5' :
+                categoriesPerRow === '6' ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6' :
+                // Auto / responsive default
+                displayedPaths.length === 1 ? 'grid-cols-1 max-w-2xl mx-auto' :
+                displayedPaths.length === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-5xl mx-auto' :
+                displayedPaths.length === 4 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' :
+                displayedPaths.length === 5 ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5' :
+                displayedPaths.length >= 6 ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6' :
+                'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+              }`}
+              aria-label="Learning paths"
+            >
+              {displayedPaths.map((path, idx) => (
+                <ActivityCard
+                  key={path.id}
+                  path={path}
+                  cardColor={path.color || PATH_COLORS[idx % PATH_COLORS.length]}
+                  selectedOption={selectedPath[path.id]}
+                  onSelect={handleSelect}
+                  completedActivities={gameState.completedActivities}
+                  pendingActivities={pendingActivities}
+                  approvedActivities={approvedActivities}
+                  rejectedActivities={rejectedActivities}
+                />
+              ))}
+            </main>
+          );
+        })()}
 
         <div className="text-center pb-20">
           <button onClick={() => setShowInfo(!showInfo)} className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-300 transition-colors" aria-expanded={showInfo} aria-controls="pedagogical-info">
@@ -2480,13 +2666,7 @@ function AppContent() {
     return localStorage.getItem('lvlup_admin_view_scope') || 'mine';
   });
 
-  const isSuperAdmin = user && (
-    user.role === 'admin' ||
-    user.role === 'super_admin' ||
-    user.role === 'super admin' ||
-    user.email?.toLowerCase() === 'matthew.harbert@lcps.org' ||
-    user.email?.toLowerCase() === 'propellevelup@lcps.org'
-  );
+  const isSuperAdmin = isAdminUser(user);
 
   // Load teacher's or admin's classes for student emulation
   useEffect(() => {

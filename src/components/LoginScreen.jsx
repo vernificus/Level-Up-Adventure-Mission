@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { BookOpen, Users, LogIn, UserPlus, ArrowRight, GraduationCap, Lock, User, UserCheck, Building2, ShieldCheck, Shield } from 'lucide-react';
+import { BookOpen, Users, LogIn, UserPlus, ArrowRight, GraduationCap, Lock, User, UserCheck, Building2, ShieldCheck, Shield, Eye, EyeOff, Search } from 'lucide-react';
 import { realBackend as backend } from '../services/realBackend';
 import LegalModal from './LegalModal';
+import { filterRosterByName, getVisibilityInputType, getVisibilityToggleLabel } from '../utils/portalUtils';
 
 export default function LoginScreen() {
   const { loginTeacher, registerTeacher, loginStudent, signupStudent } = useAuth();
@@ -34,6 +35,13 @@ export default function LoginScreen() {
   const [signupName, setSignupName] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
+
+  // Usability enhancement states (FE-1, FE-2)
+  const [rosterSearch, setRosterSearch] = useState('');
+  const [showTeacherPassword, setShowTeacherPassword] = useState(false);
+  const [showStudentPin, setShowStudentPin] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [showSignupConfirmPassword, setShowSignupConfirmPassword] = useState(false);
 
   // Load organizations on mount
   useEffect(() => {
@@ -260,15 +268,25 @@ export default function LoginScreen() {
 
             <div>
               <label htmlFor="teacher-password" className="block text-sm text-slate-400 mb-1">Password</label>
-              <input
-                id="teacher-password"
-                type="password"
-                required
-                autoComplete="current-password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
-              />
+              <div className="relative">
+                <input
+                  id="teacher-password"
+                  type={getVisibilityInputType(showTeacherPassword)}
+                  required
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 pr-11 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowTeacherPassword(!showTeacherPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
+                  aria-label={getVisibilityToggleLabel(showTeacherPassword, false)}
+                >
+                  {showTeacherPassword ? <EyeOff className="w-5 h-5" aria-hidden="true" /> : <Eye className="w-5 h-5" aria-hidden="true" />}
+                </button>
+              </div>
             </div>
 
             <button
@@ -339,15 +357,25 @@ export default function LoginScreen() {
 
             <div>
               <label htmlFor="signup-password" className="block text-sm text-slate-400 mb-1">Password</label>
-              <input
-                id="signup-password"
-                type="password"
-                required
-                autoComplete="new-password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
-              />
+              <div className="relative">
+                <input
+                  id="signup-password"
+                  type={getVisibilityInputType(showTeacherPassword)}
+                  required
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 pr-11 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowTeacherPassword(!showTeacherPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
+                  aria-label={getVisibilityToggleLabel(showTeacherPassword, false)}
+                >
+                  {showTeacherPassword ? <EyeOff className="w-5 h-5" aria-hidden="true" /> : <Eye className="w-5 h-5" aria-hidden="true" />}
+                </button>
+              </div>
             </div>
 
             <button
@@ -395,40 +423,75 @@ export default function LoginScreen() {
         )}
 
         {/* Student Join: Step 2 (Select Name) */}
-        {mode === 'student-select' && (
-          <div className="space-y-4">
-            <BackButton />
-            <h2 className="text-xl font-bold text-white text-center mb-2">Who are you?</h2>
-            <p className="text-center text-slate-400 text-sm mb-4">Class: <span className="font-bold text-white">{classInfo?.name}</span></p>
+        {mode === 'student-select' && (() => {
+          const filteredRoster = filterRosterByName(roster, rosterSearch);
 
-            <div className="max-h-60 overflow-y-auto space-y-2 pr-1 custom-scrollbar" role="list" aria-label="Student roster">
-              {roster.map(student => (
-                <button
-                  key={student.id}
-                  role="listitem"
-                  onClick={() => { setSelectedStudentId(student.id); setMode('student-password'); }}
-                  className="w-full p-4 bg-slate-700 hover:bg-slate-600 rounded-xl text-left transition-colors flex items-center gap-3"
-                >
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-sm" aria-hidden="true">👤</div>
-                  <span className="font-bold text-white">{student.name}</span>
-                </button>
-              ))}
-              {roster.length === 0 && (
-                <p className="text-center text-slate-500 py-4" role="status">No students yet. Be the first to join!</p>
+          return (
+            <div className="space-y-4">
+              <BackButton />
+              <h2 className="text-xl font-bold text-white text-center mb-2">Who are you?</h2>
+              <p className="text-center text-slate-400 text-sm mb-4">Class: <span className="font-bold text-white">{classInfo?.name}</span></p>
+
+              {/* Roster Search Input */}
+              {roster.length > 0 && (
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" aria-hidden="true" />
+                  <input
+                    type="text"
+                    value={rosterSearch}
+                    onChange={e => setRosterSearch(e.target.value)}
+                    placeholder="Type your name to find yourself..."
+                    aria-label="Search student roster by name"
+                    autoFocus={roster.length > 5}
+                    className="w-full px-4 py-2.5 pl-9 pr-8 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:border-blue-500 focus:outline-none text-sm"
+                  />
+                  {rosterSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setRosterSearch('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 text-xs"
+                      aria-label="Clear search"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
               )}
-            </div>
 
-            <div className="border-t border-slate-700 pt-4 mt-4">
-              <button
-                onClick={() => { setError(''); setMode('student-signup'); }}
-                className="w-full p-4 bg-green-600 hover:bg-green-500 rounded-xl text-center transition-colors flex items-center justify-center gap-2"
-              >
-                <UserPlus className="w-5 h-5 text-white" aria-hidden="true" />
-                <span className="font-bold text-white">I'm New - Create My Account</span>
-              </button>
+              <div className="max-h-60 overflow-y-auto space-y-2 pr-1 custom-scrollbar" role="list" aria-label="Student roster">
+                {filteredRoster.map(student => (
+                  <button
+                    key={student.id}
+                    role="listitem"
+                    onClick={() => { setSelectedStudentId(student.id); setMode('student-password'); }}
+                    className="w-full p-4 bg-slate-700 hover:bg-slate-600 rounded-xl text-left transition-colors flex items-center gap-3"
+                  >
+                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-sm" aria-hidden="true">👤</div>
+                    <span className="font-bold text-white">{student.name}</span>
+                  </button>
+                ))}
+                {roster.length === 0 && (
+                  <p className="text-center text-slate-500 py-4" role="status">No students yet. Be the first to join!</p>
+                )}
+                {roster.length > 0 && filteredRoster.length === 0 && (
+                  <p className="text-center text-slate-400 py-4 text-sm" role="status">
+                    No students matching "{rosterSearch}".
+                  </p>
+                )}
+              </div>
+
+              <div className="border-t border-slate-700 pt-4 mt-4">
+                <button
+                  onClick={() => { setError(''); setMode('student-signup'); }}
+                  className="w-full p-4 bg-green-600 hover:bg-green-500 rounded-xl text-center transition-colors flex items-center justify-center gap-2"
+                >
+                  <UserPlus className="w-5 h-5 text-white" aria-hidden="true" />
+                  <span className="font-bold text-white">I'm New - Create My Account</span>
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Student Join: Step 3 (Password) */}
         {mode === 'student-password' && (
@@ -439,18 +502,26 @@ export default function LoginScreen() {
             <div>
               <label htmlFor="student-pin" className="block text-sm text-slate-400 mb-1">Enter your Password/PIN</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" aria-hidden="true" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none" aria-hidden="true" />
                 <input
                   id="student-pin"
-                  type="password"
+                  type={getVisibilityInputType(showStudentPin)}
                   required
                   autoFocus
                   placeholder="******"
                   value={studentPassword}
                   onChange={e => setStudentPassword(e.target.value)}
-                  className="w-full px-4 py-3 pl-10 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-blue-500 focus:outline-none text-center text-xl tracking-widest"
+                  className="w-full px-4 py-3 pl-10 pr-11 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-blue-500 focus:outline-none text-center text-xl tracking-widest"
                   autoComplete="current-password"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowStudentPin(!showStudentPin)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                  aria-label={getVisibilityToggleLabel(showStudentPin, true)}
+                >
+                  {showStudentPin ? <EyeOff className="w-5 h-5" aria-hidden="true" /> : <Eye className="w-5 h-5" aria-hidden="true" />}
+                </button>
               </div>
             </div>
 
@@ -492,34 +563,50 @@ export default function LoginScreen() {
             <div>
               <label htmlFor="student-signup-password" className="block text-sm text-slate-400 mb-1">Create a Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" aria-hidden="true" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none" aria-hidden="true" />
                 <input
                   id="student-signup-password"
-                  type="password"
+                  type={getVisibilityInputType(showSignupPassword)}
                   required
                   placeholder="Choose a password"
                   value={signupPassword}
                   onChange={e => setSignupPassword(e.target.value)}
-                  className="w-full px-4 py-3 pl-10 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-green-500 focus:outline-none"
+                  className="w-full px-4 py-3 pl-10 pr-11 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-green-500 focus:outline-none"
                   autoComplete="new-password"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowSignupPassword(!showSignupPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400"
+                  aria-label={getVisibilityToggleLabel(showSignupPassword, false)}
+                >
+                  {showSignupPassword ? <EyeOff className="w-5 h-5" aria-hidden="true" /> : <Eye className="w-5 h-5" aria-hidden="true" />}
+                </button>
               </div>
             </div>
 
             <div>
               <label htmlFor="student-signup-confirm" className="block text-sm text-slate-400 mb-1">Confirm Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" aria-hidden="true" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none" aria-hidden="true" />
                 <input
                   id="student-signup-confirm"
-                  type="password"
+                  type={getVisibilityInputType(showSignupConfirmPassword)}
                   required
                   placeholder="Type password again"
                   value={signupConfirmPassword}
                   onChange={e => setSignupConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-3 pl-10 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-green-500 focus:outline-none"
+                  className="w-full px-4 py-3 pl-10 pr-11 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-green-500 focus:outline-none"
                   autoComplete="new-password"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowSignupConfirmPassword(!showSignupConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400"
+                  aria-label={getVisibilityToggleLabel(showSignupConfirmPassword, false)}
+                >
+                  {showSignupConfirmPassword ? <EyeOff className="w-5 h-5" aria-hidden="true" /> : <Eye className="w-5 h-5" aria-hidden="true" />}
+                </button>
               </div>
             </div>
 

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { realBackend as backend } from '../services/realBackend';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, isAdminUser } from '../context/AuthContext';
 import { LEARNING_PATHS as DEFAULT_PATHS, PATH_COLORS } from '../data/gameData';
+import { resolveClassLearningPaths } from '../utils/gameUtils';
 import {
   Save, Plus, Trash2, BookOpen, Search, X, ChevronDown, ChevronUp,
   GripVertical, Link2, ExternalLink, Eye, EyeOff, Bold, Italic, Type,
@@ -10,50 +11,7 @@ import {
 } from 'lucide-react';
 import DocumentImporterModal from './DocumentImporterModal';
 
-// Normalize a step to object form for backward compatibility.
-// Old steps are plain strings; new steps are { text, link?, linkText? }.
-function normalizeStep(step) {
-  if (typeof step === 'string') return { text: step };
-  return step;
-}
-
-function normalizeSteps(steps) {
-  if (!steps) return [{ text: '' }];
-  return steps.map(normalizeStep);
-}
-
-// Render text with basic markdown-style formatting: **bold** and *italic*
-function renderFormattedText(text) {
-  if (!text) return null;
-  const parts = [];
-  let remaining = text;
-  let key = 0;
-
-  // Process **bold** and *italic* markers
-  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*)/g;
-  let lastIndex = 0;
-  let match;
-
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(<span key={key++}>{text.slice(lastIndex, match.index)}</span>);
-    }
-    if (match[2]) {
-      // **bold**
-      parts.push(<strong key={key++} className="font-bold text-white">{match[2]}</strong>);
-    } else if (match[3]) {
-      // *italic*
-      parts.push(<em key={key++} className="italic text-slate-200">{match[3]}</em>);
-    }
-    lastIndex = match.index + match[0].length;
-  }
-
-  if (lastIndex < text.length) {
-    parts.push(<span key={key++}>{text.slice(lastIndex)}</span>);
-  }
-
-  return parts.length > 0 ? parts : text;
-}
+import { normalizeStep, normalizeSteps, renderFormattedText } from '../utils/textUtils';
 
 // Step editor component for a single step with link support
 function StepEditor({ step, index, totalSteps, onChange, onRemove, onMoveUp, onMoveDown }) {
@@ -413,57 +371,10 @@ export default function ActivityEditor({
             }
           }
 
-          let paths = classDoc.activities && classDoc.activities.length > 0
-            ? classDoc.activities
-            : DEFAULT_PATHS;
-
-          if (classDoc.categoryNames || classDoc.categorySubtitles) {
-            paths = paths.map(path => ({
-              ...path,
-              title: classDoc.categoryNames?.[path.id] || path.title,
-              subtitle: classDoc.categorySubtitles?.[path.id] || path.subtitle,
-            }));
-
-            // Add any extra categories that don't have activity paths yet
-            if (classDoc.categoryNames) {
-              const existingIds = new Set(paths.map(p => p.id));
-              Object.keys(classDoc.categoryNames).forEach((key, idx) => {
-                if (!existingIds.has(key)) {
-                  paths.push({
-                    id: key,
-                    title: classDoc.categoryNames[key],
-                    subtitle: classDoc.categorySubtitles?.[key] || '',
-                    icon: 'BookOpen',
-                    color: PATH_COLORS[(paths.length) % PATH_COLORS.length],
-                    options: [],
-                  });
-                }
-              });
-            }
-
-            // Filter out paths that were removed from categoryNames
-            if (classDoc.categoryNames && Object.keys(classDoc.categoryNames).length > 0) {
-              paths = paths.filter(p => p.id in classDoc.categoryNames);
-            }
-
-            // Sort by categoryOrder if available
-            if (Array.isArray(classDoc.categoryOrder) && classDoc.categoryOrder.length > 0) {
-              paths.sort((a, b) => {
-                const idxA = classDoc.categoryOrder.indexOf(a.id);
-                const idxB = classDoc.categoryOrder.indexOf(b.id);
-                if (idxA === -1 && idxB === -1) return 0;
-                if (idxA === -1) return 1;
-                if (idxB === -1) return -1;
-                return idxA - idxB;
-              });
-            }
-          }
-
-          // Normalize all steps to object form and ensure colors match categoryOrder
-          paths = paths.map((path, idx) => ({
+          let paths = resolveClassLearningPaths(classDoc, DEFAULT_PATHS);
+          paths = paths.map(path => ({
             ...path,
-            color: PATH_COLORS[idx % PATH_COLORS.length],
-            options: path.options.map(opt => ({
+            options: (path.options || []).map(opt => ({
               ...opt,
               steps: normalizeSteps(opt.steps),
             })),
@@ -486,7 +397,7 @@ export default function ActivityEditor({
     setLibraryError(null);
     setShowLibrary(true);
 
-    const isUserAdmin = user?.role === 'admin' || user?.email?.toLowerCase() === 'matthew.harbert@lcps.org';
+    const isUserAdmin = isAdminUser(user);
 
     // If teacher: strictly locked to userOrgId (cannot query other organizations)
     // If admin: can view orgIdOverride, filterOrgId, or userOrgId

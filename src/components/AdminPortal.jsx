@@ -743,10 +743,10 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
         )}
 
         {/* Main Navigation Tabs */}
-        <div className="flex items-center gap-2 mb-6 border-b border-slate-800 pb-4 overflow-x-auto">
+        <div className="flex items-center gap-2 mb-6 border-b border-slate-800 pb-4 overflow-x-auto flex-nowrap scrollbar-none" role="tablist" aria-label="Admin navigation">
           <button
             onClick={() => setActiveTab('organizations')}
-            className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold transition-all text-sm ${
+            className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold transition-all text-sm whitespace-nowrap flex-shrink-0 ${
               activeTab === 'organizations'
                 ? 'bg-yellow-500 text-slate-950 shadow-lg shadow-yellow-500/10'
                 : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
@@ -758,7 +758,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
 
           <button
             onClick={() => setActiveTab('teachers')}
-            className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold transition-all text-sm ${
+            className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold transition-all text-sm whitespace-nowrap flex-shrink-0 ${
               activeTab === 'teachers'
                 ? 'bg-yellow-500 text-slate-950 shadow-lg shadow-yellow-500/10'
                 : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
@@ -770,7 +770,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
 
           <button
             onClick={() => setActiveTab('templates')}
-            className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold transition-all text-sm ${
+            className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold transition-all text-sm whitespace-nowrap flex-shrink-0 ${
               activeTab === 'templates'
                 ? 'bg-yellow-500 text-slate-950 shadow-lg shadow-yellow-500/10'
                 : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
@@ -782,7 +782,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
 
           <button
             onClick={() => setActiveTab('bosses')}
-            className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold transition-all text-sm ${
+            className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold transition-all text-sm whitespace-nowrap flex-shrink-0 ${
               activeTab === 'bosses'
                 ? 'bg-yellow-500 text-slate-950 shadow-lg shadow-yellow-500/10'
                 : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
@@ -798,7 +798,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
               if (!classOrgFilter) setClassOrgFilter(selectedOrgId || 'all');
               loadClassesForOrg(classOrgFilter || selectedOrgId || 'all');
             }}
-            className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold transition-all text-sm ${
+            className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold transition-all text-sm whitespace-nowrap flex-shrink-0 ${
               activeTab === 'classes'
                 ? 'bg-yellow-500 text-slate-950 shadow-lg shadow-yellow-500/10'
                 : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'

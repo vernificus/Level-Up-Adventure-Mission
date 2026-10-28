@@ -50,7 +50,6 @@ An interactive, gamified choice board web application built for educational orga
 - **Hosting**: Firebase Hosting (`level-up-choice-board-game.web.app`).
 - **Services Architecture**:
   - `src/services/realBackend.js`: Live Firestore database integration with admin role checks and org template distribution.
-  - `src/services/mockBackend.js`: Offline fallback mock service for local offline testing.
 
 ---
 
@@ -73,9 +72,11 @@ Level-Up-Adventure-Mission/
 │   ├── context/
 │   │   └── AuthContext.jsx       # Auth Provider & Admin Role State Management
 │   ├── services/
-│   │   ├── realBackend.js        # Firebase Firestore API Interface
-│   │   └── mockBackend.js        # Mock API Service
+│   │   └── realBackend.js        # Firebase Firestore API Interface
 │   └── utils/
+│       ├── textUtils.js          # Markdown formatting, step normalization & roster parsing
+│       ├── gameUtils.js          # Progression, category ordering & Path Masters helpers
+│       ├── authUtils.js          # Super Admin role & email verification
 │       └── documentParser.js     # Multi-Activity Google Doc / Word Parser
 └── package.json
 ```

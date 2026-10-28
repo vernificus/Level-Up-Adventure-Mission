@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { parseDocumentToActivities } from '../utils/documentParser';
+import { parseDocumentToActivities, isDocxFile } from '../utils/documentParser';
 import { FileText, Upload, Sparkles, Check, X, AlertCircle, Layers, Plus } from 'lucide-react';
 
 export default function DocumentImporterModal({ isOpen, onClose, onImportActivities, categoryNames = {} }) {
@@ -8,6 +8,7 @@ export default function DocumentImporterModal({ isOpen, onClose, onImportActivit
   const [fileName, setFileName] = useState('');
   const [targetPathId, setTargetPathId] = useState('auto'); // 'auto' or specific pathId
   const [activeTab, setActiveTab] = useState('paste'); // 'paste' or 'file'
+  const [docxWarning, setDocxWarning] = useState(false);
 
   if (!isOpen) return null;
 
@@ -22,6 +23,13 @@ export default function DocumentImporterModal({ isOpen, onClose, onImportActivit
     if (!file) return;
     setFileName(file.name);
 
+    // Guard against binary .docx / .doc files which corrupt when read as text
+    if (isDocxFile(file.name)) {
+      setDocxWarning(true);
+      return;
+    }
+
+    setDocxWarning(false);
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target.result;
@@ -120,10 +128,10 @@ Steps:
             <div className="p-8 border-2 border-dashed border-slate-700 hover:border-blue-500 rounded-xl bg-slate-950/50 text-center transition-colors">
               <Upload className="w-10 h-10 text-slate-500 mx-auto mb-3" />
               <p className="text-sm font-bold text-white mb-1">Upload a Document File</p>
-              <p className="text-xs text-slate-400 mb-4">Supports plain text, markdown, and Word document exports (.txt, .md, .docx)</p>
+              <p className="text-xs text-slate-400 mb-4">Supports plain text and markdown files (.txt, .md). For Word docs, copy and paste text directly into the Paste Text tab.</p>
               <input
                 type="file"
-                accept=".txt,.md,.doc,.docx"
+                accept=".txt,.md"
                 onChange={handleFileUpload}
                 className="hidden"
                 id="doc-file-upload"
@@ -135,6 +143,25 @@ Steps:
                 <Upload className="w-4 h-4" /> Browse File
               </label>
               {fileName && <p className="text-xs text-green-400 font-bold mt-3">Selected: {fileName}</p>}
+
+              {docxWarning && (
+                <div className="mt-4 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-left flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-bold text-amber-300 mb-1">Word Document (.docx) Detected</p>
+                    <p className="text-xs text-slate-300 mb-2 leading-relaxed">
+                      Word files contain binary XML formatting that cannot be parsed from raw file uploads. Please open your document, copy the text (Ctrl+A / Ctrl+C), and switch to the Paste Text tab to import your activities.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => { setActiveTab('paste'); setDocxWarning(false); }}
+                      className="px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold rounded-lg border border-amber-500/40 transition-colors"
+                    >
+                      Switch to Paste Text Tab →
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

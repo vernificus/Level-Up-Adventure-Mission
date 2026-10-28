@@ -2,9 +2,17 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { LEVELS, ACHIEVEMENTS, DAILY_QUESTS, MYSTERY_REWARDS, LEARNING_PATHS as DEFAULT_PATHS, PATH_COLORS, GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, getResolvedDailyQuest, getResolvedAchievements } from '../data/gameData';
 import { realBackend as backend } from '../services/realBackend';
 import { useAuth } from '../context/AuthContext';
+import {
+  getLevelForXp,
+  calculateLevelAndBonusCoins,
+  getMostRecentMonday7am,
+  resolveClassLearningPaths,
+  reconcileRevocationState,
+  calculateRewardState,
+  calculateStreak
+} from '../utils/gameUtils.js';
 
 const getDefaultState = () => ({
-
   // Player info
   playerName: '',
   xp: 0,
@@ -35,21 +43,6 @@ const getDefaultState = () => ({
   lastActivityReset: null,
   highFivesSent: {},
 });
-
-// Get the most recent Monday at 7:00 AM (local time)
-function getMostRecentMonday7am() {
-  const now = new Date();
-  const day = now.getDay(); // 0=Sun, 1=Mon, ...
-  const diff = (day === 0 ? 6 : day - 1); // days since last Monday
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - diff);
-  monday.setHours(7, 0, 0, 0);
-  // If it's Monday but before 7am, go back to previous Monday
-  if (monday > now) {
-    monday.setDate(monday.getDate() - 7);
-  }
-  return monday;
-}
 
 // Check if activities should be auto-reset (weekly Monday 7am)
 function shouldAutoReset(lastResetIso, autoResetEnabled = true) {
@@ -128,61 +121,7 @@ export function useGameState(overrideClassId) {
         setClassGuilds(classDoc.guilds);
       }
 
-      // Start with custom activities if saved, otherwise keep defaults
-      let paths = classDoc.activities && classDoc.activities.length > 0
-        ? classDoc.activities
-        : DEFAULT_PATHS;
-
-      // Apply custom category names/subtitles on top
-      if (classDoc.categoryNames || classDoc.categorySubtitles) {
-        paths = paths.map(path => ({
-          ...path,
-          title: classDoc.categoryNames?.[path.id] || path.title,
-          subtitle: classDoc.categorySubtitles?.[path.id] || path.subtitle,
-        }));
-
-        // Add any extra categories that don't have activity paths yet
-        if (classDoc.categoryNames) {
-          const existingIds = new Set(paths.map(p => p.id));
-          Object.keys(classDoc.categoryNames).forEach(key => {
-            if (!existingIds.has(key)) {
-              paths.push({
-                id: key,
-                title: classDoc.categoryNames[key],
-                subtitle: classDoc.categorySubtitles?.[key] || '',
-                icon: 'BookOpen',
-                color: PATH_COLORS[(paths.length) % PATH_COLORS.length],
-                options: [],
-              });
-            }
-          });
-        }
-      }
-
-      // Filter out any paths that were removed by the teacher in categoryNames
-      if (classDoc.categoryNames && Object.keys(classDoc.categoryNames).length > 0) {
-        paths = paths.filter(p => p.id in classDoc.categoryNames);
-      }
-
-      // Sort according to custom categoryOrder if specified
-      if (Array.isArray(classDoc.categoryOrder) && classDoc.categoryOrder.length > 0) {
-        paths.sort((a, b) => {
-          const idxA = classDoc.categoryOrder.indexOf(a.id);
-          const idxB = classDoc.categoryOrder.indexOf(b.id);
-          if (idxA === -1 && idxB === -1) return 0;
-          if (idxA === -1) return 1;
-          if (idxB === -1) return -1;
-          return idxA - idxB;
-        });
-      }
-
-      // Ensure category colors match their column display order (matching TeacherPortal borderColors)
-      paths = paths.map((path, idx) => ({
-        ...path,
-        color: PATH_COLORS[idx % PATH_COLORS.length],
-      }));
-
-      setLearningPaths(paths);
+      setLearningPaths(resolveClassLearningPaths(classDoc, DEFAULT_PATHS));
     } catch (e) {
       console.error("Failed to load class activities", e);
     }
@@ -257,15 +196,7 @@ export function useGameState(overrideClassId) {
           const oldXp = gameData.xp || 0;
           gameData.xp = approvedXpTotal;
           // Calculate bonus coins from levels gained
-          const oldLevel = LEVELS.reduce((acc, l) => oldXp >= l.xpRequired ? l : acc, LEVELS[0]);
-          const newLevel = LEVELS.reduce((acc, l) => approvedXpTotal >= l.xpRequired ? l : acc, LEVELS[0]);
-          let bonusCoins = 0;
-          if (newLevel.level > oldLevel.level) {
-            for (let lvl = oldLevel.level + 1; lvl <= newLevel.level; lvl++) {
-              const lvlData = LEVELS.find(l => l.level === lvl);
-              if (lvlData?.coinReward) bonusCoins += lvlData.coinReward;
-            }
-          }
+          const { bonusCoins } = calculateLevelAndBonusCoins(oldXp, approvedXpTotal, LEVELS);
           if (bonusCoins > 0) {
             gameData.coins = (gameData.coins || 100) + bonusCoins;
           }
@@ -303,11 +234,11 @@ export function useGameState(overrideClassId) {
           ...gameData,
           playerName: name || prev.playerName
         }));
+        setDataLoaded(true);
       }
     } catch (error) {
       console.error("Error loading user data:", error);
-    } finally {
-      setDataLoaded(true);
+      setDataLoaded(false);
     }
   };
 
@@ -320,15 +251,7 @@ export function useGameState(overrideClassId) {
 
   // Calculate current level
   const getCurrentLevel = useCallback(() => {
-    let currentLevel = LEVELS[0];
-    for (const level of LEVELS) {
-      if (gameState.xp >= level.xpRequired) {
-        currentLevel = level;
-      } else {
-        break;
-      }
-    }
-    return currentLevel;
+    return getLevelForXp(gameState.xp, LEVELS);
   }, [gameState.xp]);
 
   // Get XP needed for next level
@@ -451,23 +374,16 @@ export function useGameState(overrideClassId) {
   };
 
   const checkLevelUp = (oldState, newState) => {
-      const oldLevel = LEVELS.reduce((acc, l) => oldState.xp >= l.xpRequired ? l : acc, LEVELS[0]);
-      const newLevelData = LEVELS.reduce((acc, l) => newState.xp >= l.xpRequired ? l : acc, LEVELS[0]);
-      if (newLevelData.level > oldLevel.level) {
-        // Grant coin rewards for each level gained
-        let totalCoins = 0;
-        for (let lvl = oldLevel.level + 1; lvl <= newLevelData.level; lvl++) {
-          const levelData = LEVELS.find(l => l.level === lvl);
-          if (levelData?.coinReward) totalCoins += levelData.coinReward;
-        }
-        if (totalCoins > 0) {
-          newState.coins = (newState.coins || 0) + totalCoins;
-        }
-        setTimeout(() => {
-          setNewLevel({ ...newLevelData, coinsEarned: totalCoins });
-          setShowLevelUp(true);
-        }, 500);
+    const { oldLevel, newLevel: newLevelData, bonusCoins: totalCoins } = calculateLevelAndBonusCoins(oldState.xp, newState.xp, LEVELS);
+    if (newLevelData.level > oldLevel.level) {
+      if (totalCoins > 0) {
+        newState.coins = (newState.coins || 0) + totalCoins;
       }
+      setTimeout(() => {
+        setNewLevel({ ...newLevelData, coinsEarned: totalCoins });
+        setShowLevelUp(true);
+      }, 500);
+    }
   };
 
   // Submit activity
@@ -567,6 +483,8 @@ export function useGameState(overrideClassId) {
               const localSub = currentSubs.find(s => s.id === serverSub.id);
               if (serverSub.status === 'approved' && (!localSub || localSub.status !== 'approved')) {
                 processReward(serverSub);
+              } else if (serverSub.status !== 'approved' && localSub && localSub.status === 'approved') {
+                reconcileRevokedSubmission(serverSub);
               }
             });
 
@@ -586,6 +504,12 @@ export function useGameState(overrideClassId) {
     }
   }, [user, effectiveClassId]);
 
+  const reconcileRevokedSubmission = (submission) => {
+    if (processedSubmissionIds.current.has(submission.id)) {
+      processedSubmissionIds.current.delete(submission.id);
+    }
+    setGameState(prev => reconcileRevocationState(prev, submission));
+  };
 
   const processReward = (submission) => {
     // Skip if we already processed this exact submission (prevents double-counting from polls)
@@ -603,57 +527,11 @@ export function useGameState(overrideClassId) {
        const activity = { id: submission.activityId, type: submission.activityType, xp: submission.xp };
        const pathId = submission.pathId;
        const isDailyQuestMatch = checkDailyQuestMatch(activity, pathId);
-       let xpEarned = submission.xp || 100;
 
-       if (submission.isBoss) {
-          const updatedState = {
-            ...prev,
-            xp: prev.xp + xpEarned,
-            completedBossChallenges: [...prev.completedBossChallenges, submission.activityId],
-            guildXpContributed: prev.guild ? prev.guildXpContributed + xpEarned : prev.guildXpContributed,
-            pendingMysteryBoxes: prev.pendingMysteryBoxes + 1,
-          };
-          checkAndSetAchievements(updatedState);
-          return updatedState;
-       } else {
-          // After-school STEM club friendly streak logic:
-          // Since clubs typically meet 1-3 times per week, any activity completed on a new calendar day
-          // within 8 days of the previous club session increments the student's session streak!
-          let newStreak = prev.currentStreak;
-          if (prev.lastActivityDate !== today) {
-             const diff = (new Date(today) - new Date(prev.lastActivityDate || 0)) / 86400000;
-             if (diff <= 8) newStreak++;
-             else if (diff > 8 && !prev.streakShieldActive) newStreak = 1;
-          }
-
-          if (isDailyQuestMatch && !prev.dailyQuestCompleted) {
-             xpEarned *= 2;
-          }
-
-          const newTotal = prev.totalActivitiesCompleted + 1;
-          const earnedMysteryBox = newTotal % 3 === 0;
-
-          const updatedState = {
-             ...prev,
-             xp: prev.xp + xpEarned,
-             completedActivities: [...new Set([...prev.completedActivities, submission.activityId])],
-             totalActivitiesCompleted: newTotal,
-             guildXpContributed: prev.guild ? (prev.guildXpContributed || 0) + xpEarned : prev.guildXpContributed,
-             currentStreak: newStreak,
-             lastActivityDate: today,
-             dailyQuestCompleted: isDailyQuestMatch ? true : prev.dailyQuestCompleted,
-             pendingMysteryBoxes: earnedMysteryBox ? prev.pendingMysteryBoxes + 1 : prev.pendingMysteryBoxes,
-             collaborationCount: submission.activityType === 'Collaboration' ? prev.collaborationCount + 1 : prev.collaborationCount,
-             pathCompletions: {
-               ...prev.pathCompletions,
-               [pathId]: (prev.pathCompletions[pathId] || 0) + 1,
-             },
-          };
-
-          checkAndSetAchievements(updatedState);
-          checkLevelUp(prev, updatedState);
-          return updatedState;
-       }
+       const updatedState = calculateRewardState(prev, submission, { today, isDailyQuestMatch });
+       checkAndSetAchievements(updatedState);
+       checkLevelUp(prev, updatedState);
+       return updatedState;
     });
   };
 
@@ -726,8 +604,19 @@ export function useGameState(overrideClassId) {
      setGameState(prev => ({ ...prev, playerName: name }));
   }, []);
 
+  const recordHighFive = useCallback((targetMemberId, isoString = new Date().toISOString()) => {
+    setGameState(prev => ({
+      ...prev,
+      highFivesSent: {
+        ...(prev.highFivesSent || {}),
+        [targetMemberId]: isoString
+      }
+    }));
+  }, []);
+
   return {
     gameState,
+    dataLoaded, // True once the student's saved profile has been loaded from the backend
     submissions,
     learningPaths, // Export this
     categoriesPerRow, // Export this
@@ -737,6 +626,7 @@ export function useGameState(overrideClassId) {
     highFiveLimit, // High-five cooldown frequency limit ('daily' | 'weekly' | 'disabled')
     allowStudentGuildSelect, // Teacher toggle for student self-selection
     spendCoins, // Helper to spend coins on STEM supplies
+    recordHighFive,
     getCurrentLevel,
     getNextLevelXp,
     getDailyQuest,
@@ -755,10 +645,13 @@ export function useGameState(overrideClassId) {
     setShowAchievement,
     showMysteryReward,
     setShowMysteryReward,
-
-    approveSubmission: () => {},
-    rejectSubmission: () => {},
-    clearReviewedSubmissions: () => {},
-    validateTeacherPin: () => false,
   };
 }
+
+// Re-export pure calculation functions for direct consumer/testing use
+export {
+  reconcileRevocationState,
+  calculateRewardState,
+  calculateStreak,
+  calculateLevelAndBonusCoins
+};

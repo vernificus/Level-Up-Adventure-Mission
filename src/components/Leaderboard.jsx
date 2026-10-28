@@ -2,16 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Trophy, X, Crown, Medal, Award, Flame, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { LEVELS, ACHIEVEMENTS, GUILDS, DEFAULT_15_GUILDS, getResolvedAchievements } from '../data/gameData';
 import { realBackend as backend } from '../services/realBackend';
+import { getLevelForXp } from '../utils/gameUtils';
 import Avatar3D from './Avatar3D';
-
-function getLevelForXp(xp) {
-  let current = LEVELS[0];
-  for (const level of LEVELS) {
-    if (xp >= level.xpRequired) current = level;
-    else break;
-  }
-  return current;
-}
 
 const RANK_ICONS = [
   <Crown className="w-6 h-6 text-yellow-400" aria-hidden="true" />,

@@ -150,3 +150,15 @@ export function parseDocumentToActivities(rawText) {
   finalizeActivity();
   return activities;
 }
+
+/**
+ * Checks if a filename has a Microsoft Word extension (.docx or .doc).
+ * Used to guard file upload against binary corruption.
+ * @param {string} filename
+ * @returns {boolean}
+ */
+export function isDocxFile(filename) {
+  if (!filename || typeof filename !== 'string') return false;
+  const lower = filename.toLowerCase();
+  return lower.endsWith('.docx') || lower.endsWith('.doc');
+}

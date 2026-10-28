@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import html2canvas from 'html2canvas';
 import { Download, X, Loader2 } from 'lucide-react';
 import { LEARNING_PATHS as DEFAULT_PATHS, PATH_COLORS } from '../data/gameData';
+import { resolveClassLearningPaths } from '../utils/gameUtils';
 import { realBackend as backend } from '../services/realBackend';
 
 // Map Tailwind bg color classes to hex values for the export render
@@ -27,59 +28,7 @@ export default function ChoiceBoardExport({ classId, className }) {
   const loadPaths = useCallback(async () => {
     const classDoc = await backend.getClass(classId);
     if (!classDoc) return [];
-
-    let loaded = classDoc.activities && classDoc.activities.length > 0
-      ? classDoc.activities
-      : DEFAULT_PATHS;
-
-    if (classDoc.categoryNames || classDoc.categorySubtitles) {
-      loaded = loaded.map(path => ({
-        ...path,
-        title: classDoc.categoryNames?.[path.id] || path.title,
-        subtitle: classDoc.categorySubtitles?.[path.id] || path.subtitle,
-      }));
-
-      if (classDoc.categoryNames) {
-        const existingIds = new Set(loaded.map(p => p.id));
-        Object.keys(classDoc.categoryNames).forEach((key) => {
-          if (!existingIds.has(key)) {
-            loaded.push({
-              id: key,
-              title: classDoc.categoryNames[key],
-              subtitle: classDoc.categorySubtitles?.[key] || '',
-              icon: 'BookOpen',
-              color: PATH_COLORS[loaded.length % PATH_COLORS.length],
-              options: [],
-            });
-          }
-        });
-      }
-
-      // Filter out removed categories
-      if (classDoc.categoryNames && Object.keys(classDoc.categoryNames).length > 0) {
-        loaded = loaded.filter(p => p.id in classDoc.categoryNames);
-      }
-
-      // Sort by categoryOrder if available
-      if (Array.isArray(classDoc.categoryOrder) && classDoc.categoryOrder.length > 0) {
-        loaded.sort((a, b) => {
-          const idxA = classDoc.categoryOrder.indexOf(a.id);
-          const idxB = classDoc.categoryOrder.indexOf(b.id);
-          if (idxA === -1 && idxB === -1) return 0;
-          if (idxA === -1) return 1;
-          if (idxB === -1) return -1;
-          return idxA - idxB;
-        });
-      }
-
-      // Ensure colors match category column display order
-      loaded = loaded.map((path, idx) => ({
-        ...path,
-        color: PATH_COLORS[idx % PATH_COLORS.length],
-      }));
-    }
-
-    return loaded;
+    return resolveClassLearningPaths(classDoc, DEFAULT_PATHS);
   }, [classId]);
 
   const handleOpen = async () => {

@@ -12,46 +12,10 @@ import {
   Info
 } from 'lucide-react';
 import { LEARNING_PATHS as DEFAULT_PATHS, BOSS_CHALLENGES } from '../data/gameData';
+import { normalizeStep, normalizeSteps, renderFormattedText } from '../utils/textUtils';
 
-// Normalize a step into object form { text, link?, linkText? }
-export function normalizeStep(step) {
-  if (!step) return { text: '' };
-  if (typeof step === 'string') return { text: step };
-  return step;
-}
-
-export function normalizeSteps(steps) {
-  if (!steps || !Array.isArray(steps)) return [];
-  return steps.map(normalizeStep).filter(s => s && (s.text || s.link));
-}
-
-// Render basic markdown-style text formatting (**bold** and *italic*)
-export function renderFormattedText(text) {
-  if (!text || typeof text !== 'string') return text || null;
-  const parts = [];
-  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*)/g;
-  let lastIndex = 0;
-  let match;
-  let key = 0;
-
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(<span key={key++}>{text.slice(lastIndex, match.index)}</span>);
-    }
-    if (match[2]) {
-      parts.push(<strong key={key++} className="font-bold text-white">{match[2]}</strong>);
-    } else if (match[3]) {
-      parts.push(<em key={key++} className="italic text-slate-200">{match[3]}</em>);
-    }
-    lastIndex = match.index + match[0].length;
-  }
-
-  if (lastIndex < text.length) {
-    parts.push(<span key={key++}>{text.slice(lastIndex)}</span>);
-  }
-
-  return parts.length > 0 ? parts : text;
-}
+// Re-export for backward compatibility
+export { normalizeStep, normalizeSteps, renderFormattedText };
 
 // Helper to look up an activity's full details and directions
 export function findActivityForSubmission(submission, classActivities = [], activeBoss = null) {

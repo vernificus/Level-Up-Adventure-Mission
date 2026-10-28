@@ -4,6 +4,7 @@ import {
   Maximize2, Minimize2, Sparkles, CheckCircle2, Users, Zap, RefreshCw, Flame
 } from 'lucide-react';
 import { DEFAULT_15_GUILDS, GUILD_LEVELS, BOSS_CHALLENGES } from '../data/gameData';
+import { getMostRecentMonday7am } from '../utils/gameUtils';
 
 // Synthesize an arcade/makerspace chime using Web Audio API (no external audio file needed)
 function playArenaChime(type = 'complete') {
@@ -147,17 +148,7 @@ export default function ClubArenaModal({
   const currentBoss = activeBoss || BOSS_CHALLENGES[weekOfYear % BOSS_CHALLENGES.length];
   const bossTotalHp = Number(currentBoss?.totalHP) || 1000;
 
-  const getWeekStartMs = () => {
-    const now = new Date();
-    const day = now.getDay();
-    const daysSinceMonday = (day + 6) % 7;
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - daysSinceMonday);
-    monday.setHours(7, 0, 0, 0);
-    if (now < monday) monday.setDate(monday.getDate() - 7);
-    return monday.getTime();
-  };
-  const weekStartMs = getWeekStartMs();
+  const weekStartMs = getMostRecentMonday7am().getTime();
 
   const weeklyApproved = submissions.filter(s => {
     if (s.status !== 'approved') return false;

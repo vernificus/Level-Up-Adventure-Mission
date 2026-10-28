@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { realBackend as backend } from '../services/realBackend';
 import { UserPlus, Lock, Trash2, Save, Edit, X, Check, RotateCcw, Gift, Star, Zap, Trophy, Eye, EyeOff, Sparkles, User, ShieldCheck, FileText, Shield, Search, ArrowRightLeft, AlertTriangle } from 'lucide-react';
 import { ACHIEVEMENTS, LEVELS, AVATAR_ITEMS, GUILDS } from '../data/gameData';
+import { parseRosterLines } from '../utils/textUtils';
 import Avatar3D, { AvatarColorSwatch } from './Avatar3D';
 import StudentSubmissionsModal from './StudentSubmissionsModal';
 
@@ -331,23 +332,17 @@ export default function RosterManager({
   const [showBulk, setShowBulk] = useState(false);
 
   const handleBulkUpload = async () => {
-    const lines = bulkText.split('\n').filter(line => line.trim());
+    const studentsToCreate = parseRosterLines(bulkText);
     setAdding(true);
     let count = 0;
     let errors = [];
 
-    for (const line of lines) {
-      // Format: Name, Password
-      const parts = line.split(',');
-      if (parts.length >= 2) {
-        const name = parts[0].trim();
-        const pass = parts[1].trim();
-        try {
-          await backend.createStudent(classId, name, pass);
-          count++;
-        } catch (e) {
-          errors.push(`${name}: ${e.message}`);
-        }
+    for (const { name, pass } of studentsToCreate) {
+      try {
+        await backend.createStudent(classId, name, pass);
+        count++;
+      } catch (e) {
+        errors.push(`${name}: ${e.message}`);
       }
     }
 
@@ -408,13 +403,13 @@ export default function RosterManager({
 
         {showBulk && (
           <div className="bg-slate-900 p-4 rounded-lg border border-slate-700 mb-4">
-            <label htmlFor="bulk-upload" className="text-xs text-slate-400 mb-2 block">Enter names and passwords, one per line (e.g., "Alice, 1234")</label>
+            <label htmlFor="bulk-upload" className="text-xs text-slate-400 mb-2 block">Enter names and passwords, one per line (e.g., "Alice, 1234" or "Alice" defaulting PIN to 1234)</label>
             <textarea
               id="bulk-upload"
               value={bulkText}
               onChange={e => setBulkText(e.target.value)}
               className="w-full h-32 bg-slate-800 text-white p-2 rounded border border-slate-600 text-sm font-mono"
-              placeholder="Alice, 1234&#10;Bob, 5678"
+              placeholder="Alice, 1234&#10;Bob&#10;Charlie, 5678"
             />
             <button
               onClick={handleBulkUpload}

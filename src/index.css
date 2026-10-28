@@ -7,10 +7,14 @@
     @apply antialiased;
   }
 
-  /* WCAG 2.4.7: Visible focus indicators for all interactive elements */
-  *:focus-visible {
-    @apply outline-2 outline-offset-2 outline-yellow-400;
-    outline-style: solid;
+  /* WCAG 2.4.7: Visible focus indicators for all interactive elements (FE-10) */
+  *:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  a:focus-visible {
+    @apply ring-2 ring-yellow-400 outline-none;
   }
 
   /* Remove default outline only when focus-visible is supported */

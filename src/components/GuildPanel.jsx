@@ -21,6 +21,7 @@ export default function GuildPanel({
   classId,
   gameState,
   onStateUpdate,
+  onRecordHighFive,
   guilds = GUILDS,
   spendCoins,
   highFiveLimit = 'daily',
@@ -146,10 +147,10 @@ export default function GuildPanel({
         targetMember.name,
         currentGuild
       );
-      // Persist in local gameState object so cooldown reflects immediately across re-renders
-      if (gameState) {
-        if (!gameState.highFivesSent) gameState.highFivesSent = {};
-        gameState.highFivesSent[targetMember.id] = res?.nowIso || new Date().toISOString();
+      // Persist in local state immutably via callback avoiding direct prop mutation
+      const highFiveTimestamp = res?.nowIso || new Date().toISOString();
+      if (onRecordHighFive) {
+        onRecordHighFive(targetMember.id, highFiveTimestamp);
       }
       showToast(`⚡ Sent a High-Five to ${targetMember.name}! (+10 XP to you, +15 XP to ${targetMember.name})`);
       if (onStateUpdate) onStateUpdate();

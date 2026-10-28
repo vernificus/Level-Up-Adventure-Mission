@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, isAdminUser } from '../context/AuthContext';
 import { realBackend as backend } from '../services/realBackend';
 import {
   Users, Plus, LogOut, BookOpen, ClipboardList, CheckCircle2,
@@ -7,7 +7,7 @@ import {
   Share2, UserPlus, X, Mail, MessageSquare, Sparkles, Star, Trophy, ChevronDown, ChevronUp, BarChart3, Eye, Zap, Building2, Layers, Shield, ShieldCheck,
   Camera, Upload, Package, ShoppingBag, Swords, Check, Settings, Image as ImageIcon, Award, Crown, Pencil, User, AlertTriangle,
   Filter, Search, FileText, ExternalLink, Printer, GripVertical, UserX, ArrowRightLeft, Lock,
-  Archive, ArchiveRestore
+  Archive, ArchiveRestore, CheckSquare, Square
 } from 'lucide-react';
 import {
   LEVELS, ACHIEVEMENTS, GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, GUILD_TROPHIES,
@@ -25,6 +25,14 @@ import LevelEconomyGuideModal from './LevelEconomyGuideModal';
 import StudentSubmissionsModal from './StudentSubmissionsModal';
 import ActivityDirectionsCard from './ActivityDirectionsCard';
 import ClubArenaModal from './ClubArenaModal';
+import {
+  calculateBatchTotalXp,
+  computeBatchSelectionState,
+  toggleSelectAllPending,
+  pruneSelectedSubmissionIds,
+  resolveRevisionFeedback,
+  QUICK_REVISION_CHIPS
+} from '../utils/portalUtils';
 
 
 export default function TeacherPortal({
@@ -35,13 +43,7 @@ export default function TeacherPortal({
   onClearInitialClassId
 }) {
   const { user, logout } = useAuth();
-  const isAdmin = user && (
-    user.role === 'admin' ||
-    user.role === 'super_admin' ||
-    user.role === 'super admin' ||
-    user.email?.toLowerCase() === 'matthew.harbert@lcps.org' ||
-    user.email?.toLowerCase() === 'propellevelup@lcps.org'
-  );
+  const isAdmin = isAdminUser(user);
 
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState(null);
@@ -82,12 +84,26 @@ export default function TeacherPortal({
   const [classActivities, setClassActivities] = useState([]);
   const [activeBoss, setActiveBoss] = useState(null);
   const [globalExpandDirections, setGlobalExpandDirections] = useState(true);
+  const [selectedSubmissionIds, setSelectedSubmissionIds] = useState(new Set());
+  const [batchProcessing, setBatchProcessing] = useState(false);
+  const [batchNotice, setBatchNotice] = useState(null);
+  const [showConfirmApproveAllModal, setShowConfirmApproveAllModal] = useState(false);
 
   useEffect(() => {
     if (initialTab) {
       setActiveTab(initialTab);
     }
   }, [initialTab]);
+
+  // Reset selected submission IDs when student filter or class changes
+  useEffect(() => {
+    setSelectedSubmissionIds(new Set());
+  }, [selectedStudentFilterId, selectedClass?.id]);
+
+  // Prune any stale IDs from selectedSubmissionIds if submissions change
+  useEffect(() => {
+    setSelectedSubmissionIds(prev => pruneSelectedSubmissionIds(prev, submissions));
+  }, [submissions]);
   const [legalModalOpen, setLegalModalOpen] = useState(false);
   const [legalTab, setLegalTab] = useState('privacy');
   const [categoryNames, setCategoryNames] = useState({});
@@ -571,6 +587,14 @@ export default function TeacherPortal({
   };
 
   const handleReview = async (submissionId, status, feedback) => {
+    // Immediately prune from selectedSubmissionIds
+    setSelectedSubmissionIds(prev => {
+      if (!prev.has(submissionId)) return prev;
+      const next = new Set(prev);
+      next.delete(submissionId);
+      return next;
+    });
+
     await backend.reviewSubmission(submissionId, status, feedback);
     if (selectedClass?.id) {
       const updatedStudents = await backend.getStudents(selectedClass.id);
@@ -579,6 +603,49 @@ export default function TeacherPortal({
         const refreshed = (updatedStudents || []).find(s => s.id === inspectingStudentSubmissions.id);
         if (refreshed) setInspectingStudentSubmissions(refreshed);
       }
+    }
+  };
+
+  const handleToggleSelectSubmission = (subId) => {
+    setSelectedSubmissionIds(prev => {
+      const next = new Set(prev);
+      if (next.has(subId)) next.delete(subId);
+      else next.add(subId);
+      return next;
+    });
+  };
+
+  const handleToggleSelectAllPending = () => {
+    setSelectedSubmissionIds(prev => toggleSelectAllPending(pending, prev));
+  };
+
+  const handleBatchApprove = async (submissionsToApprove, note = 'Batch approved by teacher') => {
+    if (!submissionsToApprove || submissionsToApprove.length === 0) return;
+    setBatchProcessing(true);
+    setBatchNotice({ type: 'info', text: `Approving ${submissionsToApprove.length} submission(s)...` });
+    try {
+      let approvedCount = 0;
+      let totalXpAwarded = 0;
+      for (const sub of submissionsToApprove) {
+        await backend.reviewSubmission(sub.id, 'approved', note);
+        approvedCount++;
+        totalXpAwarded += Number(sub.xp) || 0;
+      }
+      if (selectedClass?.id) {
+        const updatedStudents = await backend.getStudents(selectedClass.id);
+        setStudents(updatedStudents || []);
+      }
+      setSelectedSubmissionIds(new Set());
+      setBatchNotice({
+        type: 'success',
+        text: `Successfully approved ${approvedCount} submission(s) and awarded +${totalXpAwarded} XP!`
+      });
+      setTimeout(() => setBatchNotice(null), 5000);
+    } catch (err) {
+      setBatchNotice({ type: 'error', text: 'Error in batch approval: ' + err.message });
+    } finally {
+      setBatchProcessing(false);
+      setShowConfirmApproveAllModal(false);
     }
   };
 
@@ -843,6 +910,11 @@ export default function TeacherPortal({
 
   const pending = activeSubmissions.filter(s => s.status === 'pending');
   const reviewed = activeSubmissions.filter(s => s.status !== 'pending');
+
+  // Derive visible selection state strictly scoped to current pending submissions
+  const { visibleSelectedSubs, visibleSelectedCount, isAllSelected } = useMemo(() => {
+    return computeBatchSelectionState(pending, selectedSubmissionIds);
+  }, [pending, selectedSubmissionIds]);
 
   const selectedStudentObj = useMemo(() => {
     if (selectedStudentFilterId === 'all') return null;
@@ -1394,14 +1466,14 @@ export default function TeacherPortal({
                 </div>
 
                 {/* Tabs */}
-                <div className="flex gap-4 mb-6 border-b border-slate-700" role="tablist" aria-label="Class management">
+                <div className="flex gap-2 sm:gap-4 mb-6 border-b border-slate-700 overflow-x-auto flex-nowrap scrollbar-none pb-1" role="tablist" aria-label="Class management">
                   <button
                     role="tab"
                     aria-selected={activeTab === 'submissions'}
                     aria-controls="tabpanel-submissions"
                     id="tab-submissions"
                     onClick={() => setActiveTab('submissions')}
-                    className={`pb-4 px-2 font-bold ${activeTab === 'submissions' ? 'text-green-400 border-b-2 border-green-400' : 'text-slate-400 hover:text-white'}`}
+                    className={`pb-3 px-3 font-bold whitespace-nowrap flex-shrink-0 transition-colors ${activeTab === 'submissions' ? 'text-green-400 border-b-2 border-green-400' : 'text-slate-400 hover:text-white'}`}
                   >
                     Submissions
                   </button>
@@ -1411,7 +1483,7 @@ export default function TeacherPortal({
                     aria-controls="tabpanel-students"
                     id="tab-students"
                     onClick={() => setActiveTab('students')}
-                    className={`pb-4 px-2 font-bold ${activeTab === 'students' ? 'text-green-400 border-b-2 border-green-400' : 'text-slate-400 hover:text-white'}`}
+                    className={`pb-3 px-3 font-bold whitespace-nowrap flex-shrink-0 transition-colors ${activeTab === 'students' ? 'text-green-400 border-b-2 border-green-400' : 'text-slate-400 hover:text-white'}`}
                   >
                     Students
                   </button>
@@ -1421,7 +1493,7 @@ export default function TeacherPortal({
                     aria-controls="tabpanel-activities"
                     id="tab-activities"
                     onClick={() => setActiveTab('activities')}
-                    className={`pb-4 px-2 font-bold ${activeTab === 'activities' ? 'text-green-400 border-b-2 border-green-400' : 'text-slate-400 hover:text-white'}`}
+                    className={`pb-3 px-3 font-bold whitespace-nowrap flex-shrink-0 transition-colors ${activeTab === 'activities' ? 'text-green-400 border-b-2 border-green-400' : 'text-slate-400 hover:text-white'}`}
                   >
                     Activities
                   </button>
@@ -1431,7 +1503,7 @@ export default function TeacherPortal({
                     aria-controls="tabpanel-categories"
                     id="tab-categories"
                     onClick={() => setActiveTab('categories')}
-                    className={`pb-4 px-2 font-bold ${activeTab === 'categories' ? 'text-green-400 border-b-2 border-green-400' : 'text-slate-400 hover:text-white'}`}
+                    className={`pb-3 px-3 font-bold whitespace-nowrap flex-shrink-0 transition-colors ${activeTab === 'categories' ? 'text-green-400 border-b-2 border-green-400' : 'text-slate-400 hover:text-white'}`}
                   >
                     Categories
                   </button>
@@ -1441,7 +1513,7 @@ export default function TeacherPortal({
                     aria-controls="tabpanel-spotlight"
                     id="tab-spotlight"
                     onClick={() => setActiveTab('spotlight')}
-                    className={`pb-4 px-2 font-bold ${activeTab === 'spotlight' ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-slate-400 hover:text-white'}`}
+                    className={`pb-3 px-3 font-bold whitespace-nowrap flex-shrink-0 transition-colors ${activeTab === 'spotlight' ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-slate-400 hover:text-white'}`}
                   >
                     <span className="flex items-center gap-1"><Sparkles className="w-4 h-4" aria-hidden="true" /> Spotlight</span>
                   </button>
@@ -1451,7 +1523,7 @@ export default function TeacherPortal({
                     aria-controls="tabpanel-guilds"
                     id="tab-guilds"
                     onClick={() => setActiveTab('guilds')}
-                    className={`pb-4 px-2 font-bold ${activeTab === 'guilds' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-slate-400 hover:text-white'}`}
+                    className={`pb-3 px-3 font-bold whitespace-nowrap flex-shrink-0 transition-colors ${activeTab === 'guilds' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-slate-400 hover:text-white'}`}
                   >
                     <span className="flex items-center gap-1"><Users className="w-4 h-4" aria-hidden="true" /> Guilds</span>
                   </button>
@@ -1461,7 +1533,7 @@ export default function TeacherPortal({
                     aria-controls="tabpanel-sharing"
                     id="tab-sharing"
                     onClick={() => setActiveTab('sharing')}
-                    className={`pb-4 px-2 font-bold ${activeTab === 'sharing' ? 'text-green-400 border-b-2 border-green-400' : 'text-slate-400 hover:text-white'}`}
+                    className={`pb-3 px-3 font-bold whitespace-nowrap flex-shrink-0 transition-colors ${activeTab === 'sharing' ? 'text-green-400 border-b-2 border-green-400' : 'text-slate-400 hover:text-white'}`}
                   >
                     Sharing
                   </button>
@@ -1471,7 +1543,7 @@ export default function TeacherPortal({
                     aria-controls="tabpanel-rewards"
                     id="tab-rewards"
                     onClick={() => setActiveTab('rewards')}
-                    className={`pb-4 px-2 font-bold ${activeTab === 'rewards' ? 'text-green-400 border-b-2 border-green-400' : 'text-slate-400 hover:text-white'}`}
+                    className={`pb-3 px-3 font-bold whitespace-nowrap flex-shrink-0 transition-colors ${activeTab === 'rewards' ? 'text-green-400 border-b-2 border-green-400' : 'text-slate-400 hover:text-white'}`}
                   >
                     <span className="flex items-center gap-1"><Gift className="w-4 h-4" aria-hidden="true" /> Rewards</span>
                   </button>
@@ -2078,6 +2150,143 @@ export default function TeacherPortal({
                               )}
                             </div>
 
+                            {/* ── BATCH REVIEW TOOLBAR (FE-3) ── */}
+                            {pending.length > 0 && (
+                              <div className="bg-slate-800/90 border border-slate-700 rounded-xl p-3 mb-4 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+                                <div className="flex items-center gap-3">
+                                  <label className="flex items-center gap-2 text-xs font-bold text-slate-300 cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={isAllSelected}
+                                      onChange={handleToggleSelectAllPending}
+                                      disabled={batchProcessing}
+                                      className="w-4 h-4 rounded border-slate-600 text-green-600 focus:ring-green-400 cursor-pointer bg-slate-700"
+                                      aria-label="Select all pending submissions"
+                                    />
+                                    <span>Select All ({pending.length})</span>
+                                  </label>
+
+                                  {visibleSelectedCount > 0 && (
+                                    <span className="text-xs bg-green-950/60 text-green-300 border border-green-700/50 font-bold px-2 py-0.5 rounded-full">
+                                      {visibleSelectedCount} selected
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <button
+                                    type="button"
+                                    disabled={visibleSelectedCount === 0 || batchProcessing}
+                                    onClick={() => {
+                                      handleBatchApprove(visibleSelectedSubs, 'Batch approved by teacher');
+                                    }}
+                                    className="px-3.5 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm flex items-center gap-1.5"
+                                  >
+                                    <Check className="w-3.5 h-3.5" />
+                                    <span>Approve Selected ({visibleSelectedCount})</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    disabled={pending.length === 0 || batchProcessing}
+                                    onClick={() => setShowConfirmApproveAllModal(true)}
+                                    className="px-3.5 py-1.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-lg text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm flex items-center gap-1.5"
+                                  >
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                    <span>Approve All Pending ({pending.length})</span>
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Screen reader live region - continuously mounted in DOM (WCAG 4.1.3) */}
+                            <div role="status" aria-live="polite" aria-atomic="true">
+                              {batchNotice && (
+                                <div
+                                  className={`mb-4 p-3 rounded-xl text-xs font-bold flex items-center justify-between border ${
+                                    batchNotice.type === 'error'
+                                      ? 'bg-rose-950/60 border-rose-800 text-rose-200'
+                                      : 'bg-emerald-950/60 border-emerald-800 text-emerald-200'
+                                  }`}
+                                >
+                                  <span>{batchNotice.text}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setBatchNotice(null)}
+                                    className="text-slate-400 hover:text-white ml-2"
+                                    aria-label="Dismiss notice"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Batch Approve All Confirmation Modal */}
+                            {showConfirmApproveAllModal && (
+                              <div
+                                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+                                role="dialog"
+                                aria-modal="true"
+                                aria-labelledby="confirm-approve-all-title"
+                              >
+                                <div className="bg-slate-800 border-2 border-yellow-500 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className="p-2.5 bg-yellow-500/20 text-yellow-400 rounded-xl">
+                                      <CheckCircle2 className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                      <h4 id="confirm-approve-all-title" className="font-bold text-lg text-white">
+                                        Approve All Pending Submissions?
+                                      </h4>
+                                      <p className="text-xs text-slate-400">Class: {selectedClass?.name}</p>
+                                    </div>
+                                  </div>
+
+                                  <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700 text-xs text-slate-300 space-y-2">
+                                    <p>
+                                      You are about to approve <strong className="text-white">{pending.length}</strong> pending submission(s).
+                                    </p>
+                                    <p>
+                                      Total XP awarded to students:{' '}
+                                      <strong className="text-green-400">
+                                        +{calculateBatchTotalXp(pending)} XP
+                                      </strong>
+                                    </p>
+                                    <p className="text-slate-400">
+                                      This will mark all activities as approved in student accounts, credit their XP, and advance class guild challenge progression.
+                                    </p>
+                                  </div>
+
+                                  <div className="flex items-center justify-end gap-3 pt-2">
+                                    <button
+                                      type="button"
+                                      disabled={batchProcessing}
+                                      onClick={() => setShowConfirmApproveAllModal(false)}
+                                      className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold text-xs rounded-xl transition-colors"
+                                    >
+                                      Cancel
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={batchProcessing}
+                                      onClick={() => handleBatchApprove(pending, 'Batch approved all pending by teacher')}
+                                      className="px-5 py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold text-xs rounded-xl transition-colors shadow-lg shadow-yellow-950/50 flex items-center gap-1.5"
+                                    >
+                                      {batchProcessing ? (
+                                        <span>Approving {pending.length}...</span>
+                                      ) : (
+                                        <>
+                                          <Check className="w-4 h-4" />
+                                          <span>Confirm & Approve All</span>
+                                        </>
+                                      )}
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
                             {pending.length === 0 ? (
                               <div className="bg-slate-800/50 rounded-xl p-8 text-center text-slate-500 mb-8">
                                 <CheckCircle2 className="w-12 h-12 mx-auto mb-2 opacity-20 text-green-400" aria-hidden="true" />
@@ -2096,6 +2305,9 @@ export default function TeacherPortal({
                                     classActivities={classActivities}
                                     activeBoss={activeBoss}
                                     forceExpanded={globalExpandDirections}
+                                    isSelected={selectedSubmissionIds.has(sub.id)}
+                                    onToggleSelect={handleToggleSelectSubmission}
+                                    isBatchProcessing={batchProcessing}
                                   />
                                 ))}
                               </div>
@@ -5057,17 +5269,17 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
         </div>
       )}
 
-      {/* Floating Action Toast */}
-      {rosterToast && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="fixed bottom-6 right-6 z-50 bg-slate-900 border-2 border-yellow-400 text-yellow-300 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 font-bold text-xs animate-in slide-in-from-bottom-3 backdrop-blur-md"
-        >
-          <Check className="w-4 h-4 text-green-400 shrink-0" aria-hidden="true" />
-          <span>{rosterToast}</span>
-        </div>
-      )}
+      {/* Floating Action Toast - continuously mounted live region (WCAG 4.1.3) */}
+      <div role="status" aria-live="polite" aria-atomic="true">
+        {rosterToast && (
+          <div
+            className="fixed bottom-6 right-6 z-50 bg-slate-900 border-2 border-yellow-400 text-yellow-300 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 font-bold text-xs animate-in slide-in-from-bottom-3 backdrop-blur-md"
+          >
+            <Check className="w-4 h-4 text-green-400 shrink-0" aria-hidden="true" />
+            <span>{rosterToast}</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -5354,58 +5566,95 @@ function RewardsManager({ classId }) {
   );
 }
 
-function SubmissionCard({ submission, onReview, onInspectStudent, classActivities, activeBoss, forceExpanded }) {
+function SubmissionCard({
+  submission,
+  onReview,
+  onInspectStudent,
+  classActivities,
+  activeBoss,
+  forceExpanded,
+  isSelected,
+  onToggleSelect,
+  isBatchProcessing
+}) {
   const [feedback, setFeedback] = useState('');
+  const [showRevisionModal, setShowRevisionModal] = useState(false);
+  const [revisionFeedback, setRevisionFeedback] = useState('');
   const feedbackId = `feedback-${submission.id}`;
 
+  const handleRejectClick = () => {
+    setRevisionFeedback(feedback.trim());
+    setShowRevisionModal(true);
+  };
+
+  const handleConfirmRevision = async () => {
+    const finalNote = resolveRevisionFeedback(revisionFeedback);
+    await onReview(submission.id, 'rejected', finalNote);
+    setShowRevisionModal(false);
+  };
+
   return (
-    <article className="bg-slate-800 border-2 border-slate-700 rounded-xl p-6 hover:border-blue-500 transition-colors" aria-label={`Submission from ${submission.playerName}: ${submission.activityTitle}`}>
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <h4 className="font-bold text-lg text-white">{submission.activityTitle}</h4>
-            {submission.isBoss && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                Boss Challenge
-              </span>
-            )}
-            {submission.activityType && !submission.isBoss && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-slate-700 text-slate-300">
-                {submission.activityType}
-              </span>
+    <article className={`bg-slate-800 border-2 rounded-xl p-6 transition-colors ${isSelected ? 'border-green-500 bg-slate-800/90 ring-1 ring-green-500/40' : 'border-slate-700 hover:border-blue-500'}`} aria-label={`Submission from ${submission.playerName}: ${submission.activityTitle}`}>
+      <div className="flex justify-between items-start mb-4 gap-3">
+        <div className="flex items-start gap-3 flex-1 min-w-0">
+          {onToggleSelect && (
+            <div className="pt-0.5">
+              <input
+                type="checkbox"
+                checked={isSelected || false}
+                disabled={isBatchProcessing}
+                onChange={() => onToggleSelect(submission.id)}
+                className="w-5 h-5 rounded border-slate-600 text-green-600 focus:ring-green-400 focus:ring-2 cursor-pointer bg-slate-700"
+                aria-label={`Select submission from ${submission.playerName}: ${submission.activityTitle}`}
+              />
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h4 className="font-bold text-lg text-white">{submission.activityTitle}</h4>
+              {submission.isBoss && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                  Boss Challenge
+                </span>
+              )}
+              {submission.activityType && !submission.isBoss && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-slate-700 text-slate-300">
+                  {submission.activityType}
+                </span>
+              )}
+              {Array.isArray(submission.collaborators) && submission.collaborators.length > 0 && !submission.isCoOpCopy && (
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full font-black bg-indigo-500/25 text-indigo-200 border border-indigo-400/50">
+                  🤝 Co-Op Squad (+{submission.collaborators.length})
+                </span>
+              )}
+              {submission.isCoOpCopy && (
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-indigo-900/50 text-indigo-300 border border-indigo-600/40">
+                  🤝 Co-Op with {submission.coOpLeaderName || 'Teammate'}
+                </span>
+              )}
+            </div>
+            {onInspectStudent ? (
+              <button
+                type="button"
+                onClick={() => onInspectStudent(submission)}
+                className="text-blue-400 hover:text-blue-300 font-bold hover:underline flex items-center gap-1.5 text-left transition-colors mt-0.5"
+                title={`Click to view all submissions from ${submission.playerName}`}
+              >
+                <span>{submission.playerName}</span>
+                <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+              </button>
+            ) : (
+              <p className="text-blue-400 font-bold mt-0.5">{submission.playerName}</p>
             )}
             {Array.isArray(submission.collaborators) && submission.collaborators.length > 0 && !submission.isCoOpCopy && (
-              <span className="text-[10px] px-2.5 py-0.5 rounded-full font-black bg-indigo-500/25 text-indigo-200 border border-indigo-400/50">
-                🤝 Co-Op Squad (+{submission.collaborators.length})
-              </span>
-            )}
-            {submission.isCoOpCopy && (
-              <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-indigo-900/50 text-indigo-300 border border-indigo-600/40">
-                🤝 Co-Op with {submission.coOpLeaderName || 'Teammate'}
-              </span>
+              <p className="text-xs text-indigo-300 font-semibold mt-1">
+                🤝 Tagged Squad: {submission.collaborators.map(c => c.name || c).join(', ')}{' '}
+                <span className="text-slate-400 font-normal">(Approving awards +{submission.xp} XP to all teammates)</span>
+              </p>
             )}
           </div>
-          {onInspectStudent ? (
-            <button
-              type="button"
-              onClick={() => onInspectStudent(submission)}
-              className="text-blue-400 hover:text-blue-300 font-bold hover:underline flex items-center gap-1.5 text-left transition-colors mt-0.5"
-              title={`Click to view all submissions from ${submission.playerName}`}
-            >
-              <span>{submission.playerName}</span>
-              <ExternalLink className="w-3.5 h-3.5 opacity-70" />
-            </button>
-          ) : (
-            <p className="text-blue-400 font-bold mt-0.5">{submission.playerName}</p>
-          )}
-          {Array.isArray(submission.collaborators) && submission.collaborators.length > 0 && !submission.isCoOpCopy && (
-            <p className="text-xs text-indigo-300 font-semibold mt-1">
-              🤝 Tagged Squad: {submission.collaborators.map(c => c.name || c).join(', ')}{' '}
-              <span className="text-slate-400 font-normal">(Approving awards +{submission.xp} XP to all teammates)</span>
-            </p>
-          )}
         </div>
-        <span className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded">
+        <span className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded shrink-0">
           {new Date(submission.submittedAt).toLocaleDateString()}
         </span>
       </div>
@@ -5467,7 +5716,7 @@ function SubmissionCard({ submission, onReview, onInspectStudent, classActivitie
           />
         </div>
         <button
-          onClick={() => onReview(submission.id, 'rejected', feedback)}
+          onClick={handleRejectClick}
           className="bg-red-900/50 hover:bg-red-900 text-red-200 border border-red-800 px-4 py-2 rounded-lg font-bold text-sm transition-colors"
         >
           Reject
@@ -5479,6 +5728,94 @@ function SubmissionCard({ submission, onReview, onInspectStudent, classActivitie
           Approve (+{submission.xp} XP)
         </button>
       </div>
+
+      {/* Revision Guidance Guardrail Modal (FE-4) */}
+      {showRevisionModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={`revision-title-${submission.id}`}
+        >
+          <div className="bg-slate-800 border-2 border-rose-500 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-700">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-rose-500/20 text-rose-300 rounded-lg">
+                  <RotateCcw className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 id={`revision-title-${submission.id}`} className="font-bold text-lg text-white">
+                    Request Revision
+                  </h4>
+                  <p className="text-xs text-slate-400">
+                    {submission.playerName} &bull; {submission.activityTitle}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowRevisionModal(false)}
+                className="text-slate-400 hover:text-white p-1"
+                aria-label="Close revision dialog"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                Quick Revision Guidance (Click chip to add):
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {QUICK_REVISION_CHIPS.map(chip => (
+                  <button
+                    key={chip}
+                    type="button"
+                    onClick={() => {
+                      setRevisionFeedback(prev => prev ? `${prev}. ${chip}` : chip);
+                    }}
+                    className="text-xs px-2.5 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-200 transition-colors text-left"
+                  >
+                    + {chip}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor={`custom-revision-${submission.id}`} className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+                Teacher Feedback for Student *
+              </label>
+              <textarea
+                id={`custom-revision-${submission.id}`}
+                rows={3}
+                value={revisionFeedback}
+                onChange={e => setRevisionFeedback(e.target.value)}
+                placeholder="Explain what the student needs to adjust before their submission can be approved..."
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-xl text-white text-sm focus:border-rose-500 focus:outline-none resize-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-700">
+              <button
+                type="button"
+                onClick={() => setShowRevisionModal(false)}
+                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold text-sm rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmRevision}
+                className="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm rounded-xl transition-colors shadow-lg shadow-rose-950/50 flex items-center gap-1.5"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>Send Revision Request</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </article>
   );
 }
@@ -5488,18 +5825,27 @@ function ReviewedSubmissions({ reviewed, onReview, onInspectStudent, classActivi
   const [showAll, setShowAll] = useState(false);
   const [filter, setFilter] = useState('all'); // 'all', 'approved', 'rejected'
   const [changingStatus, setChangingStatus] = useState(null);
-  const [newFeedback, setNewFeedback] = useState('');
+  const [feedbackMap, setFeedbackMap] = useState({});
 
   const filtered = filter === 'all' ? reviewed : reviewed.filter(s => s.status === filter);
   const sorted = [...filtered].sort((a, b) => new Date(b.reviewedAt || b.submittedAt) - new Date(a.reviewedAt || a.submittedAt));
   const displayed = showAll ? sorted : sorted.slice(0, 10);
 
+  const handleFeedbackChange = (subId, val) => {
+    setFeedbackMap(prev => ({ ...prev, [subId]: val }));
+  };
+
   const handleChangeStatus = async (sub, newStatus) => {
     setChangingStatus(sub.id);
-    await onReview(sub.id, newStatus, newFeedback || sub.teacherFeedback || '');
+    const feedbackText = feedbackMap[sub.id] !== undefined ? feedbackMap[sub.id] : (sub.teacherFeedback || '');
+    await onReview(sub.id, newStatus, feedbackText);
     setChangingStatus(null);
     setExpandedId(null);
-    setNewFeedback('');
+    setFeedbackMap(prev => {
+      const next = { ...prev };
+      delete next[sub.id];
+      return next;
+    });
   };
 
   return (
@@ -5643,8 +5989,8 @@ function ReviewedSubmissions({ reviewed, onReview, onInspectStudent, classActivi
                       <input
                         id={`revised-feedback-${sub.id}`}
                         type="text"
-                        value={newFeedback}
-                        onChange={e => setNewFeedback(e.target.value)}
+                        value={feedbackMap[sub.id] !== undefined ? feedbackMap[sub.id] : ''}
+                        onChange={e => handleFeedbackChange(sub.id, e.target.value)}
                         placeholder={sub.teacherFeedback || 'Update feedback (optional)'}
                         className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
                       />

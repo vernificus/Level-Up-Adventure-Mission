@@ -22,19 +22,8 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { LEVELS, GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, DEFAULT_STEM_SUPPLIES, GUILD_LEVELS, GUILD_CHALLENGES, BOSS_CHALLENGES, DEFAULT_PATHS, PATH_COLORS, getGuildLevelInfo, getHighFiveCooldownStatus } from "../data/gameData";
-
-function calculateLevelAndBonusCoins(oldXp, newXp) {
-  const oldLevel = LEVELS.reduce((acc, l) => oldXp >= l.xpRequired ? l : acc, LEVELS[0]);
-  const newLevel = LEVELS.reduce((acc, l) => newXp >= l.xpRequired ? l : acc, LEVELS[0]);
-  let bonusCoins = 0;
-  if (newLevel.level > oldLevel.level) {
-    for (let lvl = oldLevel.level + 1; lvl <= newLevel.level; lvl++) {
-      const lvlData = LEVELS.find(l => l.level === lvl);
-      if (lvlData?.coinReward) bonusCoins += lvlData.coinReward;
-    }
-  }
-  return { oldLevel, newLevel, bonusCoins };
-}
+import { calculateLevelAndBonusCoins, calculatePathMastersProgress } from "../utils/gameUtils.js";
+import { isAdminUser } from "../utils/authUtils.js";
 
 export const realBackend = {
   // ================= TEACHER AUTH =================
@@ -46,7 +35,7 @@ export const realBackend = {
       let organizationId = null;
       let organizationName = '';
 
-      if (user.email?.toLowerCase() === 'matthew.harbert@lcps.org') {
+      if (isAdminUser(user)) {
         role = 'admin';
       }
 
@@ -59,8 +48,8 @@ export const realBackend = {
           if (data.organizationName) organizationName = data.organizationName;
         }
 
-        // Always ensure matthew.harbert@lcps.org has admin role persisted in Firestore
-        if (user.email?.toLowerCase() === 'matthew.harbert@lcps.org') {
+        // Always ensure elevated admin has admin role persisted in Firestore
+        if (isAdminUser(user)) {
           role = 'admin';
           await setDoc(doc(db, "teachers", user.uid), {
             name: user.displayName || 'Matthew Harbert',
@@ -93,7 +82,7 @@ export const realBackend = {
 
       await updateProfile(user, { displayName: name });
 
-      const isDefaultAdmin = email.toLowerCase() === 'matthew.harbert@lcps.org';
+      const isDefaultAdmin = isAdminUser({ email });
       const assignedRole = isDefaultAdmin ? 'admin' : 'teacher';
 
       const teacherData = {
@@ -575,7 +564,7 @@ export const realBackend = {
           const tData = teacherDoc.data();
           userOrgId = tData.organizationId || null;
           userOrgName = tData.organizationName || '';
-          isUserAdmin = tData.role === 'admin' || tData.role === 'super_admin' || tData.role === 'super admin' || user.email?.toLowerCase() === 'matthew.harbert@lcps.org';
+          isUserAdmin = isAdminUser({ ...user, role: tData.role });
         }
       } catch (e) {
         console.warn("Could not load user profile from teachers collection:", e);
@@ -649,12 +638,12 @@ export const realBackend = {
           if (teacherDoc.exists()) {
             const tData = teacherDoc.data();
             userOrgId = tData.organizationId || null;
-            isUserAdmin = tData.role === 'admin' || tData.role === 'super_admin' || tData.role === 'super admin';
+            isUserAdmin = isAdminUser({ ...user, role: tData.role });
           }
         } catch (e) {
           console.warn("Could not load user profile in getPublicActivities:", e);
         }
-        if (user.email && user.email.toLowerCase() === 'matthew.harbert@lcps.org') {
+        if (isAdminUser(user)) {
           isUserAdmin = true;
         }
       }
@@ -1458,8 +1447,8 @@ export const realBackend = {
           } else if (ch.type === 'streakers') {
             currentVal = g.members.filter(m => (m.currentStreak || 0) >= 3).length;
           } else if (ch.type === 'paths') {
-            // Count unique activities across paths
-            currentVal = g.members.reduce((acc, m) => acc + (m.completedActivities?.length || 0), 0);
+            // Count distinct learning paths with completed activities (at least 2 per path for Path Masters)
+            currentVal = calculatePathMastersProgress(g.members, DEFAULT_PATHS, 2);
           } else if (ch.type === 'bosses') {
             currentVal = g.members.reduce((acc, m) => acc + (m.completedBossChallenges?.length || 0), 0);
           } else if (ch.type === 'collab') {

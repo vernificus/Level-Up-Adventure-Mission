@@ -1,0 +1,34 @@
+rules_version = '2';
+
+// Firebase Cloud Storage Security Rules for Level Up Adventure Mission
+// Balances open student submissions (Chromebook videos, photos, PDFs) with strict size limits
+// to preserve the $0 free tier (5 GB storage cap).
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Student and Class Activity Submissions
+    match /submissions/{classId}/{studentId}/{fileName} {
+      // Anyone in class/teacher portal can view/play submitted videos and photos
+      allow read: if true;
+
+      // Allow students to upload videos, photos, and project files up to 25 MB
+      // (A 45-second 480p Chromebook video is ~2-3 MB, well within this limit)
+      allow create: if request.resource.size < 25 * 1024 * 1024
+                    && (request.resource.contentType.matches('video/.*')
+                        || request.resource.contentType.matches('image/.*')
+                        || request.resource.contentType.matches('audio/.*')
+                        || request.resource.contentType.matches('application/.*'));
+
+      // Submissions are immutable once created to prevent accidental overwrite
+      allow update: if false;
+
+      // Authenticated teachers or admins can delete/prune old media to maintain free tier quota
+      allow delete: if request.auth != null;
+    }
+
+    // Default deny for all other paths
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

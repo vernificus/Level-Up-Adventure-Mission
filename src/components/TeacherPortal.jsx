@@ -1365,9 +1365,9 @@ export default function TeacherPortal({
                   </div>
                 )}
 
-                <div className="bg-white p-6 rounded-2xl mb-6 border border-slate-200">
-                  <div className="flex justify-between items-start">
-                    <div>
+                <div className="bg-white p-4 sm:p-6 rounded-2xl mb-6 border border-slate-200">
+                  <div className="flex flex-wrap justify-between items-start gap-4">
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2.5 flex-wrap">
                         <h2 className="text-2xl font-display font-bold text-slate-900">{selectedClass.name}</h2>
                         <button
@@ -1407,13 +1407,13 @@ export default function TeacherPortal({
                           )}
                         </div>
                       )}
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-slate-600 text-sm">Class Code:</span>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
+                        <span className="text-slate-600 text-sm whitespace-nowrap">Class Code:</span>
                         <code className="text-xl font-mono font-bold text-green-800 tracking-widest">{selectedClass.code}</code>
                         <button onClick={() => copyCode(selectedClass.code)} className="text-slate-600 hover:text-slate-900" aria-label="Copy class code">
                           <Copy className="w-4 h-4" aria-hidden="true" />
                         </button>
-                        <button onClick={() => copyJoinLink(selectedClass.code)} className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 ml-2" aria-label="Copy join link">
+                        <button onClick={() => copyJoinLink(selectedClass.code)} className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 ml-2 whitespace-nowrap" aria-label="Copy join link">
                           <Link className="w-4 h-4" aria-hidden="true" /> Copy Join Link
                         </button>
                       </div>
@@ -1433,28 +1433,30 @@ export default function TeacherPortal({
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 mt-3">
-                    <div className="text-right">
+                  <div className="flex flex-wrap items-center gap-4 mt-3">
+                    <div className="grid grid-cols-3 gap-x-4 gap-y-3 sm:flex sm:items-center sm:gap-4">
+                    <div className="sm:text-right">
                       <p className="text-3xl font-display font-bold text-slate-900">{students.length}</p>
                       <p className="text-slate-600 text-xs uppercase font-bold">Students</p>
                     </div>
-                    <div className="text-right border-l border-slate-300 pl-4">
+                    <div className="sm:text-right sm:border-l sm:border-slate-300 sm:pl-4">
                       <p className="text-3xl font-display font-bold text-slate-900">{pending.length}</p>
                       <p className="text-slate-600 text-xs uppercase font-bold">Pending</p>
                     </div>
-                    <div className="text-right border-l border-slate-300 pl-4">
+                    <div className="sm:text-right sm:border-l sm:border-slate-300 sm:pl-4">
                       <p className="text-3xl font-display font-bold text-slate-900">{reviewed.filter(s => s.status === 'approved').length}</p>
                       <p className="text-slate-600 text-xs uppercase font-bold">Approved</p>
                     </div>
-                    <div className="text-right border-l border-slate-300 pl-4">
+                    <div className="sm:text-right sm:border-l sm:border-slate-300 sm:pl-4">
                       <p className="text-3xl font-display font-bold text-slate-900">{reviewed.filter(s => s.status === 'rejected').length}</p>
                       <p className="text-slate-600 text-xs uppercase font-bold">Rejected</p>
                     </div>
-                    <div className="text-right border-l border-slate-300 pl-4">
+                    <div className="sm:text-right sm:border-l sm:border-slate-300 sm:pl-4">
                       <p className="text-3xl font-display font-bold text-green-800">{students.length > 0 ? Math.round(students.reduce((sum, s) => sum + (s.xp || 0), 0) / students.length) : 0}</p>
                       <p className="text-slate-600 text-xs uppercase font-bold">Avg XP</p>
                     </div>
-                    <div className="ml-auto flex flex-wrap items-start gap-3">
+                    </div>
+                    <div className="w-full sm:w-auto sm:ml-auto flex flex-wrap items-start gap-3">
                       <button
                         type="button"
                         onClick={() => {

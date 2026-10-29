@@ -70,11 +70,11 @@ export default function ChoiceBoardExport({ classId, className }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-start justify-center z-50 overflow-y-auto p-4">
-      <div className="bg-slate-900 rounded-xl border border-slate-700 w-full max-w-6xl my-8">
+    <div className="fixed inset-0 bg-slate-900/60 flex items-start justify-center z-50 overflow-y-auto p-4">
+      <div className="bg-slate-50 rounded-xl border border-slate-200 w-full max-w-6xl my-8">
         {/* Toolbar */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-700">
-          <h3 className="text-lg font-bold text-white">Export Choice Board</h3>
+        <div className="flex items-center justify-between p-4 border-b border-slate-200">
+          <h3 className="text-lg font-bold text-slate-900">Export Choice Board</h3>
           <div className="flex items-center gap-3">
             <button
               onClick={handleExport}
@@ -86,7 +86,7 @@ export default function ChoiceBoardExport({ classId, className }) {
             </button>
             <button
               onClick={() => { setShowPreview(false); setPaths(null); }}
-              className="p-2 text-slate-400 hover:text-white transition-colors"
+              className="p-2 text-slate-600 hover:text-slate-900 transition-colors"
               aria-label="Close export preview"
             >
               <X className="w-5 h-5" />
@@ -98,7 +98,7 @@ export default function ChoiceBoardExport({ classId, className }) {
         <div className="p-4 overflow-auto">
           {!paths ? (
             <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-8 h-8 text-green-400 animate-spin" />
+              <Loader2 className="w-8 h-8 text-green-800 animate-spin" />
             </div>
           ) : (
             <div

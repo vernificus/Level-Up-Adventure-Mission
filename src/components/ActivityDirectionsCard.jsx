@@ -185,8 +185,8 @@ export default function ActivityDirectionsCard({
 
   if (!hasContent) {
     return (
-      <div className={`bg-slate-900/40 border border-slate-800 rounded-xl p-3 text-xs text-slate-500 italic flex items-center gap-2 mb-3.5 ${className}`}>
-        <Info className="w-3.5 h-3.5 text-slate-600 flex-shrink-0" />
+      <div className={`bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-600 italic flex items-center gap-2 mb-3.5 ${className}`}>
+        <Info className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
         <span>No specific directions found for "{activity.title}".</span>
       </div>
     );
@@ -195,32 +195,32 @@ export default function ActivityDirectionsCard({
   return (
     <div className={`rounded-xl transition-all duration-200 mb-3.5 overflow-hidden ${
       isExpanded
-        ? 'bg-gradient-to-br from-slate-900/95 to-slate-950/95 border-2 border-amber-500/40 shadow-lg'
-        : 'bg-slate-900/70 border border-amber-500/25 hover:border-amber-500/40'
+        ? 'bg-gradient-to-br from-slate-50 to-slate-50 border-2 border-amber-500/40 shadow-lg'
+        : 'bg-slate-50 border border-amber-500/25 hover:border-amber-500/40'
     } ${className}`}>
       {/* ── HEADER / SUMMARY ROW ── */}
       <div className="p-3.5 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
-          <div className="p-1.5 rounded-lg bg-amber-500/15 text-amber-400 border border-amber-500/30 flex-shrink-0">
+          <div className="p-1.5 rounded-lg bg-amber-100 text-amber-800 border border-amber-500/30 flex-shrink-0">
             <BookOpen className="w-4 h-4" aria-hidden="true" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[11px] font-black uppercase tracking-wider text-amber-400">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800">
                 Activity Directions
               </span>
               {activity.pathTitle && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-white text-slate-700 border border-slate-200">
                   {activity.pathTitle}
                 </span>
               )}
               {activity.type && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-800 border border-amber-500/30">
                   {activity.type}
                 </span>
               )}
               {activity.xp > 0 && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-yellow-500/10 text-yellow-300 border border-yellow-500/30">
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-yellow-100 text-yellow-800 border border-yellow-500/30">
                   +{activity.xp} XP
                 </span>
               )}
@@ -228,7 +228,7 @@ export default function ActivityDirectionsCard({
 
             {/* In collapsed view, display 1-line preview of objective */}
             {!isExpanded && (
-              <p className="text-xs text-slate-300 truncate mt-1">
+              <p className="text-xs text-slate-700 truncate mt-1">
                 {activity.desc || (hasSteps ? `${activity.steps.length} required step(s)` : 'Click to view directions')}
               </p>
             )}
@@ -241,8 +241,8 @@ export default function ActivityDirectionsCard({
           onClick={() => setIsExpanded(prev => !prev)}
           className={`px-3 py-1.5 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all flex-shrink-0 ${
             isExpanded
-              ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
-              : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 shadow-sm'
+              ? 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+              : 'bg-amber-100 hover:bg-amber-100 text-amber-800 border border-amber-500/40 shadow-sm'
           }`}
           aria-expanded={isExpanded}
         >
@@ -257,15 +257,15 @@ export default function ActivityDirectionsCard({
 
       {/* ── EXPANDED FULL DIRECTIONS VIEW ── */}
       {isExpanded && (
-        <div className="px-4 pb-4 pt-1 border-t border-slate-800/80 space-y-3.5">
+        <div className="px-4 pb-4 pt-1 border-t border-slate-200 space-y-3.5">
           {/* Assignment Objective / Prompt */}
           {activity.desc && (
-            <div className="bg-slate-950/70 p-3.5 rounded-xl border border-slate-800">
-              <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest flex items-center gap-1.5 mb-1.5">
-                <Compass className="w-3.5 h-3.5 text-amber-400" aria-hidden="true" />
+            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+              <span className="text-[10px] font-bold text-amber-800 uppercase tracking-widest flex items-center gap-1.5 mb-1.5">
+                <Compass className="w-3.5 h-3.5 text-amber-800" aria-hidden="true" />
                 Assignment Prompt & Objective
               </span>
-              <p className="text-sm text-slate-200 leading-relaxed font-sans">
+              <p className="text-sm text-slate-800 leading-relaxed font-sans">
                 {renderFormattedText(activity.desc)}
               </p>
             </div>
@@ -273,11 +273,11 @@ export default function ActivityDirectionsCard({
 
           {/* Boss Challenge Requirements */}
           {activity.requirements && (
-            <div className="bg-amber-950/30 border border-amber-600/30 p-3 rounded-xl text-xs space-y-1">
-              <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider block">
+            <div className="bg-amber-50 border border-amber-600/30 p-3 rounded-xl text-xs space-y-1">
+              <span className="text-[10px] text-amber-800 font-bold uppercase tracking-wider block">
                 Challenge Requirements:
               </span>
-              <p className="text-amber-100 leading-relaxed">
+              <p className="text-amber-800 leading-relaxed">
                 {renderFormattedText(activity.requirements)}
               </p>
             </div>
@@ -286,8 +286,8 @@ export default function ActivityDirectionsCard({
           {/* Step-by-Step Directions */}
           {hasSteps && (
             <div className="space-y-2">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                <ListChecks className="w-3.5 h-3.5 text-amber-400" aria-hidden="true" />
+              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest flex items-center gap-1.5">
+                <ListChecks className="w-3.5 h-3.5 text-amber-800" aria-hidden="true" />
                 Required Steps ({activity.steps.length})
               </span>
               <ol className="space-y-2 pl-0.5">
@@ -297,8 +297,8 @@ export default function ActivityDirectionsCard({
                   const stepLinkText = typeof step === 'object' ? step.linkText : null;
 
                   return (
-                    <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-200 group">
-                      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-800 text-amber-400 flex items-center justify-center text-[10px] font-bold border border-slate-700 mt-0.5 shadow-sm group-hover:border-amber-500/50 transition-colors">
+                    <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-800 group">
+                      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-white text-amber-800 flex items-center justify-center text-[10px] font-bold border border-slate-200 mt-0.5 shadow-sm group-hover:border-amber-500/50 transition-colors">
                         {idx + 1}
                       </span>
                       <div className="leading-relaxed flex-1 pt-0.5">
@@ -308,9 +308,9 @@ export default function ActivityDirectionsCard({
                             href={stepLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 ml-2 px-2.5 py-0.5 bg-blue-950/80 hover:bg-blue-900 border border-blue-600/50 rounded-lg text-blue-300 hover:text-white text-[11px] font-semibold transition-all align-middle shadow-sm"
+                            className="inline-flex items-center gap-1 ml-2 px-2.5 py-0.5 bg-blue-50 hover:bg-blue-50 border border-blue-600/50 rounded-lg text-blue-700 hover:text-slate-900 text-[11px] font-semibold transition-all align-middle shadow-sm"
                           >
-                            <Link2 className="w-3 h-3 text-blue-400" aria-hidden="true" />
+                            <Link2 className="w-3 h-3 text-blue-700" aria-hidden="true" />
                             <span>{stepLinkText || 'Open Resource Link'}</span>
                             <ExternalLink className="w-2.5 h-2.5 opacity-70" aria-hidden="true" />
                           </a>
@@ -325,13 +325,13 @@ export default function ActivityDirectionsCard({
 
           {/* Pro Tip Callout */}
           {activity.proTip && (
-            <div className="bg-blue-950/40 border border-blue-600/30 p-3 rounded-xl flex items-start gap-2.5 text-xs">
-              <Sparkles className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="bg-blue-50 border border-blue-600/30 p-3 rounded-xl flex items-start gap-2.5 text-xs">
+              <Sparkles className="w-4 h-4 text-blue-700 flex-shrink-0 mt-0.5" aria-hidden="true" />
               <div className="space-y-0.5">
-                <span className="text-[10px] font-black uppercase tracking-wider text-blue-400 block">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 block">
                   Pro Tip:
                 </span>
-                <p className="text-blue-100 leading-relaxed">
+                <p className="text-blue-800 leading-relaxed">
                   {renderFormattedText(activity.proTip)}
                 </p>
               </div>

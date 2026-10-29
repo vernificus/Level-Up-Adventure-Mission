@@ -4,7 +4,12 @@
 
 @layer base {
   body {
-    @apply antialiased;
+    @apply antialiased bg-slate-50 text-slate-900 font-sans;
+  }
+
+  /* Headings use the rounded display face */
+  h1, h2, h3, h4 {
+    @apply font-display;
   }
 
   /* WCAG 2.4.7: Visible focus indicators for all interactive elements (FE-10) */
@@ -14,7 +19,7 @@
   select:focus-visible,
   textarea:focus-visible,
   a:focus-visible {
-    @apply ring-2 ring-yellow-400 outline-none;
+    @apply ring-[3px] ring-orange-500 ring-offset-2 ring-offset-white outline-none;
   }
 
   /* Remove default outline only when focus-visible is supported */
@@ -72,7 +77,7 @@
 
   /* Skip navigation link - WCAG 2.4.1 */
   .sr-skip-link {
-    @apply absolute -top-full left-4 z-[100] bg-yellow-500 text-slate-900 px-4 py-2 font-bold rounded-b-lg;
+    @apply absolute -top-full left-4 z-[100] bg-slate-900 text-white px-4 py-2 font-bold rounded-b-lg;
     transition: top 0.2s;
   }
   .sr-skip-link:focus {

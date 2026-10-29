@@ -45,7 +45,7 @@ An interactive, gamified choice board web application built for educational orga
 ## 🛠️ Technology Stack & Architecture
 
 - **Frontend**: React 18, Vite, Lucide Icons, Canvas 3D rendering.
-- **Styling**: Tailwind CSS (Dark Mode, Glassmorphism, Responsive Modal Layouts).
+- **Styling**: Tailwind CSS with a light brand theme (navy-tinted neutrals, brand blue, WCAG AA contrast), Atkinson Hyperlegible + Fredoka fonts bundled via @fontsource, responsive modal layouts.
 - **Backend & Database**: Firebase Authentication, Cloud Firestore, Firestore Security Rules (`firestore.rules`).
 - **Hosting**: Firebase Hosting (`level-up-choice-board-game.web.app`).
 - **Services Architecture**:

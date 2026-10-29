@@ -653,34 +653,34 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
   const currentOrg = organizations.find(o => o.id === selectedOrgId);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 font-sans">
+    <div className="min-h-screen bg-slate-50 text-slate-900 p-4 sm:p-6 lg:p-8 font-sans">
       <div className="w-full max-w-[1920px] mx-auto">
 
         {/* Top Header */}
-        <header className="flex flex-wrap items-center justify-between gap-4 mb-8 bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
+        <header className="flex flex-wrap items-center justify-between gap-4 mb-8 bg-slate-50 border border-slate-200 p-6 rounded-2xl shadow-xl">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-tr from-yellow-500 to-amber-600 rounded-xl text-slate-950 font-black shadow-lg shadow-yellow-500/20">
+            <div className="p-3 bg-gradient-to-tr from-yellow-500 to-amber-600 rounded-xl text-slate-950 font-bold shadow-lg shadow-yellow-500/20">
               <ShieldCheck className="w-8 h-8" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="bg-yellow-500/20 text-yellow-400 text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border border-yellow-500/30">
+                <span className="bg-yellow-100 text-yellow-800 text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border border-yellow-500/30">
                   Super Admin Console
                 </span>
               </div>
-              <h1 className="text-3xl font-black tracking-tight text-white mt-1">Level Up Admin Command Center</h1>
-              <p className="text-slate-400 text-sm">Manage organizations, teachers, and distribute choice board templates</p>
+              <h1 className="text-3xl font-display font-bold text-slate-900 mt-1">Level Up Admin Command Center</h1>
+              <p className="text-slate-600 text-sm">Manage organizations, teachers, and distribute choice board templates</p>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
             <div className="text-right hidden sm:block">
-              <p className="font-bold text-white text-sm">{user.name || user.email}</p>
-              <p className="text-xs text-yellow-400">System Administrator</p>
+              <p className="font-bold text-slate-900 text-sm">{user.name || user.email}</p>
+              <p className="text-xs text-yellow-800">System Administrator</p>
             </div>
             <button
               onClick={logout}
-              className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl transition-colors border border-slate-700"
+              className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 rounded-xl transition-colors border border-slate-200"
             >
               <LogOut className="w-4 h-4" />
               <span>Logout</span>
@@ -690,66 +690,66 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
 
         {/* System Stats Bar */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-5 flex items-center gap-4">
-            <div className="p-3 bg-blue-500/10 text-blue-400 rounded-lg">
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex items-center gap-4">
+            <div className="p-3 bg-blue-100 text-blue-700 rounded-lg">
               <Building2 className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-2xl font-black text-white">{organizations.length}</p>
-              <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Organizations</p>
+              <p className="text-2xl font-display font-bold text-slate-900">{organizations.length}</p>
+              <p className="text-xs text-slate-600 font-semibold uppercase tracking-wider">Organizations</p>
             </div>
           </div>
 
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-5 flex items-center gap-4">
-            <div className="p-3 bg-purple-500/10 text-purple-400 rounded-lg">
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex items-center gap-4">
+            <div className="p-3 bg-purple-100 text-purple-700 rounded-lg">
               <Users className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-2xl font-black text-white">{teachers.length}</p>
-              <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Total Teacher Accounts</p>
+              <p className="text-2xl font-display font-bold text-slate-900">{teachers.length}</p>
+              <p className="text-xs text-slate-600 font-semibold uppercase tracking-wider">Total Teacher Accounts</p>
             </div>
           </div>
 
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-5 flex items-center gap-4">
-            <div className="p-3 bg-yellow-500/10 text-yellow-400 rounded-lg">
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex items-center gap-4">
+            <div className="p-3 bg-yellow-100 text-yellow-800 rounded-lg">
               <BookOpen className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-2xl font-black text-white">{templates.length}</p>
-              <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Active Org Templates</p>
+              <p className="text-2xl font-display font-bold text-slate-900">{templates.length}</p>
+              <p className="text-xs text-slate-600 font-semibold uppercase tracking-wider">Active Org Templates</p>
             </div>
           </div>
         </div>
 
         {/* Error / Success Banners */}
         {error && (
-          <div className="mb-6 p-4 bg-red-950/80 border border-red-800 text-red-200 rounded-xl flex items-center justify-between">
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+              <AlertCircle className="w-5 h-5 text-red-700 flex-shrink-0" />
               <span>{error}</span>
             </div>
-            <button onClick={() => setError('')} className="text-red-400 hover:text-white">✕</button>
+            <button onClick={() => setError('')} className="text-red-700 hover:text-slate-900">✕</button>
           </div>
         )}
 
         {successMsg && (
-          <div className="mb-6 p-4 bg-emerald-950/80 border border-emerald-800 text-emerald-200 rounded-xl flex items-center justify-between">
+          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+              <CheckCircle2 className="w-5 h-5 text-emerald-800 flex-shrink-0" />
               <span>{successMsg}</span>
             </div>
-            <button onClick={() => setSuccessMsg('')} className="text-emerald-400 hover:text-white">✕</button>
+            <button onClick={() => setSuccessMsg('')} className="text-emerald-800 hover:text-slate-900">✕</button>
           </div>
         )}
 
         {/* Main Navigation Tabs */}
-        <div className="flex items-center gap-2 mb-6 border-b border-slate-800 pb-4 overflow-x-auto flex-nowrap scrollbar-none" role="tablist" aria-label="Admin navigation">
+        <div className="flex items-center gap-2 mb-6 border-b border-slate-200 pb-4 overflow-x-auto flex-nowrap scrollbar-none" role="tablist" aria-label="Admin navigation">
           <button
             onClick={() => setActiveTab('organizations')}
             className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold transition-all text-sm whitespace-nowrap flex-shrink-0 ${
               activeTab === 'organizations'
                 ? 'bg-yellow-500 text-slate-950 shadow-lg shadow-yellow-500/10'
-                : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
+                : 'bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-white border border-slate-200'
             }`}
           >
             <Building2 className="w-4 h-4" />
@@ -761,7 +761,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
             className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold transition-all text-sm whitespace-nowrap flex-shrink-0 ${
               activeTab === 'teachers'
                 ? 'bg-yellow-500 text-slate-950 shadow-lg shadow-yellow-500/10'
-                : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
+                : 'bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-white border border-slate-200'
             }`}
           >
             <Users className="w-4 h-4" />
@@ -773,7 +773,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
             className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold transition-all text-sm whitespace-nowrap flex-shrink-0 ${
               activeTab === 'templates'
                 ? 'bg-yellow-500 text-slate-950 shadow-lg shadow-yellow-500/10'
-                : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
+                : 'bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-white border border-slate-200'
             }`}
           >
             <Layers className="w-4 h-4" />
@@ -785,7 +785,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
             className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold transition-all text-sm whitespace-nowrap flex-shrink-0 ${
               activeTab === 'bosses'
                 ? 'bg-yellow-500 text-slate-950 shadow-lg shadow-yellow-500/10'
-                : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
+                : 'bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-white border border-slate-200'
             }`}
           >
             <Swords className="w-4 h-4" />
@@ -801,14 +801,14 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
             className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold transition-all text-sm whitespace-nowrap flex-shrink-0 ${
               activeTab === 'classes'
                 ? 'bg-yellow-500 text-slate-950 shadow-lg shadow-yellow-500/10'
-                : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
+                : 'bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-white border border-slate-200'
             }`}
           >
             <BookOpen className="w-4 h-4" />
             <span>Classes & Oversight</span>
             {allClasses.length > 0 && (
               <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                activeTab === 'classes' ? 'bg-slate-950 text-yellow-400' : 'bg-slate-800 text-slate-300'
+                activeTab === 'classes' ? 'bg-slate-50 text-yellow-800' : 'bg-white text-slate-700'
               }`}>
                 {allClasses.length}
               </span>
@@ -821,8 +821,8 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
           <div className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h2 className="text-xl font-bold text-white">System Organizations</h2>
-                <p className="text-slate-400 text-sm">Schools, Districts, and Organizations in Level Up</p>
+                <h2 className="text-xl font-bold text-slate-900">System Organizations</h2>
+                <p className="text-slate-600 text-sm">Schools, Districts, and Organizations in Level Up</p>
               </div>
 
               <button
@@ -840,36 +840,36 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
             </div>
 
             {loading ? (
-              <div className="p-12 text-center text-slate-400">Loading organizations...</div>
+              <div className="p-12 text-center text-slate-600">Loading organizations...</div>
             ) : organizations.length === 0 ? (
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center">
-                <Building2 className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                <h3 className="text-lg font-bold text-white">No Organizations Yet</h3>
-                <p className="text-slate-400 text-sm mt-1 max-w-md mx-auto">
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-12 text-center">
+                <Building2 className="w-12 h-12 text-slate-500 mx-auto mb-3" />
+                <h3 className="text-lg font-bold text-slate-900">No Organizations Yet</h3>
+                <p className="text-slate-600 text-sm mt-1 max-w-md mx-auto">
                   Create your first Organization (School or District) to start assigning teachers and master choice board templates.
                 </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {organizations.map(org => (
-                  <div key={org.id} className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl p-6 transition-all shadow-lg flex flex-col justify-between">
+                  <div key={org.id} className="bg-slate-50 border border-slate-200 hover:border-slate-200 rounded-2xl p-6 transition-all shadow-lg flex flex-col justify-between">
                     <div>
                       <div className="flex items-start justify-between gap-2 mb-3">
-                        <div className="p-3 bg-slate-800 text-yellow-400 rounded-xl">
+                        <div className="p-3 bg-white text-yellow-800 rounded-xl">
                           <Building2 className="w-6 h-6" />
                         </div>
-                        <span className="px-3 py-1 bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 text-xs font-mono font-bold rounded-lg">
+                        <span className="px-3 py-1 bg-yellow-100 text-yellow-800 border border-yellow-500/20 text-xs font-mono font-bold rounded-lg">
                           {org.code}
                         </span>
                       </div>
 
-                      <h3 className="text-xl font-bold text-white">{org.name}</h3>
-                      <p className="text-slate-400 text-sm mt-1 line-clamp-2">{org.description || 'No description provided.'}</p>
+                      <h3 className="text-xl font-bold text-slate-900">{org.name}</h3>
+                      <p className="text-slate-600 text-sm mt-1 line-clamp-2">{org.description || 'No description provided.'}</p>
 
-                      <div className="grid grid-cols-2 gap-3 mt-6 pt-4 border-t border-slate-800 text-xs">
-                        <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-center">
-                          <span className="block text-slate-400">Teachers</span>
-                          <span className="text-base font-bold text-white">{org.teacherCount || 0}</span>
+                      <div className="grid grid-cols-2 gap-3 mt-6 pt-4 border-t border-slate-200 text-xs">
+                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-center">
+                          <span className="block text-slate-600">Teachers</span>
+                          <span className="text-base font-bold text-slate-900">{org.teacherCount || 0}</span>
                         </div>
                         <div
                           onClick={() => {
@@ -878,16 +878,16 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                             loadClassesForOrg(org.id);
                             setActiveTab('classes');
                           }}
-                          className="bg-slate-950 hover:bg-slate-900 p-2.5 rounded-lg border border-slate-800 hover:border-yellow-500/50 cursor-pointer text-center transition-colors group/stat"
+                          className="bg-slate-50 hover:bg-slate-50 p-2.5 rounded-lg border border-slate-200 hover:border-yellow-500/50 cursor-pointer text-center transition-colors group/stat"
                           title="Click to view and manage classes"
                         >
-                          <span className="block text-slate-400 group-hover/stat:text-yellow-400 transition-colors">Classes</span>
-                          <span className="text-base font-bold text-white group-hover/stat:text-yellow-400 transition-colors">{org.classCount || 0}</span>
+                          <span className="block text-slate-600 group-hover/stat:text-yellow-400 transition-colors">Classes</span>
+                          <span className="text-base font-bold text-slate-900 group-hover/stat:text-yellow-400 transition-colors">{org.classCount || 0}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-slate-800">
+                    <div className="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-slate-200">
                       <button
                         onClick={() => {
                           setSelectedOrgId(org.id);
@@ -895,7 +895,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                           loadClassesForOrg(org.id);
                           setActiveTab('classes');
                         }}
-                        className="px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                        className="px-3 py-1.5 bg-yellow-100 hover:bg-yellow-100 text-yellow-800 border border-yellow-500/30 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
                         title="View classes as teacher and manage"
                       >
                         <BookOpen className="w-3.5 h-3.5" /> Classes ({org.classCount || 0})
@@ -907,13 +907,13 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                           setOrgDesc(org.description || '');
                           setShowOrgModal(true);
                         }}
-                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold flex items-center gap-1.5"
+                        className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5"
                       >
                         <Edit className="w-3.5 h-3.5" /> Edit
                       </button>
                       <button
                         onClick={() => handleDeleteOrganization(org)}
-                        className="px-3 py-1.5 bg-red-950/40 hover:bg-red-900/60 text-red-300 rounded-lg text-xs font-semibold flex items-center gap-1.5"
+                        className="px-3 py-1.5 bg-red-50 hover:bg-red-50 text-red-700 rounded-lg text-xs font-semibold flex items-center gap-1.5"
                       >
                         <Trash2 className="w-3.5 h-3.5" /> Delete
                       </button>
@@ -930,8 +930,8 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
           <div className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h2 className="text-xl font-bold text-white">Teacher Roster & Organization Assignment</h2>
-                <p className="text-slate-400 text-sm">Create teacher accounts and assign teachers to specific organizations</p>
+                <h2 className="text-xl font-bold text-slate-900">Teacher Roster & Organization Assignment</h2>
+                <p className="text-slate-600 text-sm">Create teacher accounts and assign teachers to specific organizations</p>
               </div>
 
               <button
@@ -944,25 +944,25 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
             </div>
 
             {/* Filter and Search Bar */}
-            <div className="flex flex-wrap items-center gap-4 bg-slate-900 p-4 border border-slate-800 rounded-xl">
+            <div className="flex flex-wrap items-center gap-4 bg-slate-50 p-4 border border-slate-200 rounded-xl">
               <div className="flex-1 min-w-[240px] relative">
-                <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-slate-600 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Search by teacher name or email..."
                   value={teacherSearch}
                   onChange={e => setTeacherSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:border-yellow-500 focus:outline-none"
+                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-sm focus:border-yellow-500 focus:outline-none"
                 />
               </div>
 
               <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-slate-400" />
-                <span className="text-xs text-slate-400 font-semibold">Filter Org:</span>
+                <Filter className="w-4 h-4 text-slate-600" />
+                <span className="text-xs text-slate-600 font-semibold">Filter Org:</span>
                 <select
                   value={teacherOrgFilter}
                   onChange={e => setTeacherOrgFilter(e.target.value)}
-                  className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:border-yellow-500 focus:outline-none"
+                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-sm focus:border-yellow-500 focus:outline-none"
                 >
                   <option value="all">All Organizations ({teachers.length})</option>
                   <option value="unassigned">Unassigned Teachers</option>
@@ -974,37 +974,37 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
             </div>
 
             {/* Teachers Table */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden shadow-xl">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-slate-950 border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       <th className="px-6 py-4">Teacher</th>
                       <th className="px-6 py-4">Role</th>
                       <th className="px-6 py-4">Assigned Organization</th>
                       <th className="px-6 py-4 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60 text-sm">
+                  <tbody className="divide-y divide-slate-200 text-sm">
                     {filteredTeachers.length === 0 ? (
                       <tr>
-                        <td colSpan="4" className="px-6 py-8 text-center text-slate-400">
+                        <td colSpan="4" className="px-6 py-8 text-center text-slate-600">
                           No teachers match your search or filter.
                         </td>
                       </tr>
                     ) : (
                       filteredTeachers.map(t => (
-                        <tr key={t.id} className="hover:bg-slate-800/40 transition-colors">
+                        <tr key={t.id} className="hover:bg-white transition-colors">
                           <td className="px-6 py-4">
-                            <div className="font-bold text-white">{t.name || 'Unnamed Teacher'}</div>
-                            <div className="text-xs text-slate-400">{t.email}</div>
+                            <div className="font-bold text-slate-900">{t.name || 'Unnamed Teacher'}</div>
+                            <div className="text-xs text-slate-600">{t.email}</div>
                           </td>
 
                           <td className="px-6 py-4">
                             <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
                               t.role === 'admin'
-                                ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                                : 'bg-slate-800 text-slate-300'
+                                ? 'bg-yellow-100 text-yellow-800 border border-yellow-500/30'
+                                : 'bg-white text-slate-700'
                             }`}>
                               {t.role || 'teacher'}
                             </span>
@@ -1012,12 +1012,12 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
 
                           <td className="px-6 py-4">
                             {t.organizationName || (t.organizationId ? (organizations.find(o => o.id === t.organizationId)?.name) : null) ? (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-950/40 text-blue-300 border border-blue-800/40 rounded-lg text-xs font-medium">
-                                <Building2 className="w-3.5 h-3.5 text-blue-400" />
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-medium">
+                                <Building2 className="w-3.5 h-3.5 text-blue-700" />
                                 {t.organizationName || organizations.find(o => o.id === t.organizationId)?.name}
                               </span>
                             ) : (
-                              <span className="text-xs text-slate-500 italic">Unassigned</span>
+                              <span className="text-xs text-slate-600 italic">Unassigned</span>
                             )}
                           </td>
 
@@ -1027,8 +1027,8 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                                 onClick={() => handleToggleTeacherRole(t)}
                                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 ${
                                   t.role === 'admin'
-                                    ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
-                                    : 'bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 border border-yellow-500/30'
+                                    ? 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                                    : 'bg-yellow-100 hover:bg-yellow-100 text-yellow-800 border border-yellow-500/30'
                                 }`}
                               >
                                 <ShieldCheck className="w-3.5 h-3.5" />
@@ -1039,7 +1039,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                                   setReassigningTeacher(t);
                                   setNewOrgForTeacher(t.organizationId || '');
                                 }}
-                                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold transition-colors border border-slate-700"
+                                className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold transition-colors border border-slate-200"
                               >
                                 Assign / Move Org
                               </button>
@@ -1058,19 +1058,19 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
         {/* TAB 3: CHOICE BOARD TEMPLATES & ASSIGNMENT */}
         {activeTab === 'templates' && (
           <div className="space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-900 p-6 border border-slate-800 rounded-2xl">
+            <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-50 p-6 border border-slate-200 rounded-2xl">
               <div>
-                <h2 className="text-xl font-bold text-white">Organization Choice Board Templates</h2>
-                <p className="text-slate-400 text-sm">Design master templates and push them to all or selected classes in an Organization</p>
+                <h2 className="text-xl font-bold text-slate-900">Organization Choice Board Templates</h2>
+                <p className="text-slate-600 text-sm">Design master templates and push them to all or selected classes in an Organization</p>
               </div>
 
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400 font-semibold">Active Org:</span>
+                  <span className="text-xs text-slate-600 font-semibold">Active Org:</span>
                   <select
                     value={selectedOrgId}
                     onChange={e => setSelectedOrgId(e.target.value)}
-                    className="px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm font-bold focus:border-yellow-500 focus:outline-none"
+                    className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm font-bold focus:border-yellow-500 focus:outline-none"
                   >
                     {organizations.length === 0 && <option value="">No Organizations Available</option>}
                     {organizations.map(o => (
@@ -1092,12 +1092,12 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
 
             {/* Templates Display */}
             {!selectedOrgId ? (
-              <div className="p-12 text-center text-slate-400">Please select an Organization above to view its choice board templates.</div>
+              <div className="p-12 text-center text-slate-600">Please select an Organization above to view its choice board templates.</div>
             ) : templates.length === 0 ? (
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center">
-                <Layers className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                <h3 className="text-lg font-bold text-white">No Choice Board Templates for {currentOrg?.name}</h3>
-                <p className="text-slate-400 text-sm mt-1 max-w-md mx-auto mb-6">
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-12 text-center">
+                <Layers className="w-12 h-12 text-slate-500 mx-auto mb-3" />
+                <h3 className="text-lg font-bold text-slate-900">No Choice Board Templates for {currentOrg?.name}</h3>
+                <p className="text-slate-600 text-sm mt-1 max-w-md mx-auto mb-6">
                   Create master choice board templates for this organization that teachers can adopt or admins can push directly to classes.
                 </p>
                 <button
@@ -1110,43 +1110,43 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {templates.map(tmp => (
-                  <div key={tmp.id} className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl p-6 transition-all shadow-xl flex flex-col justify-between">
+                  <div key={tmp.id} className="bg-slate-50 border border-slate-200 hover:border-slate-200 rounded-2xl p-6 transition-all shadow-xl flex flex-col justify-between">
                     <div>
                       <div className="flex items-start justify-between gap-2 mb-2">
-                        <span className="px-2.5 py-1 bg-purple-950/60 text-purple-300 border border-purple-800/40 text-xs font-bold rounded-lg flex items-center gap-1">
-                          <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                        <span className="px-2.5 py-1 bg-purple-50 text-purple-700 border border-purple-200 text-xs font-bold rounded-lg flex items-center gap-1">
+                          <Sparkles className="w-3.5 h-3.5 text-purple-700" />
                           Org Master Template
                         </span>
-                        <span className="text-xs text-slate-500">By {tmp.createdBy || 'Admin'}</span>
+                        <span className="text-xs text-slate-600">By {tmp.createdBy || 'Admin'}</span>
                       </div>
 
-                      <h3 className="text-xl font-bold text-white">{tmp.title}</h3>
-                      <p className="text-slate-400 text-sm mt-1 line-clamp-2">{tmp.description || 'No description provided.'}</p>
+                      <h3 className="text-xl font-bold text-slate-900">{tmp.title}</h3>
+                      <p className="text-slate-600 text-sm mt-1 line-clamp-2">{tmp.description || 'No description provided.'}</p>
 
-                      <div className="mt-4 p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs text-slate-300">
-                        <span className="font-bold text-yellow-400">Included Categories / Paths: </span>
+                      <div className="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700">
+                        <span className="font-bold text-yellow-800">Included Categories / Paths: </span>
                         <span>{tmp.activities?.map(a => a.title).join(', ') || 'Default paths'}</span>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between gap-2 mt-6 pt-4 border-t border-slate-800 flex-wrap">
+                    <div className="flex items-center justify-between gap-2 mt-6 pt-4 border-t border-slate-200 flex-wrap">
                       <div className="flex items-center gap-2 flex-wrap">
                         <button
                           onClick={() => handleOpenEditTemplate(tmp)}
-                          className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                          className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
                         >
                           <Edit className="w-3.5 h-3.5" /> Edit
                         </button>
                         <button
                           onClick={() => handleDuplicateTemplate(tmp)}
-                          className="px-3 py-1.5 bg-slate-800 hover:bg-blue-950/60 hover:text-blue-300 text-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 border border-slate-700/60 transition-colors"
+                          className="px-3 py-1.5 bg-white hover:bg-blue-50 hover:text-blue-700 text-slate-800 rounded-lg text-xs font-semibold flex items-center gap-1.5 border border-slate-200 transition-colors"
                           title="Copy this template to create a new one"
                         >
-                          <Copy className="w-3.5 h-3.5 text-blue-400" /> Copy Template
+                          <Copy className="w-3.5 h-3.5 text-blue-700" /> Copy Template
                         </button>
                         <button
                           onClick={() => handleDeleteTemplate(tmp.id, tmp.title)}
-                          className="px-3 py-1.5 bg-red-950/40 hover:bg-red-900/60 text-red-300 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                          className="px-3 py-1.5 bg-red-50 hover:bg-red-50 text-red-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" /> Delete
                         </button>
@@ -1170,23 +1170,23 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
         {activeTab === 'bosses' && (
           <div className="space-y-8">
             {/* Header with Org selector */}
-            <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-900 p-6 border border-slate-800 rounded-2xl">
+            <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-50 p-6 border border-slate-200 rounded-2xl">
               <div>
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Swords className="w-6 h-6 text-amber-400" />
+                <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                  <Swords className="w-6 h-6 text-amber-800" />
                   District Weekly Boss & STEM Supplies Audit
                 </h2>
-                <p className="text-slate-400 text-sm">
+                <p className="text-slate-600 text-sm">
                   Publish district-wide weekly challenges and audit STEM supplies purchased by students across all classes
                 </p>
               </div>
 
               <div className="flex items-center gap-3">
-                <span className="text-xs text-slate-400 font-semibold">Active Org:</span>
+                <span className="text-xs text-slate-600 font-semibold">Active Org:</span>
                 <select
                   value={selectedOrgId}
                   onChange={e => setSelectedOrgId(e.target.value)}
-                  className="px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm font-bold focus:border-yellow-500 focus:outline-none"
+                  className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm font-bold focus:border-yellow-500 focus:outline-none"
                 >
                   {organizations.length === 0 && <option value="">No Organizations Available</option>}
                   {organizations.map(o => (
@@ -1196,7 +1196,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                 <button
                   type="button"
                   onClick={() => loadBossAndPurchasesForOrg(selectedOrgId)}
-                  className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors border border-slate-700"
+                  className="p-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl transition-colors border border-slate-200"
                   title="Refresh data"
                 >
                   <RefreshCw className="w-4 h-4" />
@@ -1205,23 +1205,23 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
             </div>
 
             {/* SECTION 1: DISTRICT / ORG-WIDE WEEKLY BOSS */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-              <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-800">
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-200">
                 <div>
                   <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-bold text-white">District-Wide Weekly Boss Challenge</h3>
+                    <h3 className="text-lg font-bold text-slate-900">District-Wide Weekly Boss Challenge</h3>
                     {orgWeeklyBoss ? (
-                      <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                      <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-500/30 flex items-center gap-1">
                         <Sparkles className="w-3.5 h-3.5" /> District Custom Boss Active
                       </span>
                     ) : (
-                      <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-400 border border-slate-700">
+                      <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-white text-slate-600 border border-slate-200">
                         Default Rotation Active
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">
-                    When active, this weekly challenge is shown to all classes in <strong className="text-white">{currentOrg?.name}</strong> unless a teacher configures their own class-level boss.
+                  <p className="text-xs text-slate-600 mt-1">
+                    When active, this weekly challenge is shown to all classes in <strong className="text-slate-900">{currentOrg?.name}</strong> unless a teacher configures their own class-level boss.
                   </p>
                 </div>
 
@@ -1243,7 +1243,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                       }
                     }}
                     defaultValue=""
-                    className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300 focus:border-yellow-500 outline-none"
+                    className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:border-yellow-500 outline-none"
                   >
                     <option value="" disabled>Load from Standard Presets...</option>
                     {BOSS_CHALLENGES.map((b, idx) => (
@@ -1255,7 +1255,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                     <button
                       type="button"
                       onClick={handleClearOrgBoss}
-                      className="px-3 py-2 bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-800/60 rounded-xl text-xs font-bold transition-all"
+                      className="px-3 py-2 bg-red-50 hover:bg-red-50 text-red-700 border border-red-200 rounded-xl text-xs font-bold transition-all"
                     >
                       Revert to Default
                     </button>
@@ -1266,57 +1266,57 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
               <form onSubmit={handleSaveOrgBoss} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-slate-400 mb-1">Emoji</label>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Emoji</label>
                     <input
                       type="text"
                       value={orgBossForm.emoji}
                       onChange={e => setOrgBossForm(prev => ({ ...prev, emoji: e.target.value }))}
-                      className="w-full text-center text-2xl px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:border-yellow-500 outline-none"
+                      className="w-full text-center text-2xl px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:border-yellow-500 outline-none"
                       maxLength={4}
                     />
                   </div>
                   <div className="sm:col-span-5">
-                    <label className="block text-xs font-semibold text-slate-400 mb-1">Boss Name</label>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Boss Name</label>
                     <input
                       type="text"
                       required
                       placeholder="e.g. Apex Cipher Dragon"
                       value={orgBossForm.name}
                       onChange={e => setOrgBossForm(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-yellow-500 outline-none"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:border-yellow-500 outline-none"
                     />
                   </div>
                   <div className="sm:col-span-5">
-                    <label className="block text-xs font-semibold text-slate-400 mb-1">Boss Title / Subtitle</label>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Boss Title / Subtitle</label>
                     <input
                       type="text"
                       placeholder="e.g. Guardian of the Silicon Void"
                       value={orgBossForm.title}
                       onChange={e => setOrgBossForm(prev => ({ ...prev, title: e.target.value }))}
-                      className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-yellow-500 outline-none"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:border-yellow-500 outline-none"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1">Challenge Mission Description</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Challenge Mission Description</label>
                   <textarea
                     rows={2}
                     placeholder="Describe the weekly threat facing the guilds and why collaborative STEM learning will defeat it..."
                     value={orgBossForm.desc}
                     onChange={e => setOrgBossForm(prev => ({ ...prev, desc: e.target.value }))}
-                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-yellow-500 outline-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:border-yellow-500 outline-none"
                   />
                 </div>
 
                 {/* Steps */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="block text-xs font-semibold text-slate-400">Battle Plan Objectives (Steps to Win)</label>
+                    <label className="block text-xs font-semibold text-slate-600">Battle Plan Objectives (Steps to Win)</label>
                     <button
                       type="button"
                       onClick={() => setOrgBossForm(prev => ({ ...prev, steps: [...prev.steps, ''] }))}
-                      className="text-xs text-yellow-400 hover:text-yellow-300 font-bold flex items-center gap-1"
+                      className="text-xs text-yellow-800 hover:text-yellow-800 font-bold flex items-center gap-1"
                     >
                       <Plus className="w-3.5 h-3.5" /> Add Step
                     </button>
@@ -1324,7 +1324,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                   <div className="space-y-2">
                     {orgBossForm.steps.map((step, sIdx) => (
                       <div key={sIdx} className="flex items-center gap-2">
-                        <span className="w-6 text-xs text-slate-500 font-mono text-center">{sIdx + 1}.</span>
+                        <span className="w-6 text-xs text-slate-600 font-mono text-center">{sIdx + 1}.</span>
                         <input
                           type="text"
                           value={step}
@@ -1334,7 +1334,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                             newSteps[sIdx] = e.target.value;
                             setOrgBossForm(prev => ({ ...prev, steps: newSteps }));
                           }}
-                          className="flex-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-xs focus:border-yellow-500 outline-none"
+                          className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-xs focus:border-yellow-500 outline-none"
                         />
                         {orgBossForm.steps.length > 1 && (
                           <button
@@ -1345,7 +1345,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                                 steps: prev.steps.filter((_, idx) => idx !== sIdx)
                               }));
                             }}
-                            className="p-1.5 text-slate-500 hover:text-red-400 transition-colors"
+                            className="p-1.5 text-slate-600 hover:text-red-700 transition-colors"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -1357,25 +1357,25 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1">Guild XP Reward</label>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Guild XP Reward</label>
                     <input
                       type="number"
                       min="50"
                       step="25"
                       value={orgBossForm.xpReward}
                       onChange={e => setOrgBossForm(prev => ({ ...prev, xpReward: Number(e.target.value) }))}
-                      className="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-yellow-500 outline-none"
+                      className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:border-yellow-500 outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1">Coin Reward per Student</label>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Coin Reward per Student</label>
                     <input
                       type="number"
                       min="10"
                       step="10"
                       value={orgBossForm.coinReward}
                       onChange={e => setOrgBossForm(prev => ({ ...prev, coinReward: Number(e.target.value) }))}
-                      className="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:border-yellow-500 outline-none"
+                      className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:border-yellow-500 outline-none"
                     />
                   </div>
                 </div>
@@ -1394,15 +1394,15 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
             </div>
 
             {/* SECTION 2: DISTRICT / ORG STEM SUPPLIES AUDIT */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-              <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-800">
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-200">
                 <div>
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    <Package className="w-5 h-5 text-yellow-400" />
+                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <Package className="w-5 h-5 text-yellow-800" />
                     District STEM Supplies Order Audit
                   </h3>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Master ledger of all STEM supplies purchased by students across all classes in <strong className="text-white">{currentOrg?.name}</strong>.
+                  <p className="text-xs text-slate-600 mt-1">
+                    Master ledger of all STEM supplies purchased by students across all classes in <strong className="text-slate-900">{currentOrg?.name}</strong>.
                   </p>
                 </div>
 
@@ -1412,7 +1412,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
                       stemFilterStatus === 'all'
                         ? 'bg-yellow-500 text-slate-950'
-                        : 'bg-slate-800 text-slate-300 hover:text-white'
+                        : 'bg-white text-slate-700 hover:text-slate-900'
                     }`}
                   >
                     All ({orgPurchases.length})
@@ -1422,7 +1422,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
                       stemFilterStatus === 'pending'
                         ? 'bg-amber-500 text-slate-950'
-                        : 'bg-slate-800 text-slate-300 hover:text-white'
+                        : 'bg-white text-slate-700 hover:text-slate-900'
                     }`}
                   >
                     Pending ({orgPurchases.filter(p => !p.fulfilled).length})
@@ -1432,7 +1432,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
                       stemFilterStatus === 'delivered'
                         ? 'bg-emerald-500 text-slate-950'
-                        : 'bg-slate-800 text-slate-300 hover:text-white'
+                        : 'bg-white text-slate-700 hover:text-slate-900'
                     }`}
                   >
                     Delivered ({orgPurchases.filter(p => !!p.fulfilled).length})
@@ -1442,25 +1442,25 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
 
               {/* Stats overview */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-                <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
-                  <div className="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Total Orders</div>
-                  <div className="text-2xl font-black text-white mt-1">{orgPurchases.length}</div>
+                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                  <div className="text-[11px] uppercase tracking-wider text-slate-600 font-bold">Total Orders</div>
+                  <div className="text-2xl font-display font-bold text-slate-900 mt-1">{orgPurchases.length}</div>
                 </div>
-                <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
-                  <div className="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Coins Invested</div>
-                  <div className="text-2xl font-black text-yellow-400 mt-1">
+                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                  <div className="text-[11px] uppercase tracking-wider text-slate-600 font-bold">Coins Invested</div>
+                  <div className="text-2xl font-display font-bold text-yellow-800 mt-1">
                     🪙 {orgPurchases.reduce((acc, p) => acc + (p.cost || 0), 0).toLocaleString()}
                   </div>
                 </div>
-                <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
-                  <div className="text-[11px] uppercase tracking-wider text-amber-400 font-bold">Pending Delivery</div>
-                  <div className="text-2xl font-black text-amber-400 mt-1">
+                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                  <div className="text-[11px] uppercase tracking-wider text-amber-800 font-bold">Pending Delivery</div>
+                  <div className="text-2xl font-display font-bold text-amber-800 mt-1">
                     {orgPurchases.filter(p => !p.fulfilled).length}
                   </div>
                 </div>
-                <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
-                  <div className="text-[11px] uppercase tracking-wider text-emerald-400 font-bold">Delivered</div>
-                  <div className="text-2xl font-black text-emerald-400 mt-1">
+                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                  <div className="text-[11px] uppercase tracking-wider text-emerald-800 font-bold">Delivered</div>
+                  <div className="text-2xl font-display font-bold text-emerald-800 mt-1">
                     {orgPurchases.filter(p => !!p.fulfilled).length}
                   </div>
                 </div>
@@ -1468,12 +1468,12 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
 
               {/* Table */}
               {loadingOrgPurchases ? (
-                <div className="text-center py-12 text-slate-400">Loading district purchases...</div>
+                <div className="text-center py-12 text-slate-600">Loading district purchases...</div>
               ) : filteredOrgPurchases.length === 0 ? (
-                <div className="text-center py-12 border border-dashed border-slate-800 rounded-xl">
-                  <Package className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                  <p className="text-sm font-bold text-slate-300">No STEM Supply Purchases Found</p>
-                  <p className="text-xs text-slate-500 mt-1">
+                <div className="text-center py-12 border border-dashed border-slate-200 rounded-xl">
+                  <Package className="w-12 h-12 text-slate-500 mx-auto mb-3" />
+                  <p className="text-sm font-bold text-slate-700">No STEM Supply Purchases Found</p>
+                  <p className="text-xs text-slate-600 mt-1">
                     When students buy STEM materials for their guilds, orders will be tracked here.
                   </p>
                 </div>
@@ -1481,7 +1481,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-400 bg-slate-950/60">
+                      <tr className="border-b border-slate-200 text-[11px] uppercase tracking-wider text-slate-600 bg-slate-50">
                         <th className="py-3 px-4">Date & Time</th>
                         <th className="py-3 px-4">Student & Guild</th>
                         <th className="py-3 px-4">Item & Tier</th>
@@ -1490,36 +1490,36 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                         <th className="py-3 px-4 text-right">Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800 text-xs">
+                    <tbody className="divide-y divide-slate-200 text-xs">
                       {filteredOrgPurchases.map(p => (
-                        <tr key={p.id} className="hover:bg-slate-800/40 transition-colors">
-                          <td className="py-3 px-4 text-slate-400 font-mono whitespace-nowrap">
+                        <tr key={p.id} className="hover:bg-white transition-colors">
+                          <td className="py-3 px-4 text-slate-600 font-mono whitespace-nowrap">
                             {p.timestamp ? new Date(p.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Recently'}
                           </td>
                           <td className="py-3 px-4">
-                            <div className="font-bold text-white">{p.studentName || 'Student'}</div>
-                            <div className="text-slate-400 text-[11px] flex items-center gap-1">
+                            <div className="font-bold text-slate-900">{p.studentName || 'Student'}</div>
+                            <div className="text-slate-600 text-[11px] flex items-center gap-1">
                               <span>{p.guildEmoji || '🛡️'}</span>
                               <span>{p.guildName || 'Guild'}</span>
                             </div>
                           </td>
                           <td className="py-3 px-4">
-                            <div className="font-bold text-slate-200 flex items-center gap-1.5">
+                            <div className="font-bold text-slate-800 flex items-center gap-1.5">
                               <span>{p.itemEmoji || '📦'}</span>
                               <span>{p.itemName || 'STEM Supply'}</span>
                             </div>
-                            <div className="text-slate-400 text-[11px]">Tier {p.itemTier || 1}</div>
+                            <div className="text-slate-600 text-[11px]">Tier {p.itemTier || 1}</div>
                           </td>
-                          <td className="py-3 px-4 font-bold text-yellow-400">
+                          <td className="py-3 px-4 font-bold text-yellow-800">
                             🪙 {p.cost}
                           </td>
                           <td className="py-3 px-4">
                             {p.fulfilled ? (
-                              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-500/30">
                                 Delivered
                               </span>
                             ) : (
-                              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-500/30">
                                 Pending Delivery
                               </span>
                             )}
@@ -1530,8 +1530,8 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                               onClick={() => handleToggleOrgPurchaseFulfill(p.id, p.fulfilled)}
                               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 ${
                                 p.fulfilled
-                                  ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
-                                  : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30'
+                                  ? 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                                  : 'bg-emerald-100 hover:bg-emerald-100 text-emerald-800 border border-emerald-500/30'
                               }`}
                             >
                               <Check className="w-3.5 h-3.5" />
@@ -1551,20 +1551,20 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
         {/* TAB 5: CLASSES & OVERSIGHT */}
         {activeTab === 'classes' && (
           <div className="space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-900 p-6 border border-slate-800 rounded-2xl">
+            <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-50 p-6 border border-slate-200 rounded-2xl">
               <div>
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <BookOpen className="w-6 h-6 text-yellow-400" />
+                <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                  <BookOpen className="w-6 h-6 text-yellow-800" />
                   Classrooms & Organization Oversight
                 </h2>
-                <p className="text-slate-400 text-sm mt-1">
+                <p className="text-slate-600 text-sm mt-1">
                   View and manage any class across your organizations as if you were the teacher. Inspect live submissions, update choice boards, manage rosters, or rename classes.
                 </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400 font-semibold">Filter Org:</span>
+                  <span className="text-xs text-slate-600 font-semibold">Filter Org:</span>
                   <select
                     value={classOrgFilter || selectedOrgId}
                     onChange={e => {
@@ -1573,7 +1573,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                       if (val !== 'all' && val !== 'personal') setSelectedOrgId(val);
                       loadClassesForOrg(val);
                     }}
-                    className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs font-bold focus:border-yellow-500 focus:outline-none"
+                    className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-bold focus:border-yellow-500 focus:outline-none"
                   >
                     <option value="all">🌐 All Organizations</option>
                     <option value="personal">🌟 My Personal Classes Only</option>
@@ -1597,7 +1597,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                 <button
                   type="button"
                   onClick={() => loadClassesForOrg(classOrgFilter || selectedOrgId || 'all')}
-                  className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors border border-slate-700"
+                  className="p-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl transition-colors border border-slate-200"
                   title="Refresh classes"
                 >
                   <RefreshCw className="w-4 h-4" />
@@ -1608,30 +1608,30 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
             {/* Search and Filters */}
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="relative flex-1 min-w-[260px] max-w-md">
-                <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-slate-600 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Search classes by name, teacher, or class code..."
                   value={classSearch}
                   onChange={e => setClassSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs placeholder:text-slate-500 focus:border-yellow-500 focus:outline-none"
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs placeholder:text-slate-600 focus:border-yellow-500 focus:outline-none"
                 />
               </div>
 
               {/* Active / Archived Class Filter */}
-              <div className="flex items-center gap-1 p-1 bg-slate-900 border border-slate-800 rounded-xl">
+              <div className="flex items-center gap-1 p-1 bg-slate-50 border border-slate-200 rounded-xl">
                 <button
                   type="button"
                   onClick={() => setClassArchiveFilter('active')}
                   className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 ${
                     classArchiveFilter === 'active'
                       ? 'bg-yellow-500 text-slate-950 font-bold shadow-sm'
-                      : 'text-slate-400 hover:text-white'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   <span>Active</span>
                   <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                    classArchiveFilter === 'active' ? 'bg-yellow-600/40 text-slate-950' : 'bg-slate-800 text-slate-400'
+                    classArchiveFilter === 'active' ? 'bg-yellow-100 text-slate-950' : 'bg-white text-slate-600'
                   }`}>
                     {allClasses.filter(c => !c.archived).length}
                   </span>
@@ -1642,25 +1642,25 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                   className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 ${
                     classArchiveFilter === 'archived'
                       ? 'bg-amber-600 text-white font-bold shadow-sm'
-                      : 'text-slate-400 hover:text-white'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   <Archive className="w-3.5 h-3.5" />
                   <span>Archived</span>
                   <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                    classArchiveFilter === 'archived' ? 'bg-amber-700 text-amber-100' : 'bg-slate-800 text-slate-400'
+                    classArchiveFilter === 'archived' ? 'bg-amber-700 text-white' : 'bg-white text-slate-600'
                   }`}>
                     {allClasses.filter(c => !!c.archived).length}
                   </span>
                 </button>
               </div>
 
-              <div className="flex items-center gap-4 text-xs text-slate-400">
-                <span>Active: <strong className="text-white font-bold">{allClasses.filter(c => !c.archived).length}</strong></span>
+              <div className="flex items-center gap-4 text-xs text-slate-600">
+                <span>Active: <strong className="text-slate-900 font-bold">{allClasses.filter(c => !c.archived).length}</strong></span>
                 <span>•</span>
-                <span>Archived: <strong className="text-amber-400 font-bold">{allClasses.filter(c => !!c.archived).length}</strong></span>
+                <span>Archived: <strong className="text-amber-800 font-bold">{allClasses.filter(c => !!c.archived).length}</strong></span>
                 <span>•</span>
-                <span>Total Students: <strong className="text-white font-bold">{allClasses.reduce((acc, c) => acc + (c.studentCount || 0), 0)}</strong></span>
+                <span>Total Students: <strong className="text-slate-900 font-bold">{allClasses.reduce((acc, c) => acc + (c.studentCount || 0), 0)}</strong></span>
               </div>
             </div>
 
@@ -1674,12 +1674,12 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                        (c.teacherName || '').toLowerCase().includes(q) ||
                        (c.code || '').toLowerCase().includes(q);
               }).length === 0 ? (
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center">
-                <BookOpen className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                <h3 className="text-lg font-bold text-white">
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-12 text-center">
+                <BookOpen className="w-12 h-12 text-slate-500 mx-auto mb-3" />
+                <h3 className="text-lg font-bold text-slate-900">
                   {classArchiveFilter === 'archived' ? 'No Archived Classes' : 'No Classes Found'}
                 </h3>
-                <p className="text-slate-400 text-sm mt-1 max-w-md mx-auto">
+                <p className="text-slate-600 text-sm mt-1 max-w-md mx-auto">
                   {classArchiveFilter === 'archived'
                     ? 'There are no archived classes in this organization view. Archived classes will be listed here when teachers or admins archive them.'
                     : (classSearch ? 'No classes match your search query.' : 'There are no classes created for this organization yet. Click "+ Create Class" to add one.')}
@@ -1699,11 +1699,11 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                   .map(cls => (
                     <div
                       key={cls.id}
-                      className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl p-6 transition-all shadow-lg flex flex-col justify-between group"
+                      className="bg-slate-50 border border-slate-200 hover:border-slate-200 rounded-2xl p-6 transition-all shadow-lg flex flex-col justify-between group"
                     >
                       <div>
                         <div className="flex items-start justify-between gap-2 mb-3">
-                          <span className="font-mono bg-black/40 text-green-400 px-2.5 py-1 rounded text-xs font-bold border border-green-500/20 flex items-center gap-1.5">
+                          <span className="font-mono bg-slate-100 text-green-800 px-2.5 py-1 rounded text-xs font-bold border border-green-500/20 flex items-center gap-1.5">
                             Code: {cls.code}
                             <button
                               onClick={(e) => {
@@ -1711,53 +1711,53 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                                 navigator.clipboard.writeText(cls.code);
                                 notifySuccess(`Copied class code ${cls.code}`);
                               }}
-                              className="text-slate-500 hover:text-white"
+                              className="text-slate-600 hover:text-slate-900"
                               title="Copy code"
                             >
                               <Copy className="w-3 h-3" />
                             </button>
                           </span>
-                          <span className="text-xs text-slate-400 flex items-center gap-1 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
-                            <Users className="w-3.5 h-3.5 text-purple-400" />
+                          <span className="text-xs text-slate-600 flex items-center gap-1 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">
+                            <Users className="w-3.5 h-3.5 text-purple-700" />
                             <strong>{cls.studentCount || 0}</strong> Students
                           </span>
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <h3 className="text-xl font-bold text-white group-hover:text-yellow-400 transition-colors truncate">
+                          <h3 className="text-xl font-bold text-slate-900 group-hover:text-yellow-800 transition-colors truncate">
                             {cls.name}
                           </h3>
                           {cls.archived && (
-                            <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                            <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-500/40">
                               Archived
                             </span>
                           )}
                           <button
                             onClick={() => handleStartRenameClass(cls)}
-                            className="p-1 text-slate-500 hover:text-yellow-400 rounded transition-colors opacity-0 group-hover:opacity-100"
+                            className="p-1 text-slate-600 hover:text-yellow-800 rounded transition-colors opacity-0 group-hover:opacity-100"
                             title="Rename class"
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
                         </div>
 
-                        <div className="mt-3 space-y-1.5 text-xs text-slate-400 border-t border-slate-800/80 pt-3">
-                          <div className="flex items-center gap-1.5 text-slate-300">
-                            <span className="text-slate-500">Teacher:</span>
-                            <strong className="text-white font-medium">{cls.teacherName || 'Teacher'}</strong>
+                        <div className="mt-3 space-y-1.5 text-xs text-slate-600 border-t border-slate-200 pt-3">
+                          <div className="flex items-center gap-1.5 text-slate-700">
+                            <span className="text-slate-600">Teacher:</span>
+                            <strong className="text-slate-900 font-medium">{cls.teacherName || 'Teacher'}</strong>
                           </div>
-                          <div className="flex items-center gap-1.5 text-slate-400">
-                            <span className="text-slate-500">Org:</span>
+                          <div className="flex items-center gap-1.5 text-slate-600">
+                            <span className="text-slate-600">Org:</span>
                             {cls.organizationId ? (
-                              <span className="text-slate-300">{organizations.find(o => o.id === cls.organizationId)?.name || 'Assigned Org'}</span>
+                              <span className="text-slate-700">{organizations.find(o => o.id === cls.organizationId)?.name || 'Assigned Org'}</span>
                             ) : (
-                              <span className="text-amber-300/80 font-medium">Personal (No Org)</span>
+                              <span className="text-amber-800 font-medium">Personal (No Org)</span>
                             )}
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between gap-2 mt-6 pt-4 border-t border-slate-800">
+                      <div className="flex items-center justify-between gap-2 mt-6 pt-4 border-t border-slate-200">
                         <button
                           onClick={() => handleViewClassAsTeacher(cls)}
                           className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-green-950/30 transition-all"
@@ -1769,54 +1769,54 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
 
                         <button
                           onClick={() => handleViewClassAsTeacher(cls, 'submissions')}
-                          className="px-3 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1 border border-blue-500/30 transition-all shadow-sm"
+                          className="px-3 py-2 bg-blue-100 hover:bg-blue-100 text-blue-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1 border border-blue-500/30 transition-all shadow-sm"
                           title="Inspect student submissions for this class"
                         >
-                          <FileText className="w-3.5 h-3.5 text-blue-400" />
+                          <FileText className="w-3.5 h-3.5 text-blue-700" />
                           <span>Submissions</span>
                         </button>
 
                         <button
                           onClick={() => handleStartMoveClassOrg(cls)}
-                          className="px-2.5 py-2 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-xl text-xs font-semibold flex items-center gap-1 border border-slate-700 transition-colors"
+                          className="px-2.5 py-2 bg-white hover:bg-slate-100 text-amber-800 rounded-xl text-xs font-semibold flex items-center gap-1 border border-slate-200 transition-colors"
                           title="Move class to another organization"
                         >
-                          <Building2 className="w-3.5 h-3.5 text-amber-400" />
+                          <Building2 className="w-3.5 h-3.5 text-amber-800" />
                           <span className="hidden sm:inline">Move Org</span>
                         </button>
 
                         <button
                           onClick={() => handleStartRenameClass(cls)}
-                          className="px-2.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1 border border-slate-700 transition-colors"
+                          className="px-2.5 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1 border border-slate-200 transition-colors"
                           title="Change class name"
                         >
-                          <Edit className="w-3.5 h-3.5 text-yellow-400" />
+                          <Edit className="w-3.5 h-3.5 text-yellow-800" />
                           <span className="hidden sm:inline">Rename</span>
                         </button>
 
                         {cls.archived ? (
                           <button
                             onClick={() => handleUnarchiveClass(cls)}
-                            className="px-2.5 py-2 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 rounded-xl text-xs font-semibold flex items-center gap-1 border border-amber-500/30 transition-colors"
+                            className="px-2.5 py-2 bg-amber-100 hover:bg-amber-100 text-amber-800 rounded-xl text-xs font-semibold flex items-center gap-1 border border-amber-500/30 transition-colors"
                             title="Restore class to active"
                           >
-                            <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                            <RotateCcw className="w-3.5 h-3.5 text-amber-800" />
                             <span className="hidden sm:inline">Restore</span>
                           </button>
                         ) : (
                           <button
                             onClick={() => handleArchiveClass(cls)}
-                            className="px-2.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1 border border-slate-700 transition-colors"
+                            className="px-2.5 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1 border border-slate-200 transition-colors"
                             title="Archive class (preserves data, disables student login)"
                           >
-                            <Archive className="w-3.5 h-3.5 text-slate-400" />
+                            <Archive className="w-3.5 h-3.5 text-slate-600" />
                             <span className="hidden sm:inline">Archive</span>
                           </button>
                         )}
 
                         <button
                           onClick={() => handleDeleteClass(cls)}
-                          className="p-2 bg-red-950/40 hover:bg-red-900/60 text-red-300 rounded-xl text-xs font-semibold flex items-center justify-center border border-red-900/30 transition-colors"
+                          className="p-2 bg-red-50 hover:bg-red-50 text-red-700 rounded-xl text-xs font-semibold flex items-center justify-center border border-red-200 transition-colors"
                           title="Delete class permanently"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1833,41 +1833,41 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
 
       {/* ================= MODAL: CREATE / EDIT ORGANIZATION ================= */}
       {showOrgModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <h3 className="text-xl font-bold text-white mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <h3 className="text-xl font-bold text-slate-900 mb-4">
               {editingOrg ? 'Edit Organization' : 'Create New Organization'}
             </h3>
 
             <form onSubmit={handleSaveOrganization} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Organization Name</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Organization Name</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Springfield School District"
                   value={orgName}
                   onChange={e => setOrgName(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:border-yellow-500 focus:outline-none"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:border-yellow-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Description (Optional)</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Description (Optional)</label>
                 <textarea
                   rows="3"
                   placeholder="Brief summary or location notes..."
                   value={orgDesc}
                   onChange={e => setOrgDesc(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:border-yellow-500 focus:outline-none"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:border-yellow-500 focus:outline-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setShowOrgModal(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-semibold"
+                  className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-sm font-semibold"
                 >
                   Cancel
                 </button>
@@ -1885,53 +1885,53 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
 
       {/* ================= MODAL: CREATE TEACHER USER ================= */}
       {showTeacherModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <h3 className="text-xl font-bold text-white mb-4">Create Teacher Account</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <h3 className="text-xl font-bold text-slate-900 mb-4">Create Teacher Account</h3>
 
             <form onSubmit={handleCreateTeacher} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Full Name</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Full Name</label>
                 <input
                   type="text"
                   required
                   placeholder="Jane Doe"
                   value={tName}
                   onChange={e => setTName(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:border-yellow-500 focus:outline-none"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:border-yellow-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Email Address</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Email Address</label>
                 <input
                   type="email"
                   required
                   placeholder="teacher@school.edu"
                   value={tEmail}
                   onChange={e => setTEmail(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:border-yellow-500 focus:outline-none"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:border-yellow-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Password</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Password</label>
                 <input
                   type="password"
                   required
                   placeholder="••••••••"
                   value={tPassword}
                   onChange={e => setTPassword(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:border-yellow-500 focus:outline-none"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:border-yellow-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Assigned Organization</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Assigned Organization</label>
                 <select
                   value={tOrgId}
                   onChange={e => setTOrgId(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:border-yellow-500 focus:outline-none"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:border-yellow-500 focus:outline-none"
                 >
                   <option value="">Unassigned</option>
                   {organizations.map(o => (
@@ -1941,22 +1941,22 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">System Role</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">System Role</label>
                 <select
                   value={tRole}
                   onChange={e => setTRole(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:border-yellow-500 focus:outline-none"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:border-yellow-500 focus:outline-none"
                 >
                   <option value="teacher">Teacher</option>
                   <option value="admin">System Administrator</option>
                 </select>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setShowTeacherModal(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-semibold"
+                  className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-sm font-semibold"
                 >
                   Cancel
                 </button>
@@ -1974,20 +1974,20 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
 
       {/* ================= MODAL: REASSIGN TEACHER ORG ================= */}
       {reassigningTeacher && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <h3 className="text-xl font-bold text-white mb-2">Reassign Organization</h3>
-            <p className="text-slate-400 text-sm mb-4">
-              Select new Organization for <strong className="text-white">{reassigningTeacher.name}</strong>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <h3 className="text-xl font-bold text-slate-900 mb-2">Reassign Organization</h3>
+            <p className="text-slate-600 text-sm mb-4">
+              Select new Organization for <strong className="text-slate-900">{reassigningTeacher.name}</strong>
             </p>
 
             <form onSubmit={handleReassignTeacher} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Organization</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Organization</label>
                 <select
                   value={newOrgForTeacher}
                   onChange={e => setNewOrgForTeacher(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:border-yellow-500 focus:outline-none"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:border-yellow-500 focus:outline-none"
                 >
                   <option value="">Unassigned</option>
                   {organizations.map(o => (
@@ -1996,11 +1996,11 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                 </select>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setReassigningTeacher(null)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-semibold"
+                  className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-sm font-semibold"
                 >
                   Cancel
                 </button>
@@ -2018,47 +2018,47 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
 
       {/* ================= MODAL: EDIT CHOICE BOARD TEMPLATE ================= */}
       {showTemplateEditor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/90 backdrop-blur-md overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="template-editor-title">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-6xl w-full p-4 sm:p-6 my-auto shadow-2xl max-h-[92vh] flex flex-col">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-              <h3 id="template-editor-title" className="text-xl font-bold text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-md overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="template-editor-title">
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl max-w-6xl w-full p-4 sm:p-6 my-auto shadow-2xl max-h-[92vh] flex flex-col">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 mb-4">
+              <h3 id="template-editor-title" className="text-xl font-bold text-slate-900">
                 {editingTemplate ? 'Edit Choice Board Template' : 'Create Choice Board Template'}
               </h3>
-              <button onClick={() => setShowTemplateEditor(false)} aria-label="Close template editor" className="text-slate-400 hover:text-white text-xl font-bold p-1">✕</button>
+              <button onClick={() => setShowTemplateEditor(false)} aria-label="Close template editor" className="text-slate-600 hover:text-slate-900 text-xl font-bold p-1">✕</button>
             </div>
 
             <div className="space-y-4 overflow-y-auto pr-2 flex-1">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1">Template Title</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Template Title</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Q1 Math Master Board"
                     value={templateTitle}
                     onChange={e => setTemplateTitle(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:border-yellow-500 focus:outline-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:border-yellow-500 focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1">Description</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Description</label>
                   <input
                     type="text"
                     placeholder="e.g. Standard curriculum choice board for middle school"
                     value={templateDesc}
                     onChange={e => setTemplateDesc(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:border-yellow-500 focus:outline-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:border-yellow-500 focus:outline-none"
                   />
                 </div>
               </div>
 
               {/* Category & Subtitle Customizer */}
-              <div className="mt-6 p-4 bg-slate-950 rounded-xl border border-slate-800">
+              <div className="mt-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h4 className="text-sm font-bold text-yellow-400 uppercase tracking-wider">Template Categories & Subtitles</h4>
-                    <p className="text-xs text-slate-400">Configure custom category titles, subtitles, remove unneeded categories (1 to 6), or add new categories for this choice board template.</p>
+                    <h4 className="text-sm font-bold text-yellow-800 uppercase tracking-wider">Template Categories & Subtitles</h4>
+                    <p className="text-xs text-slate-600">Configure custom category titles, subtitles, remove unneeded categories (1 to 6), or add new categories for this choice board template.</p>
                   </div>
                   {templatePaths.length < 6 && (
                     <button
@@ -2086,7 +2086,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                         setTemplateCategoryNames(prev => ({ ...prev, [newPathId]: newTitle }));
                         setTemplateCategorySubtitles(prev => ({ ...prev, [newPathId]: '' }));
                       }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-yellow-400 rounded-lg text-xs font-bold transition-colors border border-slate-700"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-100 text-yellow-800 rounded-lg text-xs font-bold transition-colors border border-slate-200"
                     >
                       <Plus className="w-3.5 h-3.5" /> Add New Category
                     </button>
@@ -2098,9 +2098,9 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                     const currentName = templateCategoryNames[path.id] || path.title;
                     const currentSub = templateCategorySubtitles[path.id] || path.subtitle || '';
                     return (
-                      <div key={path.id} className="p-3 bg-slate-900 rounded-lg border border-slate-800 space-y-2">
+                      <div key={path.id} className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-mono font-bold text-yellow-400">Path #{idx + 1} ({path.id})</span>
+                          <span className="text-xs font-mono font-bold text-yellow-800">Path #{idx + 1} ({path.id})</span>
                           {templatePaths.length > 1 ? (
                             <button
                               type="button"
@@ -2117,17 +2117,17 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                                 setTemplateCategoryNames(prev => { const next = { ...prev }; delete next[path.id]; return next; });
                                 setTemplateCategorySubtitles(prev => { const next = { ...prev }; delete next[path.id]; return next; });
                               }}
-                              className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors"
+                              className="text-xs text-red-700 hover:text-red-700 flex items-center gap-1 transition-colors"
                               title="Remove category"
                             >
                               <Trash2 className="w-3 h-3" /> Remove
                             </button>
                           ) : (
-                            <span className="text-[10px] text-slate-500 italic">Min. 1 category</span>
+                            <span className="text-[10px] text-slate-600 italic">Min. 1 category</span>
                           )}
                         </div>
                         <div>
-                          <label className="block text-[10px] uppercase font-bold text-slate-500 mb-0.5">Category Title</label>
+                          <label className="block text-[10px] uppercase font-bold text-slate-600 mb-0.5">Category Title</label>
                           <input
                             type="text"
                             value={currentName}
@@ -2136,11 +2136,11 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                               setTemplateCategoryNames(prev => ({ ...prev, [path.id]: val }));
                               setTemplatePaths(prev => prev.map(p => p.id === path.id ? { ...p, title: val } : p));
                             }}
-                            className="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded text-white text-xs focus:border-yellow-500 outline-none"
+                            className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded text-slate-900 text-xs focus:border-yellow-500 outline-none"
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] uppercase font-bold text-slate-500 mb-0.5">Subtitle</label>
+                          <label className="block text-[10px] uppercase font-bold text-slate-600 mb-0.5">Subtitle</label>
                           <input
                             type="text"
                             value={currentSub}
@@ -2149,7 +2149,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                               setTemplateCategorySubtitles(prev => ({ ...prev, [path.id]: val }));
                               setTemplatePaths(prev => prev.map(p => p.id === path.id ? { ...p, subtitle: val } : p));
                             }}
-                            className="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded text-white text-xs focus:border-yellow-500 outline-none"
+                            className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded text-slate-900 text-xs focus:border-yellow-500 outline-none"
                           />
                         </div>
                       </div>
@@ -2160,7 +2160,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
 
               {/* Activity Paths Visual Editor */}
               <div className="mt-6">
-                <h4 className="text-sm font-bold text-yellow-400 uppercase tracking-wider mb-3">Choice Board Activity Paths & Options</h4>
+                <h4 className="text-sm font-bold text-yellow-800 uppercase tracking-wider mb-3">Choice Board Activity Paths & Options</h4>
                 <ActivityEditor
                   paths={templatePaths}
                   onChange={(updatedPaths) => setTemplatePaths(updatedPaths)}
@@ -2173,11 +2173,11 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800 mt-4">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 mt-4">
               <button
                 type="button"
                 onClick={() => setShowTemplateEditor(false)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-semibold"
+                className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-sm font-semibold"
               >
                 Cancel
               </button>
@@ -2195,27 +2195,27 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
 
       {/* ================= MODAL: ASSIGN TEMPLATE TO ALL OR SPECIFIC CLASSES ================= */}
       {assigningTemplate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl max-w-xl w-full p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 mb-4">
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-yellow-400">Template Distribution</span>
-                <h3 className="text-xl font-bold text-white">{assigningTemplate.title}</h3>
+                <span className="text-xs font-bold uppercase tracking-wider text-yellow-800">Template Distribution</span>
+                <h3 className="text-xl font-bold text-slate-900">{assigningTemplate.title}</h3>
               </div>
-              <button onClick={() => setAssigningTemplate(null)} className="text-slate-400 hover:text-white">✕</button>
+              <button onClick={() => setAssigningTemplate(null)} className="text-slate-600 hover:text-slate-900">✕</button>
             </div>
 
             <div className="space-y-4">
-              <p className="text-sm text-slate-300">
-                Choose how you want to adjust and deploy this Choice Board Template to classes in <strong className="text-white">{currentOrg?.name}</strong>:
+              <p className="text-sm text-slate-700">
+                Choose how you want to adjust and deploy this Choice Board Template to classes in <strong className="text-slate-900">{currentOrg?.name}</strong>:
               </p>
 
               {/* Radio options */}
               <div className="grid grid-cols-1 gap-3">
                 <label className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
                   assignTargetMode === 'all'
-                    ? 'bg-yellow-500/10 border-yellow-500 text-white'
-                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                    ? 'bg-yellow-100 border-yellow-500 text-slate-900'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-200'
                 }`}>
                   <div className="flex items-center gap-3">
                     <input
@@ -2223,19 +2223,19 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                       name="targetMode"
                       checked={assignTargetMode === 'all'}
                       onChange={() => setAssignTargetMode('all')}
-                      className="w-4 h-4 text-yellow-500 focus:ring-yellow-500"
+                      className="w-4 h-4 text-yellow-800 focus:ring-yellow-500"
                     />
                     <div>
-                      <div className="font-bold text-sm text-white">All Users & Classes in Organization</div>
-                      <div className="text-xs text-slate-400">Pushes this choice board template to every active class ({orgClassesForAssign.length} classes)</div>
+                      <div className="font-bold text-sm text-slate-900">All Users & Classes in Organization</div>
+                      <div className="text-xs text-slate-600">Pushes this choice board template to every active class ({orgClassesForAssign.length} classes)</div>
                     </div>
                   </div>
                 </label>
 
                 <label className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
                   assignTargetMode === 'specific'
-                    ? 'bg-yellow-500/10 border-yellow-500 text-white'
-                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                    ? 'bg-yellow-100 border-yellow-500 text-slate-900'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-200'
                 }`}>
                   <div className="flex items-center gap-3">
                     <input
@@ -2243,11 +2243,11 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                       name="targetMode"
                       checked={assignTargetMode === 'specific'}
                       onChange={() => setAssignTargetMode('specific')}
-                      className="w-4 h-4 text-yellow-500 focus:ring-yellow-500"
+                      className="w-4 h-4 text-yellow-800 focus:ring-yellow-500"
                     />
                     <div>
-                      <div className="font-bold text-sm text-white">Specific Classes Only</div>
-                      <div className="text-xs text-slate-400">Select individual classes in this organization to update</div>
+                      <div className="font-bold text-sm text-slate-900">Specific Classes Only</div>
+                      <div className="text-xs text-slate-600">Select individual classes in this organization to update</div>
                     </div>
                   </div>
                 </label>
@@ -2255,8 +2255,8 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
 
               {/* Class selection checkboxes if specific */}
               {assignTargetMode === 'specific' && (
-                <div className="mt-4 p-4 bg-slate-950 rounded-xl border border-slate-800 max-h-60 overflow-y-auto space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-400 mb-2 pb-2 border-b border-slate-800">
+                <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200 max-h-60 overflow-y-auto space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-600 mb-2 pb-2 border-b border-slate-200">
                     <span>Select Classes to Receive Board:</span>
                     <button
                       type="button"
@@ -2267,17 +2267,17 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                           setSelectedClassIds(orgClassesForAssign.map(c => c.id));
                         }
                       }}
-                      className="text-yellow-400 hover:underline"
+                      className="text-yellow-800 hover:underline"
                     >
                       {selectedClassIds.length === orgClassesForAssign.length ? 'Deselect All' : 'Select All'}
                     </button>
                   </div>
 
                   {orgClassesForAssign.length === 0 ? (
-                    <div className="text-center py-4 text-xs text-slate-500">No active classes found for this organization.</div>
+                    <div className="text-center py-4 text-xs text-slate-600">No active classes found for this organization.</div>
                   ) : (
                     orgClassesForAssign.map(cls => (
-                      <label key={cls.id} className="flex items-center gap-3 p-2 hover:bg-slate-900 rounded-lg cursor-pointer text-xs">
+                      <label key={cls.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg cursor-pointer text-xs">
                         <input
                           type="checkbox"
                           checked={selectedClassIds.includes(cls.id)}
@@ -2288,11 +2288,11 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                               setSelectedClassIds(prev => prev.filter(id => id !== cls.id));
                             }
                           }}
-                          className="w-4 h-4 rounded text-yellow-500 focus:ring-yellow-500 bg-slate-900 border-slate-700"
+                          className="w-4 h-4 rounded text-yellow-800 focus:ring-yellow-500 bg-slate-50 border-slate-200"
                         />
                         <div className="flex-1">
-                          <span className="font-bold text-white">{cls.name}</span>
-                          <span className="text-slate-400 ml-2">(Code: {cls.code})</span>
+                          <span className="font-bold text-slate-900">{cls.name}</span>
+                          <span className="text-slate-600 ml-2">(Code: {cls.code})</span>
                         </div>
                       </label>
                     ))
@@ -2301,11 +2301,11 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
               )}
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-800 mt-6">
+            <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-200 mt-6">
               <button
                 type="button"
                 onClick={() => setAssigningTemplate(null)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-semibold"
+                className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-sm font-semibold"
               >
                 Cancel
               </button>
@@ -2324,20 +2324,20 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
 
       {/* ================= MODAL: RENAME CLASS ================= */}
       {showRenameModal && renamingClass && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Pencil className="w-5 h-5 text-yellow-400" /> Rename Class
+                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                  <Pencil className="w-5 h-5 text-yellow-800" /> Rename Class
                 </h3>
-                <p className="text-slate-400 text-xs mt-1">
-                  Updating name for <strong className="text-slate-300">{renamingClass.name}</strong> (Code: {renamingClass.code})
+                <p className="text-slate-600 text-xs mt-1">
+                  Updating name for <strong className="text-slate-700">{renamingClass.name}</strong> (Code: {renamingClass.code})
                 </p>
               </div>
               <button
                 onClick={() => { setShowRenameModal(false); setRenamingClass(null); }}
-                className="text-slate-400 hover:text-white"
+                className="text-slate-600 hover:text-slate-900"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -2345,7 +2345,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
 
             <form onSubmit={handleSaveRenameClass} className="space-y-4">
               <div>
-                <label htmlFor="admin-rename-input" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                <label htmlFor="admin-rename-input" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                   New Class Name *
                 </label>
                 <input
@@ -2356,7 +2356,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                   placeholder="e.g. 5th Grade Science & Robotics"
                   required
                   autoFocus
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm outline-none focus:border-yellow-400"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm outline-none focus:border-yellow-400"
                 />
               </div>
 
@@ -2364,7 +2364,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                 <button
                   type="button"
                   onClick={() => { setShowRenameModal(false); setRenamingClass(null); }}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-semibold"
+                  className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-sm font-semibold"
                 >
                   Cancel
                 </button>
@@ -2393,29 +2393,29 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
 
       {/* ================= MODAL: MOVE CLASS ORGANIZATION ================= */}
       {showMoveClassOrgModal && movingClassForOrg && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-amber-500/30 rounded-2xl max-w-md w-full p-6 shadow-2xl animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-slate-50 border border-amber-500/30 rounded-2xl max-w-md w-full p-6 shadow-2xl animate-in fade-in duration-200">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Building2 className="w-5 h-5 text-amber-400" /> Move Class Organization
+                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                  <Building2 className="w-5 h-5 text-amber-800" /> Move Class Organization
                 </h3>
-                <p className="text-slate-400 text-xs mt-1">
-                  Reassign <strong className="text-slate-200">{movingClassForOrg.name}</strong> (Code: {movingClassForOrg.code}) to another organization.
+                <p className="text-slate-600 text-xs mt-1">
+                  Reassign <strong className="text-slate-800">{movingClassForOrg.name}</strong> (Code: {movingClassForOrg.code}) to another organization.
                 </p>
               </div>
               <button
                 onClick={() => { setShowMoveClassOrgModal(false); setMovingClassForOrg(null); }}
-                className="text-slate-400 hover:text-white"
+                className="text-slate-600 hover:text-slate-900"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSaveMoveClassOrg} className="space-y-4">
-              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs space-y-1">
-                <div className="text-slate-400">Current Organization:</div>
-                <div className="font-bold text-amber-300">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
+                <div className="text-slate-600">Current Organization:</div>
+                <div className="font-bold text-amber-800">
                   {movingClassForOrg.organizationId
                     ? (organizations.find(o => o.id === movingClassForOrg.organizationId)?.name || movingClassForOrg.organizationId)
                     : '🌟 Personal Class (No Organization)'}
@@ -2423,14 +2423,14 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
               </div>
 
               <div>
-                <label htmlFor="admin-target-org-select" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                <label htmlFor="admin-target-org-select" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                   Destination Organization *
                 </label>
                 <select
                   id="admin-target-org-select"
                   value={targetOrgIdForMove}
                   onChange={(e) => setTargetOrgIdForMove(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm outline-none focus:border-amber-400"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm outline-none focus:border-amber-400"
                 >
                   <option value="none">🌟 Personal (No Organization)</option>
                   {organizations.map(o => (
@@ -2439,7 +2439,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                 </select>
               </div>
 
-              <div className="p-3 bg-amber-950/20 border border-amber-500/20 rounded-xl text-[11px] text-amber-200/80 leading-relaxed">
+              <div className="p-3 bg-amber-50 border border-amber-500/20 rounded-xl text-[11px] text-amber-800 leading-relaxed">
                 Moving this class updates its registered organization without altering your overall Super Admin designation or permissions.
               </div>
 
@@ -2447,7 +2447,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                 <button
                   type="button"
                   onClick={() => { setShowMoveClassOrgModal(false); setMovingClassForOrg(null); }}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-semibold"
+                  className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-sm font-semibold"
                 >
                   Cancel
                 </button>
@@ -2476,20 +2476,20 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
 
       {/* ================= MODAL: CREATE CLASS FOR ORGANIZATION ================= */}
       {showCreateClassModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Plus className="w-5 h-5 text-yellow-400" /> Create Class for Organization
+                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                  <Plus className="w-5 h-5 text-yellow-800" /> Create Class for Organization
                 </h3>
-                <p className="text-slate-400 text-xs mt-1">
+                <p className="text-slate-600 text-xs mt-1">
                   Add a new class to {organizations.find(o => o.id === (classOrgFilter || selectedOrgId))?.name || 'this organization'}
                 </p>
               </div>
               <button
                 onClick={() => setShowCreateClassModal(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-slate-600 hover:text-slate-900"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -2497,7 +2497,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
 
             <form onSubmit={handleCreateClassInOrg} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                   Class Name *
                 </label>
                 <input
@@ -2507,18 +2507,18 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                   placeholder="e.g. 5th Grade STEAM Explorers"
                   required
                   autoFocus
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm outline-none focus:border-yellow-400"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm outline-none focus:border-yellow-400"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                   Assigned Teacher (Optional)
                 </label>
                 <select
                   value={targetTeacherForNewClass}
                   onChange={e => setTargetTeacherForNewClass(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs outline-none focus:border-yellow-400"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs outline-none focus:border-yellow-400"
                 >
                   <option value={user?.id || ''}>Current Admin ({user?.name || user?.email})</option>
                   {teachers
@@ -2533,7 +2533,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                 <button
                   type="button"
                   onClick={() => setShowCreateClassModal(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-semibold"
+                  className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-sm font-semibold"
                 >
                   Cancel
                 </button>
@@ -2561,30 +2561,30 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
       )}
 
       {/* Legal & Student Data Privacy Footer */}
-      <footer className="mt-12 pt-6 border-t border-slate-800 text-center text-xs text-slate-500 space-y-2 print:hidden">
+      <footer className="mt-12 pt-6 border-t border-slate-200 text-center text-xs text-slate-600 space-y-2 print:hidden">
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
           <button
             onClick={() => { setLegalTab('privacy'); setLegalModalOpen(true); }}
-            className="hover:text-blue-400 transition-colors underline underline-offset-2"
+            className="hover:text-blue-700 transition-colors underline underline-offset-2"
           >
             Privacy Policy
           </button>
-          <span className="text-slate-700">•</span>
+          <span className="text-slate-400">•</span>
           <button
             onClick={() => { setLegalTab('terms'); setLegalModalOpen(true); }}
-            className="hover:text-blue-400 transition-colors underline underline-offset-2"
+            className="hover:text-blue-700 transition-colors underline underline-offset-2"
           >
             Terms of Service
           </button>
-          <span className="text-slate-700">•</span>
+          <span className="text-slate-400">•</span>
           <button
             onClick={() => { setLegalTab('compliance'); setLegalModalOpen(true); }}
-            className="hover:text-emerald-400 transition-colors flex items-center gap-1 inline-flex"
+            className="hover:text-emerald-800 transition-colors flex items-center gap-1 inline-flex"
           >
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Student Data Privacy & FERPA / COPPA
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-800" /> Student Data Privacy & FERPA / COPPA
           </button>
         </div>
-        <p className="text-[11px] text-slate-600">
+        <p className="text-[11px] text-slate-500">
           Protected under Federal & State Student Privacy Laws. Zero ads & zero data selling.
         </p>
       </footer>

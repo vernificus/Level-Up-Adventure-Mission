@@ -174,7 +174,7 @@ export default function LoginScreen() {
         else if (mode === 'student-signup') setMode('student-select');
         else setMode('select');
       }}
-      className="absolute top-4 left-4 text-slate-400 hover:text-white flex items-center gap-1"
+      className="absolute top-4 left-4 text-slate-600 hover:text-slate-900 flex items-center gap-1"
       aria-label="Go back"
     >
       <span aria-hidden="true">←</span> Back
@@ -182,20 +182,20 @@ export default function LoginScreen() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-slate-800 border-2 border-slate-700 rounded-2xl p-8 shadow-2xl relative">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white border-2 border-slate-200 rounded-2xl p-8 shadow-2xl relative">
 
         {/* Header */}
         <header className="text-center mb-8">
-          <div className="inline-flex items-center justify-center p-4 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full mb-4 shadow-lg" aria-hidden="true">
+          <div className="text-white inline-flex items-center justify-center p-4 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full mb-4 shadow-lg" aria-hidden="true">
             <GraduationCap className="w-8 h-8 text-slate-900" />
           </div>
-          <h1 className="text-3xl font-black uppercase italic text-white tracking-tighter">Level Up Learning</h1>
-          <p className="text-slate-400 mt-2">Classroom Gamification Platform</p>
+          <h1 className="text-3xl font-display font-bold text-slate-900">Level Up Learning</h1>
+          <p className="text-slate-600 mt-2">Classroom Gamification Platform</p>
         </header>
 
         {error && (
-          <div className="mb-6 p-3 bg-red-900/30 border border-red-500 rounded-lg text-red-200 text-sm text-center" role="alert" aria-live="assertive">
+          <div className="mb-6 p-3 bg-red-50 border border-red-500 rounded-lg text-red-800 text-sm text-center" role="alert" aria-live="assertive">
             {error}
           </div>
         )}
@@ -205,13 +205,13 @@ export default function LoginScreen() {
           <nav className="space-y-4" aria-label="Login options">
             <button
               onClick={() => setMode('student-join')}
-              className="w-full p-6 bg-blue-600 hover:bg-blue-500 rounded-xl transition-all hover:scale-[1.02] group text-left relative overflow-hidden shadow-lg"
+              className="text-white w-full p-6 bg-blue-600 hover:bg-blue-500 rounded-xl transition-all hover:scale-[1.02] group text-left relative overflow-hidden shadow-lg"
             >
               <div className="relative z-10">
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
                   <BookOpen className="w-6 h-6" aria-hidden="true" /> I am a Student
                 </h3>
-                <p className="text-blue-200 text-sm mt-1">Log in with Class Code</p>
+                <p className="text-white text-sm mt-1">Log in with Class Code</p>
               </div>
               <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">
                 <ArrowRight className="w-6 h-6 text-white" />
@@ -220,22 +220,22 @@ export default function LoginScreen() {
 
             <button
               onClick={() => setMode('teacher-login')}
-              className="w-full p-6 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-xl transition-all hover:scale-[1.02] group text-left shadow-lg"
+              className="w-full p-6 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition-all hover:scale-[1.02] group text-left shadow-lg"
             >
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+              <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                 <Users className="w-6 h-6" aria-hidden="true" /> I am a Teacher
               </h3>
-              <p className="text-slate-400 text-sm mt-1">Manage classes, roster, and choice boards</p>
+              <p className="text-slate-600 text-sm mt-1">Manage classes, roster, and choice boards</p>
             </button>
 
             <button
               onClick={() => setMode('admin-login')}
-              className="w-full p-4 bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-yellow-500/50 rounded-xl transition-all group text-left"
+              className="w-full p-4 bg-white hover:bg-slate-100 border border-slate-200 hover:border-yellow-500/50 rounded-xl transition-all group text-left"
             >
-              <h3 className="text-base font-bold text-yellow-400 flex items-center gap-2">
+              <h3 className="text-base font-bold text-yellow-800 flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5" aria-hidden="true" /> Overall System Admin
               </h3>
-              <p className="text-slate-400 text-xs mt-0.5">Manage organizations, teachers, and template deployment</p>
+              <p className="text-slate-600 text-xs mt-0.5">Manage organizations, teachers, and template deployment</p>
             </button>
           </nav>
         )}
@@ -245,16 +245,16 @@ export default function LoginScreen() {
           <form onSubmit={handleTeacherLogin} className="space-y-4" aria-labelledby="teacher-login-heading">
             <BackButton />
             <div className="text-center mb-6">
-              <h2 id="teacher-login-heading" className="text-xl font-bold text-white">
+              <h2 id="teacher-login-heading" className="text-xl font-bold text-slate-900">
                 {mode === 'admin-login' ? 'System Admin Login' : 'Teacher Login'}
               </h2>
               {mode === 'admin-login' && (
-                <p className="text-xs text-yellow-400 mt-1">Sign in with administrator credentials</p>
+                <p className="text-xs text-yellow-800 mt-1">Sign in with administrator credentials</p>
               )}
             </div>
 
             <div>
-              <label htmlFor="teacher-email" className="block text-sm text-slate-400 mb-1">Email</label>
+              <label htmlFor="teacher-email" className="block text-sm text-slate-600 mb-1">Email</label>
               <input
                 id="teacher-email"
                 type="email"
@@ -262,12 +262,12 @@ export default function LoginScreen() {
                 autoComplete="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
+                className="w-full px-4 py-3 bg-slate-100 border border-slate-300 rounded-lg text-slate-900 focus:border-yellow-500 focus:outline-none"
               />
             </div>
 
             <div>
-              <label htmlFor="teacher-password" className="block text-sm text-slate-400 mb-1">Password</label>
+              <label htmlFor="teacher-password" className="block text-sm text-slate-600 mb-1">Password</label>
               <div className="relative">
                 <input
                   id="teacher-password"
@@ -276,12 +276,12 @@ export default function LoginScreen() {
                   autoComplete="current-password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 pr-11 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
+                  className="w-full px-4 py-3 pr-11 bg-slate-100 border border-slate-300 rounded-lg text-slate-900 focus:border-yellow-500 focus:outline-none"
                 />
                 <button
                   type="button"
                   onClick={() => setShowTeacherPassword(!showTeacherPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-900 p-1 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
                   aria-label={getVisibilityToggleLabel(showTeacherPassword, false)}
                 >
                   {showTeacherPassword ? <EyeOff className="w-5 h-5" aria-hidden="true" /> : <Eye className="w-5 h-5" aria-hidden="true" />}
@@ -297,8 +297,8 @@ export default function LoginScreen() {
               {loading ? 'Logging in...' : <><LogIn className="w-5 h-5" aria-hidden="true" /> Login</>}
             </button>
 
-            <p className="text-center text-sm text-slate-400 mt-4">
-              New here? <button type="button" onClick={() => setMode('teacher-signup')} className="text-yellow-500 hover:underline">Create an account</button>
+            <p className="text-center text-sm text-slate-600 mt-4">
+              New here? <button type="button" onClick={() => setMode('teacher-signup')} className="text-yellow-800 hover:underline">Create an account</button>
             </p>
           </form>
         )}
@@ -307,10 +307,10 @@ export default function LoginScreen() {
         {mode === 'teacher-signup' && (
           <form onSubmit={handleTeacherSignup} className="space-y-4" aria-labelledby="teacher-signup-heading">
             <BackButton />
-            <h2 id="teacher-signup-heading" className="text-xl font-bold text-white text-center mb-6">Create Teacher Account</h2>
+            <h2 id="teacher-signup-heading" className="text-xl font-bold text-slate-900 text-center mb-6">Create Teacher Account</h2>
 
             <div>
-              <label htmlFor="signup-name" className="block text-sm text-slate-400 mb-1">Full Name</label>
+              <label htmlFor="signup-name" className="block text-sm text-slate-600 mb-1">Full Name</label>
               <input
                 id="signup-name"
                 type="text"
@@ -318,12 +318,12 @@ export default function LoginScreen() {
                 autoComplete="name"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
+                className="w-full px-4 py-3 bg-slate-100 border border-slate-300 rounded-lg text-slate-900 focus:border-yellow-500 focus:outline-none"
               />
             </div>
 
             <div>
-              <label htmlFor="signup-email" className="block text-sm text-slate-400 mb-1">Email</label>
+              <label htmlFor="signup-email" className="block text-sm text-slate-600 mb-1">Email</label>
               <input
                 id="signup-email"
                 type="email"
@@ -331,12 +331,12 @@ export default function LoginScreen() {
                 autoComplete="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
+                className="w-full px-4 py-3 bg-slate-100 border border-slate-300 rounded-lg text-slate-900 focus:border-yellow-500 focus:outline-none"
               />
             </div>
 
             <div>
-              <label htmlFor="signup-org" className="block text-sm text-slate-400 mb-1">Organization (School / District)</label>
+              <label htmlFor="signup-org" className="block text-sm text-slate-600 mb-1">Organization (School / District)</label>
               <select
                 id="signup-org"
                 value={selectedOrgId}
@@ -346,7 +346,7 @@ export default function LoginScreen() {
                   const found = organizations.find(o => o.id === id);
                   setSelectedOrgName(found ? found.name : '');
                 }}
-                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
+                className="w-full px-4 py-3 bg-slate-100 border border-slate-300 rounded-lg text-slate-900 focus:border-yellow-500 focus:outline-none"
               >
                 <option value="">No Organization / Independent</option>
                 {organizations.map(o => (
@@ -356,7 +356,7 @@ export default function LoginScreen() {
             </div>
 
             <div>
-              <label htmlFor="signup-password" className="block text-sm text-slate-400 mb-1">Password</label>
+              <label htmlFor="signup-password" className="block text-sm text-slate-600 mb-1">Password</label>
               <div className="relative">
                 <input
                   id="signup-password"
@@ -365,12 +365,12 @@ export default function LoginScreen() {
                   autoComplete="new-password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 pr-11 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-yellow-500 focus:outline-none"
+                  className="w-full px-4 py-3 pr-11 bg-slate-100 border border-slate-300 rounded-lg text-slate-900 focus:border-yellow-500 focus:outline-none"
                 />
                 <button
                   type="button"
                   onClick={() => setShowTeacherPassword(!showTeacherPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-900 p-1 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
                   aria-label={getVisibilityToggleLabel(showTeacherPassword, false)}
                 >
                   {showTeacherPassword ? <EyeOff className="w-5 h-5" aria-hidden="true" /> : <Eye className="w-5 h-5" aria-hidden="true" />}
@@ -386,8 +386,8 @@ export default function LoginScreen() {
               {loading ? 'Creating Account...' : <><UserPlus className="w-5 h-5" aria-hidden="true" /> Sign Up</>}
             </button>
 
-            <p className="text-center text-sm text-slate-400 mt-4">
-              Already have an account? <button type="button" onClick={() => setMode('teacher-login')} className="text-yellow-500 hover:underline">Login</button>
+            <p className="text-center text-sm text-slate-600 mt-4">
+              Already have an account? <button type="button" onClick={() => setMode('teacher-login')} className="text-yellow-800 hover:underline">Login</button>
             </p>
           </form>
         )}
@@ -396,10 +396,10 @@ export default function LoginScreen() {
         {mode === 'student-join' && (
           <form onSubmit={handleLookupClass} className="space-y-4" aria-labelledby="student-join-heading">
             <BackButton />
-            <h2 id="student-join-heading" className="text-xl font-bold text-white text-center mb-6">Find Your Class</h2>
+            <h2 id="student-join-heading" className="text-xl font-bold text-slate-900 text-center mb-6">Find Your Class</h2>
 
             <div>
-              <label htmlFor="class-code" className="block text-sm text-slate-400 mb-1">Class Code</label>
+              <label htmlFor="class-code" className="block text-sm text-slate-600 mb-1">Class Code</label>
               <input
                 id="class-code"
                 type="text"
@@ -407,7 +407,7 @@ export default function LoginScreen() {
                 placeholder="e.g. A1B2C3"
                 value={classCode}
                 onChange={e => setClassCode(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none text-center text-2xl uppercase font-mono tracking-widest"
+                className="w-full px-4 py-3 bg-slate-100 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none text-center text-2xl uppercase font-mono tracking-widest"
                 autoComplete="off"
               />
             </div>
@@ -429,13 +429,13 @@ export default function LoginScreen() {
           return (
             <div className="space-y-4">
               <BackButton />
-              <h2 className="text-xl font-bold text-white text-center mb-2">Who are you?</h2>
-              <p className="text-center text-slate-400 text-sm mb-4">Class: <span className="font-bold text-white">{classInfo?.name}</span></p>
+              <h2 className="text-xl font-bold text-slate-900 text-center mb-2">Who are you?</h2>
+              <p className="text-center text-slate-600 text-sm mb-4">Class: <span className="font-bold text-slate-900">{classInfo?.name}</span></p>
 
               {/* Roster Search Input */}
               {roster.length > 0 && (
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" aria-hidden="true" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 w-4 h-4 pointer-events-none" aria-hidden="true" />
                   <input
                     type="text"
                     value={rosterSearch}
@@ -443,13 +443,13 @@ export default function LoginScreen() {
                     placeholder="Type your name to find yourself..."
                     aria-label="Search student roster by name"
                     autoFocus={roster.length > 5}
-                    className="w-full px-4 py-2.5 pl-9 pr-8 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:border-blue-500 focus:outline-none text-sm"
+                    className="w-full px-4 py-2.5 pl-9 pr-8 bg-slate-100 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none text-sm"
                   />
                   {rosterSearch && (
                     <button
                       type="button"
                       onClick={() => setRosterSearch('')}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 text-xs"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-900 p-1 text-xs"
                       aria-label="Clear search"
                     >
                       ✕
@@ -464,26 +464,26 @@ export default function LoginScreen() {
                     key={student.id}
                     role="listitem"
                     onClick={() => { setSelectedStudentId(student.id); setMode('student-password'); }}
-                    className="w-full p-4 bg-slate-700 hover:bg-slate-600 rounded-xl text-left transition-colors flex items-center gap-3"
+                    className="w-full p-4 bg-slate-100 hover:bg-slate-200 rounded-xl text-left transition-colors flex items-center gap-3"
                   >
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-sm" aria-hidden="true">👤</div>
-                    <span className="font-bold text-white">{student.name}</span>
+                    <div className="text-white w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-sm" aria-hidden="true">👤</div>
+                    <span className="font-bold text-slate-900">{student.name}</span>
                   </button>
                 ))}
                 {roster.length === 0 && (
-                  <p className="text-center text-slate-500 py-4" role="status">No students yet. Be the first to join!</p>
+                  <p className="text-center text-slate-600 py-4" role="status">No students yet. Be the first to join!</p>
                 )}
                 {roster.length > 0 && filteredRoster.length === 0 && (
-                  <p className="text-center text-slate-400 py-4 text-sm" role="status">
+                  <p className="text-center text-slate-600 py-4 text-sm" role="status">
                     No students matching "{rosterSearch}".
                   </p>
                 )}
               </div>
 
-              <div className="border-t border-slate-700 pt-4 mt-4">
+              <div className="border-t border-slate-200 pt-4 mt-4">
                 <button
                   onClick={() => { setError(''); setMode('student-signup'); }}
-                  className="w-full p-4 bg-green-600 hover:bg-green-500 rounded-xl text-center transition-colors flex items-center justify-center gap-2"
+                  className="text-white w-full p-4 bg-green-600 hover:bg-green-500 rounded-xl text-center transition-colors flex items-center justify-center gap-2"
                 >
                   <UserPlus className="w-5 h-5 text-white" aria-hidden="true" />
                   <span className="font-bold text-white">I'm New - Create My Account</span>
@@ -497,12 +497,12 @@ export default function LoginScreen() {
         {mode === 'student-password' && (
           <form onSubmit={handleStudentLogin} className="space-y-4" aria-labelledby="student-password-heading">
             <BackButton />
-            <h2 id="student-password-heading" className="text-xl font-bold text-white text-center mb-6">Hello, {roster.find(s => s.id === selectedStudentId)?.name}!</h2>
+            <h2 id="student-password-heading" className="text-xl font-bold text-slate-900 text-center mb-6">Hello, {roster.find(s => s.id === selectedStudentId)?.name}!</h2>
 
             <div>
-              <label htmlFor="student-pin" className="block text-sm text-slate-400 mb-1">Enter your Password/PIN</label>
+              <label htmlFor="student-pin" className="block text-sm text-slate-600 mb-1">Enter your Password/PIN</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none" aria-hidden="true" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 w-5 h-5 pointer-events-none" aria-hidden="true" />
                 <input
                   id="student-pin"
                   type={getVisibilityInputType(showStudentPin)}
@@ -511,13 +511,13 @@ export default function LoginScreen() {
                   placeholder="******"
                   value={studentPassword}
                   onChange={e => setStudentPassword(e.target.value)}
-                  className="w-full px-4 py-3 pl-10 pr-11 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-blue-500 focus:outline-none text-center text-xl tracking-widest"
+                  className="w-full px-4 py-3 pl-10 pr-11 bg-slate-100 border border-slate-300 rounded-lg text-slate-900 focus:border-blue-500 focus:outline-none text-center text-xl tracking-widest"
                   autoComplete="current-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowStudentPin(!showStudentPin)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-900 p-1 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
                   aria-label={getVisibilityToggleLabel(showStudentPin, true)}
                 >
                   {showStudentPin ? <EyeOff className="w-5 h-5" aria-hidden="true" /> : <Eye className="w-5 h-5" aria-hidden="true" />}
@@ -539,13 +539,13 @@ export default function LoginScreen() {
         {mode === 'student-signup' && (
           <form onSubmit={handleStudentSignup} className="space-y-4" aria-labelledby="student-signup-heading">
             <BackButton />
-            <h2 id="student-signup-heading" className="text-xl font-bold text-white text-center mb-2">Create Your Account</h2>
-            <p className="text-center text-slate-400 text-sm mb-4">Joining: <span className="font-bold text-white">{classInfo?.name}</span></p>
+            <h2 id="student-signup-heading" className="text-xl font-bold text-slate-900 text-center mb-2">Create Your Account</h2>
+            <p className="text-center text-slate-600 text-sm mb-4">Joining: <span className="font-bold text-slate-900">{classInfo?.name}</span></p>
 
             <div>
-              <label htmlFor="student-signup-name" className="block text-sm text-slate-400 mb-1">Your Name</label>
+              <label htmlFor="student-signup-name" className="block text-sm text-slate-600 mb-1">Your Name</label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" aria-hidden="true" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 w-5 h-5" aria-hidden="true" />
                 <input
                   id="student-signup-name"
                   type="text"
@@ -554,16 +554,16 @@ export default function LoginScreen() {
                   placeholder="Enter your name"
                   value={signupName}
                   onChange={e => setSignupName(e.target.value)}
-                  className="w-full px-4 py-3 pl-10 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-green-500 focus:outline-none"
+                  className="w-full px-4 py-3 pl-10 bg-slate-100 border border-slate-300 rounded-lg text-slate-900 focus:border-green-500 focus:outline-none"
                   autoComplete="name"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="student-signup-password" className="block text-sm text-slate-400 mb-1">Create a Password</label>
+              <label htmlFor="student-signup-password" className="block text-sm text-slate-600 mb-1">Create a Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none" aria-hidden="true" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 w-5 h-5 pointer-events-none" aria-hidden="true" />
                 <input
                   id="student-signup-password"
                   type={getVisibilityInputType(showSignupPassword)}
@@ -571,13 +571,13 @@ export default function LoginScreen() {
                   placeholder="Choose a password"
                   value={signupPassword}
                   onChange={e => setSignupPassword(e.target.value)}
-                  className="w-full px-4 py-3 pl-10 pr-11 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-green-500 focus:outline-none"
+                  className="w-full px-4 py-3 pl-10 pr-11 bg-slate-100 border border-slate-300 rounded-lg text-slate-900 focus:border-green-500 focus:outline-none"
                   autoComplete="new-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowSignupPassword(!showSignupPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-900 p-1 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400"
                   aria-label={getVisibilityToggleLabel(showSignupPassword, false)}
                 >
                   {showSignupPassword ? <EyeOff className="w-5 h-5" aria-hidden="true" /> : <Eye className="w-5 h-5" aria-hidden="true" />}
@@ -586,9 +586,9 @@ export default function LoginScreen() {
             </div>
 
             <div>
-              <label htmlFor="student-signup-confirm" className="block text-sm text-slate-400 mb-1">Confirm Password</label>
+              <label htmlFor="student-signup-confirm" className="block text-sm text-slate-600 mb-1">Confirm Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none" aria-hidden="true" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 w-5 h-5 pointer-events-none" aria-hidden="true" />
                 <input
                   id="student-signup-confirm"
                   type={getVisibilityInputType(showSignupConfirmPassword)}
@@ -596,13 +596,13 @@ export default function LoginScreen() {
                   placeholder="Type password again"
                   value={signupConfirmPassword}
                   onChange={e => setSignupConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-3 pl-10 pr-11 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-green-500 focus:outline-none"
+                  className="w-full px-4 py-3 pl-10 pr-11 bg-slate-100 border border-slate-300 rounded-lg text-slate-900 focus:border-green-500 focus:outline-none"
                   autoComplete="new-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowSignupConfirmPassword(!showSignupConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-900 p-1 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400"
                   aria-label={getVisibilityToggleLabel(showSignupConfirmPassword, false)}
                 >
                   {showSignupConfirmPassword ? <EyeOff className="w-5 h-5" aria-hidden="true" /> : <Eye className="w-5 h-5" aria-hidden="true" />}
@@ -621,33 +621,33 @@ export default function LoginScreen() {
         )}
 
         {/* Legal & Compliance Footer */}
-        <div className="mt-8 pt-4 border-t border-slate-700/60 text-center text-xs text-slate-400 space-y-2">
+        <div className="mt-8 pt-4 border-t border-slate-200 text-center text-xs text-slate-600 space-y-2">
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
             <button
               type="button"
               onClick={() => { setLegalTab('privacy'); setLegalModalOpen(true); }}
-              className="hover:text-blue-400 transition-colors underline underline-offset-2"
+              className="hover:text-blue-700 transition-colors underline underline-offset-2"
             >
               Privacy Policy
             </button>
-            <span className="text-slate-600">•</span>
+            <span className="text-slate-500">•</span>
             <button
               type="button"
               onClick={() => { setLegalTab('terms'); setLegalModalOpen(true); }}
-              className="hover:text-blue-400 transition-colors underline underline-offset-2"
+              className="hover:text-blue-700 transition-colors underline underline-offset-2"
             >
               Terms of Service
             </button>
-            <span className="text-slate-600">•</span>
+            <span className="text-slate-500">•</span>
             <button
               type="button"
               onClick={() => { setLegalTab('compliance'); setLegalModalOpen(true); }}
-              className="hover:text-emerald-400 transition-colors flex items-center gap-1 inline-flex"
+              className="hover:text-emerald-800 transition-colors flex items-center gap-1 inline-flex"
             >
-              <Shield className="w-3 h-3 text-emerald-400" /> FERPA & COPPA Compliant
+              <Shield className="w-3 h-3 text-emerald-800" /> FERPA & COPPA Compliant
             </button>
           </div>
-          <p className="text-[11px] text-slate-500">
+          <p className="text-[11px] text-slate-600">
             Protected under Federal & State Student Privacy Laws. Zero ads & zero data selling.
           </p>
         </div>

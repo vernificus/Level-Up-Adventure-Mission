@@ -186,23 +186,23 @@ export default function ClubArenaModal({
   return (
     <div
       ref={arenaRef}
-      className="fixed inset-0 z-[100] bg-slate-950 text-white flex flex-col overflow-hidden select-none"
+      className="fixed inset-0 z-[100] bg-slate-50 text-slate-900 flex flex-col overflow-hidden select-none"
       role="dialog"
       aria-modal="true"
       aria-label="Live Club Arena Big-Screen Mode"
     >
       {/* Top Arena Header */}
-      <header className="px-6 py-3.5 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between gap-4 flex-shrink-0">
+      <header className="px-6 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-4 flex-shrink-0">
         <div className="flex items-center gap-3">
           <span className="flex h-3 w-3 relative">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+            <span className="text-white relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
           </span>
-          <h2 className="text-xl sm:text-2xl font-black uppercase italic tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-300 to-orange-400">
+          <h2 className="text-xl sm:text-2xl font-display font-bold text-slate-900">
             📺 Live STEM Club Arena — {classData?.name || 'Makerspace'}
           </h2>
           {classData?.code && (
-            <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-xs font-mono font-bold text-yellow-400">
+            <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-slate-200 text-xs font-mono font-bold text-yellow-800">
               Join Code: {classData.code}
             </span>
           )}
@@ -212,7 +212,7 @@ export default function ClubArenaModal({
           {onRefreshData && (
             <button
               onClick={onRefreshData}
-              className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+              className="p-2 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors"
               title="Refresh Live Scores"
             >
               <RefreshCw className="w-4 h-4" />
@@ -222,8 +222,8 @@ export default function ClubArenaModal({
             onClick={() => setSoundEnabled(prev => !prev)}
             className={`p-2 rounded-lg border transition-colors ${
               soundEnabled
-                ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300'
-                : 'bg-slate-800 border-slate-700 text-slate-500'
+                ? 'bg-emerald-50 border-emerald-500/40 text-emerald-800'
+                : 'bg-white border-slate-200 text-slate-600'
             }`}
             title={soundEnabled ? 'Timer Chime Sound ON' : 'Timer Chime Sound Muted'}
           >
@@ -231,14 +231,14 @@ export default function ClubArenaModal({
           </button>
           <button
             onClick={toggleFullscreen}
-            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+            className="p-2 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors"
             title="Toggle Projector Fullscreen"
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
           <button
             onClick={onClose}
-            className="px-3 py-1.5 rounded-lg bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 font-bold text-xs flex items-center gap-1 transition-colors"
+            className="px-3 py-1.5 rounded-lg bg-rose-100 hover:bg-rose-600 text-rose-700 hover:text-slate-900 border border-rose-500/40 font-bold text-xs flex items-center gap-1 transition-colors"
           >
             <X className="w-4 h-4" /> Exit Arena
           </button>
@@ -250,15 +250,15 @@ export default function ClubArenaModal({
         {/* LEFT 7 COLUMNS: Live Guild Race + Weekly Boss Raid */}
         <div className="lg:col-span-7 flex flex-col gap-5">
           {/* Guild XP Race Standings */}
-          <div className="bg-slate-900/90 border-2 border-yellow-500/40 rounded-2xl p-5 flex-1 flex flex-col shadow-xl">
+          <div className="bg-slate-50 border-2 border-yellow-500/40 rounded-2xl p-5 flex-1 flex flex-col shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
-                <Trophy className="w-6 h-6 text-yellow-400" />
-                <h3 className="text-lg sm:text-xl font-black uppercase italic text-white">
+                <Trophy className="w-6 h-6 text-yellow-800" />
+                <h3 className="text-lg sm:text-xl font-display font-bold text-slate-900">
                   Live Guild XP Race
                 </h3>
               </div>
-              <span className="text-xs font-bold text-slate-400">
+              <span className="text-xs font-bold text-slate-600">
                 {students.length} Club Members Active
               </span>
             </div>
@@ -274,8 +274,8 @@ export default function ClubArenaModal({
                     key={guild.id}
                     className={`p-3.5 rounded-xl border-2 transition-all flex flex-col justify-between ${
                       isFirst
-                        ? 'bg-gradient-to-br from-yellow-950/50 via-slate-900 to-slate-900 border-yellow-400 shadow-lg shadow-yellow-500/10'
-                        : 'bg-slate-800/70 border-slate-700/80'
+                        ? 'bg-gradient-to-br from-yellow-50 via-slate-50 to-slate-50 border-yellow-400 shadow-lg shadow-yellow-500/10'
+                        : 'bg-white border-slate-200'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2 mb-2">
@@ -283,25 +283,25 @@ export default function ClubArenaModal({
                         <span className="text-2xl flex-shrink-0">{guild.icon || '🛡️'}</span>
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-black text-yellow-400">#{idx + 1}</span>
-                            <h4 className="font-black text-white truncate text-sm sm:text-base">{guild.name}</h4>
+                            <span className="text-xs font-bold text-yellow-800">#{idx + 1}</span>
+                            <h4 className="font-bold text-slate-900 truncate text-sm sm:text-base">{guild.name}</h4>
                           </div>
-                          <p className="text-[11px] text-slate-400 font-semibold">
+                          <p className="text-[11px] text-slate-600 font-semibold">
                             Lv.{lvlInfo.level} {lvlInfo.title} • {guild.members.length} {guild.members.length === 1 ? 'member' : 'members'}
                           </p>
                         </div>
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <span className="text-base sm:text-lg font-black text-yellow-400">
+                        <span className="text-base sm:text-lg font-display font-bold text-yellow-800">
                           {guild.totalXp.toLocaleString()}
                         </span>
-                        <span className="text-[10px] font-bold text-slate-400 block uppercase">Guild XP</span>
+                        <span className="text-[10px] font-bold text-slate-600 block uppercase">Guild XP</span>
                       </div>
                     </div>
 
-                    <div className="h-2.5 bg-slate-950 rounded-full overflow-hidden border border-slate-700">
+                    <div className="h-2.5 bg-slate-50 rounded-full overflow-hidden border border-slate-200">
                       <div
-                        className={`h-full bg-gradient-to-r ${guild.color || 'from-blue-500 to-cyan-400'} rounded-full transition-all duration-700`}
+                        className={`text-white h-full bg-gradient-to-r ${guild.color || 'from-blue-500 to-cyan-400'} rounded-full transition-all duration-700`}
                         style={{ width: `${barWidth}%` }}
                       />
                     </div>
@@ -312,58 +312,58 @@ export default function ClubArenaModal({
           </div>
 
           {/* Shared Club Weekly Boss Raid Bar */}
-          <div className="bg-gradient-to-r from-red-950/60 via-slate-900 to-orange-950/50 border-2 border-red-500/60 rounded-2xl p-5 shadow-xl">
+          <div className="bg-gradient-to-r from-red-50 via-slate-50 to-orange-50 border-2 border-red-500/60 rounded-2xl p-5 shadow-xl">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
               <div className="flex items-center gap-3">
                 <div className="text-4xl">{currentBoss?.icon || '👹'}</div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-black uppercase tracking-widest text-red-400">
+                    <span className="text-xs font-bold uppercase tracking-widest text-red-700">
                       Weekly Club Boss Raid
                     </span>
                     {remainingHp === 0 && (
-                      <span className="px-2 py-0.5 text-[10px] font-black uppercase bg-emerald-500 text-slate-950 rounded-full">
+                      <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-emerald-500 text-slate-950 rounded-full">
                         🎉 BOSS DEFEATED!
                       </span>
                     )}
                   </div>
-                  <h3 className="text-xl font-black text-white">{currentBoss?.name || 'The Glitch Dragon'}</h3>
+                  <h3 className="text-xl font-display font-bold text-slate-900">{currentBoss?.name || 'The Glitch Dragon'}</h3>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-lg font-black text-red-300">
+                <p className="text-lg font-display font-bold text-red-700">
                   {remainingHp.toLocaleString()} / {bossTotalHp.toLocaleString()} HP
                 </p>
-                <p className="text-xs text-orange-300 font-bold">
+                <p className="text-xs text-orange-800 font-bold">
                   {totalDamageDealt.toLocaleString()} Total Club DMG Dealt
                 </p>
               </div>
             </div>
 
-            <div className="h-4 bg-slate-950 rounded-full overflow-hidden border border-red-500/40 p-0.5 mb-3">
+            <div className="h-4 bg-slate-50 rounded-full overflow-hidden border border-red-500/40 p-0.5 mb-3">
               <div
-                className="h-full bg-gradient-to-r from-red-600 via-orange-500 to-yellow-400 rounded-full transition-all duration-700"
+                className="text-white h-full bg-gradient-to-r from-red-600 via-orange-500 to-yellow-400 rounded-full transition-all duration-700"
                 style={{ width: `${hpPercent}%` }}
               />
             </div>
 
             {topRaiders.length > 0 ? (
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
-                  <Flame className="w-3.5 h-3.5 text-orange-400" /> Top Boss Raiders:
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1">
+                  <Flame className="w-3.5 h-3.5 text-orange-800" /> Top Boss Raiders:
                 </span>
                 {topRaiders.map(([name, dmg], i) => (
                   <span
                     key={name}
-                    className="text-xs bg-slate-900/90 border border-slate-700 px-2.5 py-1 rounded-full font-bold text-white"
+                    className="text-xs bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-full font-bold text-slate-900"
                   >
                     {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '⚔️'} {name}{' '}
-                    <span className="text-orange-400">-{dmg} HP</span>
+                    <span className="text-orange-800">-{dmg} HP</span>
                   </span>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-slate-400 italic">
+              <p className="text-xs text-slate-600 italic">
                 Complete missions (+50 DMG) or Boss Challenges (+250 DMG) to drain the Boss's HP!
               </p>
             )}
@@ -373,33 +373,33 @@ export default function ClubArenaModal({
         {/* RIGHT 5 COLUMNS: VEX Pitch & Makerspace Countdown Timer + STEM Queue + Live Feed */}
         <div className="lg:col-span-5 flex flex-col gap-5">
           {/* VEX Pitch / Makerspace Station Countdown Timer */}
-          <div className="bg-slate-900 border-2 border-cyan-500/50 rounded-2xl p-5 shadow-xl">
+          <div className="bg-slate-50 border-2 border-cyan-500/50 rounded-2xl p-5 shadow-xl">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-black uppercase tracking-widest text-cyan-400 flex items-center gap-1.5">
+              <span className="text-xs font-bold uppercase tracking-widest text-cyan-800 flex items-center gap-1.5">
                 <Clock className="w-4 h-4" /> Station & VEX Pitch Timer
               </span>
-              <span className="text-xs text-slate-400 font-semibold truncate max-w-[220px]">
+              <span className="text-xs text-slate-600 font-semibold truncate max-w-[220px]">
                 {activeStationLabel}
               </span>
             </div>
 
             {/* Giant Digital Clock */}
             <div
-              className={`my-3 py-4 px-6 rounded-2xl border-2 text-center font-mono font-black tracking-wider text-5xl sm:text-6xl transition-colors ${
+              className={`my-3 py-4 px-6 rounded-2xl border-2 text-center font-mono font-display font-bold tracking-wider text-5xl sm:text-6xl transition-colors ${
                 timerSeconds === 0
-                  ? 'bg-rose-950/80 border-rose-500 text-rose-300 animate-pulse'
+                  ? 'bg-rose-50 border-rose-500 text-rose-700 animate-pulse'
                   : isRunning
-                  ? 'bg-slate-950 border-cyan-400 text-cyan-300'
-                  : 'bg-slate-950/80 border-slate-700 text-white'
+                  ? 'bg-slate-50 border-cyan-400 text-cyan-800'
+                  : 'bg-slate-50 border-slate-200 text-slate-900'
               }`}
             >
               {formatTime(timerSeconds)}
             </div>
 
             {/* Timer Progress Bar */}
-            <div className="h-2 bg-slate-950 rounded-full overflow-hidden mb-4">
+            <div className="h-2 bg-slate-50 rounded-full overflow-hidden mb-4">
               <div
-                className="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-all duration-500"
+                className="text-white h-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-all duration-500"
                 style={{ width: `${timerProgress}%` }}
               />
             </div>
@@ -408,7 +408,7 @@ export default function ClubArenaModal({
             <div className="flex gap-2 mb-3">
               <button
                 onClick={() => setIsRunning(prev => !prev)}
-                className={`flex-1 py-2.5 rounded-xl font-black uppercase text-sm flex items-center justify-center gap-2 transition-colors ${
+                className={`flex-1 py-2.5 rounded-xl font-bold uppercase text-sm flex items-center justify-center gap-2 transition-colors ${
                   isRunning
                     ? 'bg-amber-500 hover:bg-amber-400 text-slate-950'
                     : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950'
@@ -421,13 +421,13 @@ export default function ClubArenaModal({
                   setIsRunning(false);
                   setTimerSeconds(initialTimerSeconds);
                 }}
-                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-xs flex items-center gap-1.5 border border-slate-700"
+                className="px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-800 font-bold rounded-xl text-xs flex items-center gap-1.5 border border-slate-200"
               >
                 <RotateCcw className="w-4 h-4" /> Reset
               </button>
               <button
                 onClick={() => setTimerSeconds(prev => prev + 60)}
-                className="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold rounded-xl text-xs border border-slate-700"
+                className="px-3 py-2.5 bg-white hover:bg-slate-100 text-cyan-800 font-bold rounded-xl text-xs border border-slate-200"
               >
                 +1m
               </button>
@@ -437,25 +437,25 @@ export default function ClubArenaModal({
             <div className="grid grid-cols-4 gap-1.5 text-xs">
               <button
                 onClick={() => startPresetTimer(5, '🧹 5-Min Makerspace Clean Up!')}
-                className="py-1.5 px-2 rounded-lg bg-rose-950/60 hover:bg-rose-900/80 border border-rose-500/40 text-rose-200 font-bold"
+                className="py-1.5 px-2 rounded-lg bg-rose-50 hover:bg-rose-50 border border-rose-500/40 text-rose-800 font-bold"
               >
                 🧹 5m Clean
               </button>
               <button
                 onClick={() => startPresetTimer(10, '⚡ 10-Min Build Sprint')}
-                className="py-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold"
+                className="py-1.5 px-2 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 font-bold"
               >
                 ⚡ 10m Sprint
               </button>
               <button
                 onClick={() => startPresetTimer(15, '🏟️ 15-Min VEX Pitch Pass')}
-                className="py-1.5 px-2 rounded-lg bg-cyan-950/60 hover:bg-cyan-900/80 border border-cyan-500/40 text-cyan-200 font-bold"
+                className="py-1.5 px-2 rounded-lg bg-cyan-50 hover:bg-cyan-50 border border-cyan-500/40 text-cyan-800 font-bold"
               >
                 🏟️ 15m Pitch
               </button>
               <button
                 onClick={() => startPresetTimer(30, '🏆 30-Min VEX Pitch Pass')}
-                className="py-1.5 px-2 rounded-lg bg-amber-950/60 hover:bg-amber-900/80 border border-amber-500/40 text-amber-200 font-bold"
+                className="py-1.5 px-2 rounded-lg bg-amber-50 hover:bg-amber-50 border border-amber-500/40 text-amber-800 font-bold"
               >
                 🏆 30m Pitch
               </button>
@@ -463,18 +463,18 @@ export default function ClubArenaModal({
           </div>
 
           {/* VEX Pitch & STEM Supplies Queue */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex-1 flex flex-col min-h-[180px]">
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex-1 flex flex-col min-h-[180px]">
             <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-black uppercase tracking-wider text-amber-400 flex items-center gap-2">
+              <h4 className="text-sm font-bold uppercase tracking-wider text-amber-800 flex items-center gap-2">
                 <span>🎟️ VEX Pitch & STEM Depot Queue</span>
               </h4>
-              <span className="text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">
+              <span className="text-xs bg-amber-100 text-amber-800 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">
                 {pendingQueue.length} Waiting
               </span>
             </div>
 
             {pendingQueue.length === 0 ? (
-              <div className="flex-1 flex items-center justify-center text-center text-xs text-slate-500 italic py-4">
+              <div className="flex-1 flex items-center justify-center text-center text-xs text-slate-600 italic py-4">
                 No unfulfilled VEX Pitch passes or STEM supply orders in queue.
               </div>
             ) : (
@@ -488,13 +488,13 @@ export default function ClubArenaModal({
                   return (
                     <div
                       key={order.id}
-                      className="p-2.5 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-between gap-2"
+                      className="p-2.5 rounded-xl bg-white border border-slate-200 flex items-center justify-between gap-2"
                     >
                       <div className="min-w-0">
-                        <p className="text-xs font-black text-white truncate">
+                        <p className="text-xs font-bold text-slate-900 truncate">
                           {order.itemIcon || '🎟️'} {order.itemName}
                         </p>
-                        <p className="text-[11px] text-slate-400 truncate">
+                        <p className="text-[11px] text-slate-600 truncate">
                           {order.studentName} {order.guildName ? `• ${order.guildName}` : ''}
                         </p>
                       </div>
@@ -505,7 +505,7 @@ export default function ClubArenaModal({
                               is30Min ? 30 : 15,
                               `${order.studentName}: ${order.itemName}`
                             )}
-                            className="px-2.5 py-1 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black rounded-lg text-[11px] flex items-center gap-1"
+                            className="px-2.5 py-1 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-lg text-[11px] flex items-center gap-1"
                             title="Load into Arena Timer"
                           >
                             <Play className="w-3 h-3" /> {is30Min ? '30m' : '15m'}
@@ -529,12 +529,12 @@ export default function ClubArenaModal({
           </div>
 
           {/* Live Club Mission Ticker */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
-            <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400 mb-2.5 flex items-center gap-1.5">
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-800 mb-2.5 flex items-center gap-1.5">
               <Zap className="w-4 h-4" /> Recent Approved Club Builds
             </h4>
             {recentApproved.length === 0 ? (
-              <p className="text-xs text-slate-500 italic">Approved missions will appear live here!</p>
+              <p className="text-xs text-slate-600 italic">Approved missions will appear live here!</p>
             ) : (
               <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
                 {recentApproved.map(sub => {
@@ -542,18 +542,18 @@ export default function ClubArenaModal({
                   return (
                     <div
                       key={sub.id}
-                      className="text-xs bg-slate-800/70 border border-slate-700/70 rounded-lg px-3 py-1.5 flex items-center justify-between gap-2"
+                      className="text-xs bg-white border border-slate-200 rounded-lg px-3 py-1.5 flex items-center justify-between gap-2"
                     >
-                      <span className="text-slate-200 truncate">
-                        <strong className="text-yellow-400">{sub.playerName}</strong>
+                      <span className="text-slate-800 truncate">
+                        <strong className="text-yellow-800">{sub.playerName}</strong>
                         {collabCount > 0 && (
-                          <span className="text-indigo-300 font-semibold">
+                          <span className="text-indigo-700 font-semibold">
                             {' '}+ {sub.collaborators.map(c => c.name).join(', ')}
                           </span>
                         )}{' '}
-                        completed <span className="text-white font-semibold">{sub.activityTitle}</span>
+                        completed <span className="text-slate-900 font-semibold">{sub.activityTitle}</span>
                       </span>
-                      <span className="text-emerald-400 font-black flex-shrink-0">
+                      <span className="text-emerald-800 font-bold flex-shrink-0">
                         +{sub.xp || 100} XP
                       </span>
                     </div>

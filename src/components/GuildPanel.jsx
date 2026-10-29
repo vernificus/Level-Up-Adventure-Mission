@@ -317,19 +317,19 @@ export default function GuildPanel({
   if (!currentGuild || !guild) {
     if (!allowStudentGuildSelect) {
       return (
-        <div className="mb-6 p-5 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-2 border-dashed border-amber-500/50 rounded-2xl shadow-lg">
+        <div className="mb-6 p-5 bg-gradient-to-r from-slate-50 via-white to-slate-50 border-2 border-dashed border-amber-500/50 rounded-2xl shadow-lg">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+              <div className="w-12 h-12 rounded-xl bg-amber-100 border border-amber-500/40 flex items-center justify-center text-amber-800">
                 <Shield className="w-6 h-6" />
               </div>
               <div className="text-left">
-                <span className="text-xs font-black uppercase tracking-wider text-amber-400 block">Guild Alliance</span>
-                <p className="font-black text-white text-base">Your guild alliance is assigned by your teacher.</p>
-                <p className="text-xs text-slate-400 mt-0.5">Contact your teacher if you need to be placed or moved to a guild team.</p>
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-800 block">Guild Alliance</span>
+                <p className="font-bold text-slate-900 text-base">Your guild alliance is assigned by your teacher.</p>
+                <p className="text-xs text-slate-600 mt-0.5">Contact your teacher if you need to be placed or moved to a guild team.</p>
               </div>
             </div>
-            <div className="px-3.5 py-1.5 bg-slate-800/90 text-amber-300 font-bold text-xs rounded-xl border border-slate-700 flex items-center gap-1.5 shadow-sm">
+            <div className="px-3.5 py-1.5 bg-white text-amber-800 font-bold text-xs rounded-xl border border-slate-200 flex items-center gap-1.5 shadow-sm">
               <Lock className="w-3.5 h-3.5" /> Teacher Assigned
             </div>
           </div>
@@ -341,19 +341,19 @@ export default function GuildPanel({
       <div className="mb-6">
         <button
           onClick={() => setShowGuilds(true)}
-          className="w-full p-5 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-2 border-dashed border-yellow-500/60 hover:border-yellow-400 rounded-2xl transition-all shadow-lg hover:shadow-yellow-500/10 group min-h-[44px]"
+          className="w-full p-5 bg-gradient-to-r from-slate-50 via-white to-slate-50 border-2 border-dashed border-yellow-500/60 hover:border-yellow-400 rounded-2xl transition-all shadow-lg hover:shadow-yellow-500/10 group min-h-[44px]"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-yellow-500/20 border border-yellow-500/40 flex items-center justify-center text-yellow-400 group-hover:scale-110 transition-transform">
+              <div className="w-12 h-12 rounded-xl bg-yellow-100 border border-yellow-500/40 flex items-center justify-center text-yellow-800 group-hover:scale-110 transition-transform">
                 <Shield className="w-6 h-6" />
               </div>
               <div className="text-left">
-                <span className="text-xs font-black uppercase tracking-wider text-yellow-400 block">Team Adventure</span>
-                <p className="font-black text-white text-base">Join a Guild to Collaborate & Level Up Together!</p>
+                <span className="text-xs font-bold uppercase tracking-wider text-yellow-800 block">Team Adventure</span>
+                <p className="font-bold text-slate-900 text-base">Join a Guild to Collaborate & Level Up Together!</p>
               </div>
             </div>
-            <div className="px-3.5 py-1.5 bg-yellow-500 text-slate-950 font-black text-xs rounded-xl flex items-center gap-1.5 shadow min-h-[44px]">
+            <div className="px-3.5 py-1.5 bg-yellow-500 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1.5 shadow min-h-[44px]">
               Choose Guild <ChevronRight className="w-4 h-4" />
             </div>
           </div>
@@ -361,21 +361,21 @@ export default function GuildPanel({
 
         {showGuilds && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
             role="dialog"
             aria-modal="true"
             onClick={() => setShowGuilds(false)}
           >
             <div
-              className="bg-slate-800 border-2 border-yellow-500/80 rounded-3xl max-w-3xl w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto"
+              className="bg-white border-2 border-slate-200 rounded-3xl max-w-3xl w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto"
               onClick={e => e.stopPropagation()}
             >
               <div className="text-center mb-6">
-                <span className="text-xs font-black uppercase tracking-widest text-yellow-400 bg-yellow-400/10 px-3 py-1 rounded-full border border-yellow-400/30">
+                <span className="text-xs font-bold uppercase tracking-widest text-yellow-800 bg-yellow-100 px-3 py-1 rounded-full border border-yellow-400/30">
                   Select Your Alliance ({availableGuilds.length} Guilds Available)
                 </span>
-                <h3 className="text-2xl font-black uppercase italic text-white mt-2">Choose Your Guild</h3>
-                <p className="text-xs text-slate-300 max-w-md mx-auto mt-1">
+                <h3 className="text-2xl font-display font-bold text-slate-900 mt-2">Choose Your Guild</h3>
+                <p className="text-xs text-slate-700 max-w-md mx-auto mt-1">
                   Team up with classmates! Earn collective XP, unlock tiered STEM supplies, and level up your Guild Castle.
                 </p>
               </div>
@@ -389,17 +389,17 @@ export default function GuildPanel({
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-4xl drop-shadow">{g.emoji || '🛡️'}</span>
-                        <span className="text-[11px] font-black uppercase tracking-wider bg-black/30 px-2.5 py-0.5 rounded-full border border-white/20">
+                        <span className="text-[11px] font-bold uppercase tracking-wider bg-black/30 px-2.5 py-0.5 rounded-full border border-white/20">
                           {g.symbol || 'Team'}
                         </span>
                       </div>
-                      <h4 className="text-lg font-black">{g.name}</h4>
-                      <p className="text-xs opacity-90 italic mt-0.5">"{g.motto || 'Together we rise!'}"</p>
+                      <h4 className="text-lg font-display font-bold">{g.name}</h4>
+                      <p className="text-xs italic mt-0.5">"{g.motto || 'Together we rise!'}"</p>
                     </div>
 
                     <button
                       onClick={() => { onJoinGuild(g.id); setShowGuilds(false); }}
-                      className="mt-4 w-full py-2.5 bg-white text-slate-900 hover:bg-yellow-300 font-black rounded-xl text-xs uppercase tracking-wider transition-colors shadow flex items-center justify-center gap-1.5 min-h-[44px]"
+                      className="mt-4 w-full py-2.5 bg-white text-slate-900 hover:bg-yellow-300 font-bold rounded-xl text-xs uppercase tracking-wider transition-colors shadow flex items-center justify-center gap-1.5 min-h-[44px]"
                     >
                       Enlist in {g.name} <ChevronRight className="w-4 h-4" />
                     </button>
@@ -409,7 +409,7 @@ export default function GuildPanel({
 
               <button
                 onClick={() => setShowGuilds(false)}
-                className="w-full mt-5 py-2.5 bg-slate-700 hover:bg-slate-600 rounded-xl text-slate-300 text-xs font-bold transition-colors min-h-[44px]"
+                className="w-full mt-5 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-700 text-xs font-bold transition-colors min-h-[44px]"
               >
                 Close for Now
               </button>
@@ -427,8 +427,8 @@ export default function GuildPanel({
     <>
       {/* Toast Feedback */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-yellow-300 border-2 border-yellow-500 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 font-black text-xs animate-in slide-in-from-bottom-5">
-          <Sparkles className="w-4 h-4 text-yellow-400 flex-shrink-0" />
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-50 text-yellow-800 border-2 border-yellow-500 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 font-bold text-xs animate-in slide-in-from-bottom-5">
+          <Sparkles className="w-4 h-4 text-yellow-800 flex-shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}
@@ -453,7 +453,7 @@ export default function GuildPanel({
                   alt={`${guild?.name || 'Guild'} robot`}
                   className="w-16 h-16 rounded-2xl object-cover border-2 border-yellow-400 shadow-xl"
                 />
-                <span className="absolute -bottom-1 -right-1 bg-slate-950 text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md border border-yellow-500/60 text-yellow-300">
+                <span className="absolute -bottom-1 -right-1 bg-slate-50 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md border border-yellow-500/60 text-yellow-800">
                   Bot
                 </span>
               </div>
@@ -465,27 +465,27 @@ export default function GuildPanel({
 
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-black text-xl text-white tracking-wide">{guild?.name || 'Guild'}</h3>
-                <span className="text-[11px] font-black uppercase px-2.5 py-0.5 rounded-full bg-black/30 border border-white/30">
+                <h3 className="font-display font-bold text-xl text-white tracking-wide">{guild?.name || 'Guild'}</h3>
+                <span className="text-[11px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-black/30 border border-white/30">
                   Level {levelInfo.level} • {levelInfo.name}
                 </span>
               </div>
-              <p className="text-xs opacity-90 italic mt-0.5">"{guild?.motto || ''}"</p>
+              <p className="text-xs italic mt-0.5">"{guild?.motto || ''}"</p>
             </div>
           </div>
 
           {/* Quick Stats Pills */}
           <div className="flex items-center gap-2 flex-wrap">
             <div className="bg-black/25 px-3 py-1.5 rounded-xl border border-white/20 text-center">
-              <span className="text-[10px] uppercase font-black text-white/70 block">Guild Spirit</span>
-              <span className="text-xs font-black text-amber-300 flex items-center justify-center gap-1">
+              <span className="text-[10px] uppercase font-bold text-white/70 block">Guild Spirit</span>
+              <span className="text-xs font-bold text-white flex items-center justify-center gap-1">
                 <Flame className="w-3.5 h-3.5 text-orange-400" /> {guildHall?.spiritFlame || 0} Cheers
               </span>
             </div>
             <div className="bg-black/25 px-3 py-1.5 rounded-xl border border-white/20 text-center">
-              <span className="text-[10px] uppercase font-black text-white/70 block">Your Contribution</span>
-              <span className="text-xs font-black text-yellow-300 flex items-center justify-center gap-1">
-                <Star className="w-3.5 h-3.5 text-yellow-300" /> {guildXp} XP
+              <span className="text-[10px] uppercase font-bold text-white/70 block">Your Contribution</span>
+              <span className="text-xs font-bold text-white flex items-center justify-center gap-1">
+                <Star className="w-3.5 h-3.5 text-white" /> {guildXp} XP
               </span>
             </div>
           </div>
@@ -494,8 +494,8 @@ export default function GuildPanel({
         {/* Guild Level Progress Bar */}
         <div className="mb-4 bg-black/30 p-3 rounded-2xl border border-white/15 relative z-10">
           <div className="flex items-center justify-between text-xs font-bold mb-1.5">
-            <span className="flex items-center gap-1.5 text-amber-200">
-              <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
+            <span className="flex items-center gap-1.5 text-white">
+              <Sparkles className="w-3.5 h-3.5 text-white" />
               Active Perk: <span className="text-white font-extrabold">{levelInfo.perk}</span>
             </span>
             <span className="text-white/80">
@@ -517,19 +517,19 @@ export default function GuildPanel({
               <span className="text-2xl">{activeChallenge.emoji}</span>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-300">Live Team Quest</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-white">Live Team Quest</span>
                   {activeChallenge.completed && (
-                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-slate-950 flex items-center gap-0.5">
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500 text-slate-950 flex items-center gap-0.5">
                       <Check className="w-2.5 h-2.5" /> Complete!
                     </span>
                   )}
                 </div>
-                <p className="text-xs font-black text-white">{activeChallenge.title} ({activeChallenge.current}/{activeChallenge.target})</p>
+                <p className="text-xs font-bold text-white">{activeChallenge.title} ({activeChallenge.current}/{activeChallenge.target})</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-yellow-300 bg-black/30 px-2 py-1 rounded-lg">
+              <span className="text-xs font-bold text-white bg-black/30 px-2 py-1 rounded-lg">
                 +{activeChallenge.reward} XP • +{activeChallenge.coinReward} 🪙
               </span>
             </div>
@@ -539,7 +539,7 @@ export default function GuildPanel({
         {/* Enter Guild HQ Button */}
         <button
           onClick={() => { setShowGuildDetails(true); loadGuildData(); }}
-          className="w-full py-3 bg-white hover:bg-yellow-300 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 relative z-10 active:scale-[0.99] min-h-[44px]"
+          className="w-full py-3 bg-white hover:bg-yellow-300 text-slate-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 relative z-10 active:scale-[0.99] min-h-[44px]"
         >
           <Shield className="w-4 h-4 text-slate-900" /> Enter Guild HQ, Bot Showcase & STEM Shop <ChevronRight className="w-4 h-4" />
         </button>
@@ -548,17 +548,17 @@ export default function GuildPanel({
       {/* Guild Headquarters Full Modal */}
       {showGuildDetails && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/90 backdrop-blur-md"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-md"
           role="dialog"
           aria-modal="true"
           onClick={() => setShowGuildDetails(false)}
         >
           <div
-            className="bg-slate-900 border-2 border-yellow-500/70 rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+            className="bg-slate-50 border-2 border-slate-200 rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
             onClick={e => e.stopPropagation()}
           >
             {/* Castle Header Banner with Theme */}
-            <div className={`p-6 bg-gradient-to-br ${bannerGradients[guildHall?.banner || 'default']} border-b border-slate-800 relative`}>
+            <div className={`text-white p-6 bg-gradient-to-br ${bannerGradients[guildHall?.banner || 'default']} border-b border-slate-200 relative`}>
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   {/* Bot Picture or Guild Emoji */}
@@ -595,14 +595,14 @@ export default function GuildPanel({
 
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-2xl font-black uppercase italic text-white">{guild?.name || 'Guild'}</h3>
-                      <span className="text-xs font-black uppercase px-3 py-1 rounded-full bg-yellow-500 text-slate-950 shadow">
+                      <h3 className="text-2xl font-display font-bold text-white">{guild?.name || 'Guild'}</h3>
+                      <span className="text-xs font-bold uppercase px-3 py-1 rounded-full bg-yellow-500 text-slate-950 shadow">
                         Level {levelInfo.level} • {levelInfo.name}
                       </span>
                     </div>
-                    <p className="text-slate-300 text-xs mt-0.5 italic">"{guild?.motto || ''}"</p>
+                    <p className="text-white text-xs mt-0.5 italic">"{guild?.motto || ''}"</p>
                     {guildHall?.description && (
-                      <p className="text-yellow-300 text-xs font-semibold mt-1">"{guildHall.description}"</p>
+                      <p className="text-white text-xs font-semibold mt-1">"{guildHall.description}"</p>
                     )}
                   </div>
                 </div>
@@ -610,22 +610,22 @@ export default function GuildPanel({
                 <div className="flex items-center gap-2 flex-wrap">
                   <button
                     onClick={handleOpenBotPicModal}
-                    className="px-3 py-1.5 bg-slate-800/90 hover:bg-slate-700 text-yellow-400 rounded-xl text-xs font-bold border border-yellow-500/40 flex items-center gap-1.5 transition-colors min-h-[36px]"
+                    className="px-3 py-1.5 bg-white hover:bg-slate-100 text-yellow-800 rounded-xl text-xs font-bold border border-yellow-500/40 flex items-center gap-1.5 transition-colors min-h-[36px]"
                   >
                     <Camera className="w-3.5 h-3.5" /> {activeBotPicture ? 'Edit Bot Photo' : 'Add Bot Photo'}
                   </button>
 
                   <button
                     onClick={() => setEditingHall(!editingHall)}
-                    className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold border border-slate-700 flex items-center gap-1.5 transition-colors min-h-[36px]"
+                    className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 rounded-xl text-xs font-bold border border-slate-200 flex items-center gap-1.5 transition-colors min-h-[36px]"
                     title="Customize Castle Theme & Notice"
                   >
-                    <Edit3 className="w-3.5 h-3.5 text-yellow-400" /> Customize Castle
+                    <Edit3 className="w-3.5 h-3.5 text-yellow-800" /> Customize Castle
                   </button>
 
                   <button
                     onClick={() => setShowGuildDetails(false)}
-                    className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+                    className="p-2 text-slate-400 hover:text-white hover:bg-white rounded-xl transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
                     aria-label="Close modal"
                   >
                     <X className="w-5 h-5" />
@@ -635,10 +635,10 @@ export default function GuildPanel({
 
               {/* Noticeboard Banner (if present) */}
               {guildHall?.notice && !editingHall && (
-                <div className="mt-4 p-3 bg-amber-950/40 border border-amber-500/40 rounded-xl flex items-center gap-2.5 text-amber-200 text-xs">
-                  <MessageSquare className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                <div className="mt-4 p-3 bg-amber-50 border border-amber-500/40 rounded-xl flex items-center gap-2.5 text-amber-800 text-xs">
+                  <MessageSquare className="w-4 h-4 text-amber-800 flex-shrink-0" />
                   <div className="flex-1">
-                    <span className="font-bold text-amber-300">Noticeboard ({guildHall.notice.authorName}): </span>
+                    <span className="font-bold text-amber-800">Noticeboard ({guildHall.notice.authorName}): </span>
                     <span>{guildHall.notice.text}</span>
                   </div>
                 </div>
@@ -647,37 +647,37 @@ export default function GuildPanel({
 
             {/* Customize Guild Hall Drawer */}
             {editingHall && (
-              <div className="p-5 bg-slate-800/90 border-b border-slate-700 space-y-4 animate-in slide-in-from-top-2">
-                <h4 className="text-sm font-black text-white flex items-center gap-2">
-                  <Edit3 className="w-4 h-4 text-yellow-400" /> Customize Guild Castle & Noticeboard
+              <div className="p-5 bg-white border-b border-slate-200 space-y-4 animate-in slide-in-from-top-2">
+                <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <Edit3 className="w-4 h-4 text-yellow-800" /> Customize Guild Castle & Noticeboard
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                   <div>
-                    <label className="block text-slate-400 font-bold uppercase mb-1">Guild Battle Cry / Description</label>
+                    <label className="block text-slate-600 font-bold uppercase mb-1">Guild Battle Cry / Description</label>
                     <input
                       type="text"
                       value={hallDescription}
                       onChange={e => setHallDescription(e.target.value)}
                       placeholder="e.g. Conquerors of the 5th Grade Missions!"
                       maxLength={100}
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-yellow-500"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 outline-none focus:border-yellow-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-400 font-bold uppercase mb-1">Noticeboard Announcement</label>
+                    <label className="block text-slate-600 font-bold uppercase mb-1">Noticeboard Announcement</label>
                     <input
                       type="text"
                       value={noticeText}
                       onChange={e => setNoticeText(e.target.value)}
                       placeholder="e.g. Focus on Collaboration activities this Friday!"
                       maxLength={140}
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white outline-none focus:border-yellow-500"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 outline-none focus:border-yellow-500"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 font-bold uppercase text-xs mb-2">Castle Banner Theme (Unlock by Leveling Up!)</label>
+                  <label className="block text-slate-600 font-bold uppercase text-xs mb-2">Castle Banner Theme (Unlock by Leveling Up!)</label>
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                     {GUILD_BANNERS.map(b => {
                       const isUnlocked = levelInfo.level >= b.minLevel;
@@ -689,10 +689,10 @@ export default function GuildPanel({
                           onClick={() => setHallBanner(b.id)}
                           className={`p-2 rounded-xl text-xs font-bold transition-all text-left flex flex-col justify-between border min-h-[44px] ${
                             isSelected
-                              ? 'bg-yellow-500 text-slate-950 border-yellow-400 shadow-md font-black'
+                              ? 'bg-yellow-500 text-slate-950 border-yellow-400 shadow-md font-bold'
                               : isUnlocked
-                              ? 'bg-slate-900 text-slate-300 hover:bg-slate-700 border-slate-700'
-                              : 'bg-slate-900/40 text-slate-600 border-slate-800 cursor-not-allowed opacity-60'
+                              ? 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+                              : 'bg-slate-50 text-slate-500 border-slate-200 cursor-not-allowed opacity-60'
                           }`}
                         >
                           <div className="flex items-center justify-between mb-1">
@@ -711,14 +711,14 @@ export default function GuildPanel({
                 <div className="flex justify-end gap-2 pt-2">
                   <button
                     onClick={() => setEditingHall(false)}
-                    className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold rounded-xl text-xs min-h-[44px]"
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs min-h-[44px]"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleSaveHall}
                     disabled={savingHall}
-                    className="px-5 py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black rounded-xl text-xs transition-colors shadow min-h-[44px]"
+                    className="px-5 py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold rounded-xl text-xs transition-colors shadow min-h-[44px]"
                   >
                     {savingHall ? 'Saving...' : 'Save Castle Upgrades'}
                   </button>
@@ -727,7 +727,7 @@ export default function GuildPanel({
             )}
 
             {/* Navigation Tabs */}
-            <div className="flex items-center gap-2 px-6 pt-3 border-b border-slate-800 overflow-x-auto text-xs font-black">
+            <div className="flex items-center gap-2 px-6 pt-3 border-b border-slate-200 overflow-x-auto text-xs font-bold">
               {[
                 { id: 'overview', label: 'Overview & Perks', icon: Sparkles },
                 { id: 'stem_depot', label: 'STEM Supplies Depot', icon: Package },
@@ -744,8 +744,8 @@ export default function GuildPanel({
                     onClick={() => setActiveTab(tab.id)}
                     className={`pb-3 px-3 flex items-center gap-1.5 border-b-2 transition-all whitespace-nowrap min-h-[44px] ${
                       active
-                        ? 'border-yellow-400 text-yellow-400 font-black'
-                        : 'border-transparent text-slate-400 hover:text-slate-200'
+                        ? 'border-yellow-400 text-yellow-800 font-bold'
+                        : 'border-transparent text-slate-600 hover:text-slate-800'
                     }`}
                   >
                     <Icon className="w-4 h-4" /> {tab.label}
@@ -761,24 +761,24 @@ export default function GuildPanel({
               {activeTab === 'overview' && (
                 <div className="space-y-6">
                   {/* Guild Level Card */}
-                  <div className="p-5 rounded-2xl bg-gradient-to-r from-yellow-950/40 via-amber-950/30 to-slate-800 border border-yellow-500/40 shadow-lg">
+                  <div className="p-5 rounded-2xl bg-gradient-to-r from-yellow-50 via-amber-50 to-white border border-yellow-500/40 shadow-lg">
                     <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                       <div>
-                        <span className="text-xs font-black uppercase tracking-wider text-yellow-400">Current Guild Tier</span>
-                        <h4 className="text-xl font-black text-white">Level {levelInfo.level} — {levelInfo.name}</h4>
+                        <span className="text-xs font-bold uppercase tracking-wider text-yellow-800">Current Guild Tier</span>
+                        <h4 className="text-xl font-display font-bold text-slate-900">Level {levelInfo.level} — {levelInfo.name}</h4>
                       </div>
                       <div className="text-right">
-                        <span className="text-xs text-slate-400 font-bold block">Guild Total XP</span>
-                        <span className="text-lg font-black text-yellow-400">{guildTotalXp.toLocaleString()} XP</span>
+                        <span className="text-xs text-slate-600 font-bold block">Guild Total XP</span>
+                        <span className="text-lg font-display font-bold text-yellow-800">{guildTotalXp.toLocaleString()} XP</span>
                       </div>
                     </div>
 
                     <div className="space-y-1.5 mb-3">
-                      <div className="flex justify-between text-xs font-bold text-slate-300">
+                      <div className="flex justify-between text-xs font-bold text-slate-700">
                         <span>Progress to Level {levelInfo.isMax ? 10 : levelInfo.level + 1}</span>
                         <span>{levelInfo.isMax ? 'MAX TIER REACHED' : `${levelInfo.xpNeeded.toLocaleString()} XP needed`}</span>
                       </div>
-                      <div className="w-full h-3.5 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-700">
+                      <div className="w-full h-3.5 bg-slate-50 rounded-full overflow-hidden p-0.5 border border-slate-200">
                         <div
                           className="h-full bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-200 rounded-full transition-all duration-500"
                           style={{ width: `${levelInfo.progress}%` }}
@@ -786,10 +786,10 @@ export default function GuildPanel({
                       </div>
                     </div>
 
-                    <div className="p-3 bg-black/30 rounded-xl border border-yellow-500/20 flex items-center gap-2.5 text-xs text-yellow-200">
-                      <Sparkles className="w-4 h-4 text-yellow-400 flex-shrink-0" />
+                    <div className="p-3 bg-slate-100 rounded-xl border border-yellow-500/20 flex items-center gap-2.5 text-xs text-yellow-800">
+                      <Sparkles className="w-4 h-4 text-yellow-800 flex-shrink-0" />
                       <div>
-                        <span className="font-black text-yellow-300">Active Perk: </span>
+                        <span className="font-bold text-yellow-800">Active Perk: </span>
                         <span>{levelInfo.perk}</span>
                       </div>
                     </div>
@@ -797,8 +797,8 @@ export default function GuildPanel({
 
                   {/* 10-Level Roadmap */}
                   <div>
-                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-                      <Award className="w-4 h-4 text-yellow-400" /> Guild Level Progression Roadmap
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-3 flex items-center gap-2">
+                      <Award className="w-4 h-4 text-yellow-800" /> Guild Level Progression Roadmap
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       {GUILD_LEVELS.map(lvl => {
@@ -809,24 +809,24 @@ export default function GuildPanel({
                             key={lvl.level}
                             className={`p-3 rounded-xl border flex items-center justify-between text-xs transition-all ${
                               isCurrent
-                                ? 'bg-yellow-500/10 border-yellow-500 text-white font-bold ring-1 ring-yellow-400/50'
+                                ? 'bg-yellow-100 border-yellow-500 text-slate-900 font-bold ring-1 ring-yellow-400/50'
                                 : isUnlocked
-                                ? 'bg-slate-800/80 border-slate-700 text-slate-200'
-                                : 'bg-slate-900/40 border-slate-800 text-slate-500 opacity-70'
+                                ? 'bg-white border-slate-200 text-slate-800'
+                                : 'bg-slate-50 border-dashed border-slate-300 text-slate-700'
                             }`}
                           >
                             <div className="flex items-center gap-2.5">
-                              <span className={`w-6 h-6 rounded-full flex items-center justify-center font-black text-xs ${
-                                isUnlocked ? 'bg-yellow-500 text-slate-950' : 'bg-slate-800 text-slate-500'
+                              <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
+                                isUnlocked ? 'bg-yellow-500 text-slate-950' : 'bg-white text-slate-600'
                               }`}>
                                 {lvl.level}
                               </span>
                               <div>
-                                <p className="font-black text-white">{lvl.name}</p>
-                                <p className="text-[11px] text-slate-400">{lvl.perk}</p>
+                                <p className="font-bold text-slate-900">{lvl.name}</p>
+                                <p className="text-[11px] text-slate-600">{lvl.perk}</p>
                               </div>
                             </div>
-                            <span className="text-[11px] font-bold text-slate-500">
+                            <span className="text-[11px] font-bold text-slate-600">
                               {(lvl.minXp ?? lvl.xpRequired ?? 0).toLocaleString()} XP
                             </span>
                           </div>
@@ -841,20 +841,20 @@ export default function GuildPanel({
               {activeTab === 'stem_depot' && (
                 <div className="space-y-6">
                   {/* Balance and Info Card */}
-                  <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-teal-950/30 to-slate-900 border border-emerald-500/40 shadow-xl flex flex-wrap items-center justify-between gap-4">
+                  <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-slate-50 border border-emerald-500/40 shadow-xl flex flex-wrap items-center justify-between gap-4">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <Package className="w-5 h-5 text-emerald-400" />
-                        <h4 className="text-lg font-black text-white">Guild STEM Supply Depot</h4>
+                        <Package className="w-5 h-5 text-emerald-800" />
+                        <h4 className="text-lg font-display font-bold text-slate-900">Guild STEM Supply Depot</h4>
                       </div>
-                      <p className="text-xs text-slate-300 max-w-xl">
+                      <p className="text-xs text-slate-700 max-w-xl">
                         Purchase hardware, structural components, and field perks for <strong>{guild.name}</strong> using your own coins. Supplies unlock in tiers as your guild levels up!
                       </p>
                     </div>
 
-                    <div className="bg-slate-900/90 px-4 py-2.5 rounded-2xl border border-emerald-500/50 text-right">
-                      <span className="text-[10px] font-black uppercase text-slate-400 block">Your Coin Balance</span>
-                      <span className="text-xl font-black text-yellow-400 flex items-center justify-end gap-1">
+                    <div className="bg-slate-50 px-4 py-2.5 rounded-2xl border border-emerald-500/50 text-right">
+                      <span className="text-[10px] font-bold uppercase text-slate-600 block">Your Coin Balance</span>
+                      <span className="text-xl font-display font-bold text-yellow-800 flex items-center justify-end gap-1">
                         🪙 {(gameState?.coins || 0).toLocaleString()} Coins
                       </span>
                     </div>
@@ -862,15 +862,15 @@ export default function GuildPanel({
 
                   {/* Tier Filter Pills */}
                   <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-bold">
-                    <span className="text-slate-400 mr-1">Filter Tier:</span>
+                    <span className="text-slate-600 mr-1">Filter Tier:</span>
                     {['all', '1', '2', '3', '4', '5'].map(t => (
                       <button
                         key={t}
                         onClick={() => setSelectedTierFilter(t)}
                         className={`px-3 py-1.5 rounded-xl border transition-all min-h-[44px] ${
                           selectedTierFilter === t
-                            ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-black shadow'
-                            : 'bg-slate-800 text-slate-300 border-slate-700 hover:border-slate-500'
+                            ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-bold shadow'
+                            : 'bg-white text-slate-700 border-slate-200 hover:border-slate-400'
                         }`}
                       >
                         {t === 'all' ? 'All Supplies & Perks' : `Tier ${t}`}
@@ -890,45 +890,45 @@ export default function GuildPanel({
                           key={item.id}
                           className={`p-4 rounded-2xl border-2 transition-all flex flex-col justify-between ${
                             !isUnlocked
-                              ? 'bg-slate-900/50 border-slate-800 text-slate-500 opacity-75'
-                              : 'bg-slate-850 border-slate-700 hover:border-emerald-500/60 shadow-lg'
+                              ? 'bg-slate-50 border-slate-200 text-slate-600 opacity-75'
+                              : 'bg-white border-slate-200 hover:border-emerald-500/60 shadow-lg'
                           }`}
                         >
                           <div>
                             <div className="flex items-start justify-between gap-2 mb-2">
                               <div className="flex items-center gap-2.5">
-                                <span className="text-3xl p-2 bg-slate-800 rounded-xl border border-slate-700">{item.icon || '⚙️'}</span>
+                                <span className="text-3xl p-2 bg-white rounded-xl border border-slate-200">{item.icon || '⚙️'}</span>
                                 <div>
                                   <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-500/30">
                                       Tier {item.tier || 1}
                                     </span>
                                     {item.category === 'perk' && (
-                                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 border border-purple-500/30">
                                         Perk
                                       </span>
                                     )}
                                   </div>
-                                  <h5 className="font-black text-white text-base mt-1">{item.name}</h5>
+                                  <h5 className="font-bold text-slate-900 text-base mt-1">{item.name}</h5>
                                 </div>
                               </div>
 
                               <div className="text-right">
-                                <span className="text-base font-black text-yellow-400">🪙 {item.costCoins}</span>
+                                <span className="text-base font-bold text-yellow-800">🪙 {item.costCoins}</span>
                               </div>
                             </div>
 
-                            <p className="text-xs text-slate-300 mb-3">{item.desc}</p>
+                            <p className="text-xs text-slate-700 mb-3">{item.desc}</p>
                           </div>
 
-                          <div className="pt-3 border-t border-slate-800 flex items-center justify-between gap-3">
-                            <span className="text-[11px] font-bold text-slate-400">
+                          <div className="pt-3 border-t border-slate-200 flex items-center justify-between gap-3">
+                            <span className="text-[11px] font-bold text-slate-600">
                               {isUnlocked ? (
-                                <span className="text-emerald-400 flex items-center gap-1">
+                                <span className="text-emerald-800 flex items-center gap-1">
                                   <Unlock className="w-3 h-3" /> Unlocked (Req: Lvl {item.requiredGuildLevel})
                                 </span>
                               ) : (
-                                <span className="text-amber-400 flex items-center gap-1">
+                                <span className="text-amber-800 flex items-center gap-1">
                                   <Lock className="w-3 h-3" /> Req: Guild Level {item.requiredGuildLevel}
                                 </span>
                               )}
@@ -937,12 +937,12 @@ export default function GuildPanel({
                             <button
                               disabled={!canBuy}
                               onClick={() => setPurchasingItem(item)}
-                              className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow min-h-[44px] ${
+                              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow min-h-[44px] ${
                                 canBuy
                                   ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 active:scale-95'
                                   : !isUnlocked
-                                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
-                                  : 'bg-amber-500/20 text-amber-300 border border-amber-500/40 cursor-not-allowed'
+                                  ? 'bg-white text-slate-600 cursor-not-allowed border border-slate-200'
+                                  : 'bg-amber-100 text-amber-800 border border-amber-500/40 cursor-not-allowed'
                               }`}
                             >
                               <ShoppingBag className="w-3.5 h-3.5" />
@@ -959,16 +959,16 @@ export default function GuildPanel({
                   </div>
 
                   {/* Guild Purchases & Deliveries Audit */}
-                  <div className="mt-8 bg-slate-800/80 rounded-2xl border border-slate-700 p-5">
-                    <h4 className="text-sm font-black text-white mb-2 flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-emerald-400" /> {guild.name} Supply Orders & Deliveries ({guildPurchases.length})
+                  <div className="mt-8 bg-white rounded-2xl border border-slate-200 p-5">
+                    <h4 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-emerald-800" /> {guild.name} Supply Orders & Deliveries ({guildPurchases.length})
                     </h4>
-                    <p className="text-xs text-slate-400 mb-4">
+                    <p className="text-xs text-slate-600 mb-4">
                       Items purchased by your team members. Teachers are notified to distribute supplies in class.
                     </p>
 
                     {guildPurchases.length === 0 ? (
-                      <p className="text-slate-500 text-xs text-center py-4 italic">
+                      <p className="text-slate-600 text-xs text-center py-4 italic">
                         No STEM supplies purchased yet. Be the first to supply your robot!
                       </p>
                     ) : (
@@ -976,32 +976,32 @@ export default function GuildPanel({
                         {guildPurchases.map(p => (
                           <div
                             key={p.id}
-                            className="flex items-center justify-between p-3 bg-slate-900 rounded-xl border border-slate-700 text-xs flex-wrap gap-2"
+                            className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs flex-wrap gap-2"
                           >
                             <div className="flex items-center gap-2.5">
                               <span className="text-xl">{p.icon || '⚙️'}</span>
                               <div>
-                                <p className="font-bold text-white">{p.itemName}</p>
-                                <p className="text-[11px] text-slate-400">
-                                  Contributed by <span className="text-yellow-400 font-semibold">{p.studentName}</span> • {new Date(p.timestamp).toLocaleDateString()}
+                                <p className="font-bold text-slate-900">{p.itemName}</p>
+                                <p className="text-[11px] text-slate-600">
+                                  Contributed by <span className="text-yellow-800 font-semibold">{p.studentName}</span> • {new Date(p.timestamp).toLocaleDateString()}
                                 </p>
                               </div>
                             </div>
 
                             <div className="flex items-center gap-3">
-                              <span className="text-yellow-400 font-bold">🪙 {p.costCoins}</span>
-                              <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase flex items-center gap-1 ${
+                              <span className="text-yellow-800 font-bold">🪙 {p.costCoins}</span>
+                              <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase flex items-center gap-1 ${
                                 p.fulfilled
-                                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                                  : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-500/30'
+                                  : 'bg-amber-100 text-amber-800 border border-amber-500/30'
                               }`}>
                                 {p.fulfilled ? (
                                   <>
-                                    <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Delivered
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-800" /> Delivered
                                   </>
                                 ) : (
                                   <>
-                                    <Clock className="w-3 h-3 text-amber-400" /> Order Placed
+                                    <Clock className="w-3 h-3 text-amber-800" /> Order Placed
                                   </>
                                 )}
                               </span>
@@ -1019,8 +1019,8 @@ export default function GuildPanel({
                 <div className="space-y-4">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div>
-                      <h4 className="text-sm font-black text-white">Guild Team Missions</h4>
-                      <p className="text-xs text-slate-400">Work with your guild to complete goals and earn collective rewards!</p>
+                      <h4 className="text-sm font-bold text-slate-900">Guild Team Missions</h4>
+                      <p className="text-xs text-slate-600">Work with your guild to complete goals and earn collective rewards!</p>
                     </div>
                   </div>
 
@@ -1033,28 +1033,28 @@ export default function GuildPanel({
                           key={ch.id}
                           className={`p-4 rounded-2xl border-2 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
                             isComplete
-                              ? 'bg-emerald-950/20 border-emerald-500/40'
-                              : 'bg-slate-800/80 border-slate-700'
+                              ? 'bg-emerald-50 border-emerald-500/40'
+                              : 'bg-white border-slate-200'
                           }`}
                         >
                           <div className="flex items-center gap-3">
                             <span className="text-3xl">{ch.emoji}</span>
                             <div>
                               <div className="flex items-center gap-2">
-                                <h5 className="font-black text-white text-sm">{ch.title}</h5>
+                                <h5 className="font-bold text-slate-900 text-sm">{ch.title}</h5>
                                 {isComplete && (
-                                  <span className="text-[10px] font-black px-2 py-0.5 rounded bg-emerald-500 text-slate-950">
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500 text-slate-950">
                                     COMPLETED!
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs text-slate-400 mt-0.5">{ch.desc}</p>
+                              <p className="text-xs text-slate-600 mt-0.5">{ch.desc}</p>
                               <div className="flex items-center gap-3 mt-2 text-xs font-bold">
-                                <span className="text-slate-300">
+                                <span className="text-slate-700">
                                   Progress: {ch.current || 0} / {ch.target}
                                 </span>
-                                <span className="text-yellow-400">+{ch.reward} XP</span>
-                                <span className="text-amber-300">+{ch.coinReward} 🪙</span>
+                                <span className="text-yellow-800">+{ch.reward} XP</span>
+                                <span className="text-amber-800">+{ch.coinReward} 🪙</span>
                               </div>
                             </div>
                           </div>
@@ -1064,13 +1064,13 @@ export default function GuildPanel({
                               <button
                                 disabled={claimingChallengeId === ch.id}
                                 onClick={() => handleClaimReward(ch)}
-                                className="w-full sm:w-auto px-4 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-black rounded-xl text-xs transition-colors shadow min-h-[44px]"
+                                className="w-full sm:w-auto px-4 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-bold rounded-xl text-xs transition-colors shadow min-h-[44px]"
                               >
                                 {claimingChallengeId === ch.id ? 'Claiming...' : 'Claim Reward!'}
                               </button>
                             )}
                             {isClaimed && (
-                              <span className="text-xs text-emerald-400 font-bold flex items-center gap-1">
+                              <span className="text-xs text-emerald-800 font-bold flex items-center gap-1">
                                 <Check className="w-4 h-4" /> Reward Claimed
                               </span>
                             )}
@@ -1087,10 +1087,10 @@ export default function GuildPanel({
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="text-sm font-black text-white">Active Guild Members ({myGuildData?.memberCount || 0})</h4>
-                      <p className="text-xs text-slate-400">
+                      <h4 className="text-sm font-bold text-slate-900">Active Guild Members ({myGuildData?.memberCount || 0})</h4>
+                      <p className="text-xs text-slate-600">
                         Send high-fives to energize your teammates and earn bonus XP!{' '}
-                        <span className="text-amber-400 font-semibold">
+                        <span className="text-amber-800 font-semibold">
                           ({highFiveLimit === 'weekly' ? 'Limit: 1 per teammate each week' : highFiveLimit === 'disabled' ? 'High-fives currently disabled by teacher' : 'Limit: 1 per teammate daily'})
                         </span>
                       </p>
@@ -1109,15 +1109,15 @@ export default function GuildPanel({
                       return (
                         <div
                           key={m.id}
-                          className="p-3.5 bg-slate-800/80 rounded-2xl border border-slate-700 flex items-center justify-between gap-3"
+                          className="p-3.5 bg-white rounded-2xl border border-slate-200 flex items-center justify-between gap-3"
                         >
                           <div className="flex items-center gap-3">
                             <Avatar3D avatar={m.avatar || { color: 'default', hat: 'none', accessory: 'none', face: 'happy' }} level={1} size="sm" />
                             <div>
-                              <p className="font-bold text-white text-xs flex items-center gap-1.5">
-                                {m.name} {isMe && <span className="text-[10px] bg-yellow-500 text-slate-950 px-1.5 py-0.2 rounded font-black">YOU</span>}
+                              <p className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                                {m.name} {isMe && <span className="text-[10px] bg-yellow-500 text-slate-950 px-1.5 py-0.2 rounded font-bold">YOU</span>}
                               </p>
-                              <p className="text-[11px] text-yellow-400 font-bold">{m.xp || 0} XP contributed</p>
+                              <p className="text-[11px] text-yellow-800 font-bold">{m.xp || 0} XP contributed</p>
                             </div>
                           </div>
 
@@ -1133,9 +1133,9 @@ export default function GuildPanel({
                                     ? (isCheeredInSession ? 'High-Five Sent!' : cooldownStatus.reason || 'High-Fived!')
                                     : 'Send High-Five (+10 XP to you, +15 XP to teammate)'
                                 }
-                                className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all min-h-[44px] ${
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all min-h-[44px] ${
                                   isDisabled
-                                    ? 'bg-slate-700/80 text-slate-400 cursor-not-allowed border border-slate-600/50'
+                                    ? 'bg-slate-100 text-slate-600 cursor-not-allowed border border-slate-300'
                                     : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow'
                                 }`}
                               >
@@ -1167,25 +1167,25 @@ export default function GuildPanel({
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="text-sm font-black text-white">Guild Trophy Hall</h4>
-                      <p className="text-xs text-slate-400">Honors and awards bestowed upon {guild.name} by your teachers!</p>
+                      <h4 className="text-sm font-bold text-slate-900">Guild Trophy Hall</h4>
+                      <p className="text-xs text-slate-600">Honors and awards bestowed upon {guild.name} by your teachers!</p>
                     </div>
                   </div>
 
                   {(guildHall?.trophies || []).length === 0 ? (
-                    <div className="p-8 text-center bg-slate-800/40 rounded-2xl border border-slate-700">
-                      <Trophy className="w-10 h-10 text-slate-600 mx-auto mb-2" />
-                      <p className="text-sm font-bold text-slate-300">No trophies awarded yet</p>
-                      <p className="text-xs text-slate-500 mt-1">Keep completing missions and your teacher can award guild trophies!</p>
+                    <div className="p-8 text-center bg-white rounded-2xl border border-slate-200">
+                      <Trophy className="w-10 h-10 text-slate-500 mx-auto mb-2" />
+                      <p className="text-sm font-bold text-slate-700">No trophies awarded yet</p>
+                      <p className="text-xs text-slate-600 mt-1">Keep completing missions and your teacher can award guild trophies!</p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       {guildHall.trophies.map((tr, idx) => (
-                        <div key={idx} className="p-4 bg-gradient-to-b from-yellow-950/30 to-slate-800 rounded-2xl border border-yellow-500/40 text-center shadow-lg">
+                        <div key={idx} className="p-4 bg-gradient-to-b from-yellow-50 to-white rounded-2xl border border-yellow-500/40 text-center shadow-lg">
                           <div className="text-4xl mb-1.5">{tr.icon}</div>
-                          <h5 className="font-black text-white text-xs">{tr.title}</h5>
-                          {tr.message && <p className="text-[11px] text-yellow-300 italic mt-1">"{tr.message}"</p>}
-                          <span className="text-[10px] text-slate-500 block mt-2">{new Date(tr.awardedAt).toLocaleDateString()}</span>
+                          <h5 className="font-bold text-slate-900 text-xs">{tr.title}</h5>
+                          {tr.message && <p className="text-[11px] text-yellow-800 italic mt-1">"{tr.message}"</p>}
+                          <span className="text-[10px] text-slate-600 block mt-2">{new Date(tr.awardedAt).toLocaleDateString()}</span>
                         </div>
                       ))}
                     </div>
@@ -1196,7 +1196,7 @@ export default function GuildPanel({
               {/* TAB 6: STANDINGS */}
               {activeTab === 'standings' && (
                 <div className="space-y-4">
-                  <h4 className="text-sm font-black text-white">Class Guild Rankings ({availableGuilds.length} Guilds)</h4>
+                  <h4 className="text-sm font-bold text-slate-900">Class Guild Rankings ({availableGuilds.length} Guilds)</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {[...availableGuilds]
                       .filter(Boolean)
@@ -1208,10 +1208,10 @@ export default function GuildPanel({
                         return (
                           <div
                             key={g.id || idx}
-                            className={`p-4 rounded-2xl border-2 transition-all ${
+                            className={`text-white p-4 rounded-2xl border-2 transition-all ${
                               isMyGuild
                                 ? `${g.color || 'bg-slate-700'} bg-opacity-30 border-yellow-400 shadow-lg`
-                                : 'bg-slate-800/80 border-slate-700'
+                                : 'bg-white border-slate-200'
                             }`}
                           >
                             <div className="flex items-center justify-between mb-2">
@@ -1219,11 +1219,11 @@ export default function GuildPanel({
                                 <span className="text-xl">{idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}</span>
                                 <span className="text-2xl">{g.emoji || '🛡️'}</span>
                                 <div>
-                                  <h5 className="font-black text-white text-sm">{g.name || 'Guild'}</h5>
+                                  <h5 className="font-bold text-white text-sm">{g.name || 'Guild'}</h5>
                                   <span className="text-[10px] font-bold text-slate-400">Level {gLevel.level} • {gLevel.name}</span>
                                 </div>
                               </div>
-                              <span className="text-sm font-black text-yellow-400">{(stats?.totalXp || 0).toLocaleString()} XP</span>
+                              <span className="text-sm font-bold text-yellow-400">{(stats?.totalXp || 0).toLocaleString()} XP</span>
                             </div>
                             <div className="flex justify-between text-xs text-slate-400 pt-2 border-t border-white/10">
                               <span>{stats?.memberCount || 0} Members</span>
@@ -1244,39 +1244,39 @@ export default function GuildPanel({
       {/* Bot Picture Upload / URL Modal */}
       {showBotPicModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           onClick={() => setShowBotPicModal(false)}
         >
           <div
-            className="bg-slate-900 border-2 border-yellow-500 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4"
+            className="bg-slate-50 border-2 border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-black text-white flex items-center gap-2">
-                <Camera className="w-5 h-5 text-yellow-400" /> {guild.name} Bot Picture
+              <h3 className="text-lg font-display font-bold text-slate-900 flex items-center gap-2">
+                <Camera className="w-5 h-5 text-yellow-800" /> {guild.name} Bot Picture
               </h3>
               <button
                 onClick={() => setShowBotPicModal(false)}
-                className="text-slate-400 hover:text-white p-1"
+                className="text-slate-600 hover:text-slate-900 p-1"
                 aria-label="Close"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-300">
+            <p className="text-xs text-slate-700">
               Upload a picture of your guild's robot or paste an image link. Everyone in your class will see your bot!
             </p>
 
             {/* Tab switch: File Upload vs URL */}
-            <div className="flex gap-2 bg-slate-800 p-1 rounded-xl">
+            <div className="flex gap-2 bg-white p-1 rounded-xl">
               <button
                 type="button"
                 onClick={() => setBotPicTab('upload')}
                 className={`flex-1 py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1.5 min-h-[44px] ${
-                  botPicTab === 'upload' ? 'bg-yellow-500 text-slate-950 font-black' : 'text-slate-400 hover:text-white'
+                  botPicTab === 'upload' ? 'bg-yellow-500 text-slate-950 font-bold' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <Upload className="w-3.5 h-3.5" /> Upload File
@@ -1285,7 +1285,7 @@ export default function GuildPanel({
                 type="button"
                 onClick={() => setBotPicTab('url')}
                 className={`flex-1 py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1.5 min-h-[44px] ${
-                  botPicTab === 'url' ? 'bg-yellow-500 text-slate-950 font-black' : 'text-slate-400 hover:text-white'
+                  botPicTab === 'url' ? 'bg-yellow-500 text-slate-950 font-bold' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <LinkIcon className="w-3.5 h-3.5" /> Image Link / URL
@@ -1295,10 +1295,10 @@ export default function GuildPanel({
             {/* Tab 1: Upload File */}
             {botPicTab === 'upload' && (
               <div className="space-y-3">
-                <label className="block p-5 border-2 border-dashed border-slate-700 hover:border-yellow-500/60 rounded-2xl text-center cursor-pointer bg-slate-850 transition-colors">
-                  <Upload className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
-                  <span className="text-xs font-bold text-white block">Click to select photo</span>
-                  <span className="text-[11px] text-slate-400 mt-1 block">JPG, PNG, WEBP (auto-compressed)</span>
+                <label className="block p-5 border-2 border-dashed border-slate-200 hover:border-yellow-500/60 rounded-2xl text-center cursor-pointer bg-white transition-colors">
+                  <Upload className="w-8 h-8 text-yellow-800 mx-auto mb-2" />
+                  <span className="text-xs font-bold text-slate-900 block">Click to select photo</span>
+                  <span className="text-[11px] text-slate-600 mt-1 block">JPG, PNG, WEBP (auto-compressed)</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -1312,7 +1312,7 @@ export default function GuildPanel({
             {/* Tab 2: Image URL */}
             {botPicTab === 'url' && (
               <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-300">External Image URL</label>
+                <label className="block text-xs font-bold text-slate-700">External Image URL</label>
                 <input
                   type="url"
                   value={botPicUrlInput}
@@ -1321,15 +1321,15 @@ export default function GuildPanel({
                     setBotPicPreview(e.target.value);
                   }}
                   placeholder="https://example.com/robot.jpg"
-                  className="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs outline-none focus:border-yellow-500 min-h-[44px]"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 text-xs outline-none focus:border-yellow-500 min-h-[44px]"
                 />
               </div>
             )}
 
             {/* Preview Box */}
             {botPicPreview && (
-              <div className="p-3 bg-slate-800/80 rounded-2xl border border-slate-700 text-center space-y-2">
-                <span className="text-[11px] font-bold text-slate-400 block uppercase">Picture Preview:</span>
+              <div className="p-3 bg-white rounded-2xl border border-slate-200 text-center space-y-2">
+                <span className="text-[11px] font-bold text-slate-600 block uppercase">Picture Preview:</span>
                 <img
                   src={botPicPreview}
                   alt="Bot Preview"
@@ -1339,7 +1339,7 @@ export default function GuildPanel({
             )}
 
             {/* Action buttons */}
-            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800">
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200">
               {activeBotPicture ? (
                 <button
                   type="button"
@@ -1347,7 +1347,7 @@ export default function GuildPanel({
                     setBotPicPreview('');
                     setBotPicUrlInput('');
                   }}
-                  className="text-xs text-red-400 hover:text-red-300 font-bold min-h-[44px] px-2"
+                  className="text-xs text-red-700 hover:text-red-700 font-bold min-h-[44px] px-2"
                 >
                   Clear Photo
                 </button>
@@ -1357,7 +1357,7 @@ export default function GuildPanel({
                 <button
                   type="button"
                   onClick={() => setShowBotPicModal(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs min-h-[44px]"
+                  className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 font-bold rounded-xl text-xs min-h-[44px]"
                 >
                   Cancel
                 </button>
@@ -1365,7 +1365,7 @@ export default function GuildPanel({
                   type="button"
                   onClick={handleSaveBotPicture}
                   disabled={savingBotPic}
-                  className="px-5 py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black rounded-xl text-xs transition-colors shadow min-h-[44px]"
+                  className="px-5 py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold rounded-xl text-xs transition-colors shadow min-h-[44px]"
                 >
                   {savingBotPic ? 'Saving...' : 'Save Photo'}
                 </button>
@@ -1378,46 +1378,46 @@ export default function GuildPanel({
       {/* STEM Purchase Confirmation Modal */}
       {purchasingItem && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           onClick={() => setPurchasingItem(null)}
         >
           <div
-            className="bg-slate-900 border-2 border-emerald-500 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4"
+            className="bg-slate-50 border-2 border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-black text-white flex items-center gap-2">
-                <ShoppingBag className="w-5 h-5 text-emerald-400" /> Confirm STEM Purchase
+              <h3 className="text-lg font-display font-bold text-slate-900 flex items-center gap-2">
+                <ShoppingBag className="w-5 h-5 text-emerald-800" /> Confirm STEM Purchase
               </h3>
               <button
                 onClick={() => setPurchasingItem(null)}
-                className="text-slate-400 hover:text-white"
+                className="text-slate-600 hover:text-slate-900"
                 aria-label="Close"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 flex items-center gap-3">
+            <div className="p-4 bg-white rounded-2xl border border-slate-200 flex items-center gap-3">
               <span className="text-3xl">{purchasingItem.icon || '⚙️'}</span>
               <div>
-                <h4 className="font-black text-white text-base">{purchasingItem.name}</h4>
-                <p className="text-xs text-slate-300">{purchasingItem.desc}</p>
-                <span className="text-xs font-bold text-yellow-400 mt-1 block">Cost: {purchasingItem.costCoins} Coins</span>
+                <h4 className="font-bold text-slate-900 text-base">{purchasingItem.name}</h4>
+                <p className="text-xs text-slate-700">{purchasingItem.desc}</p>
+                <span className="text-xs font-bold text-yellow-800 mt-1 block">Cost: {purchasingItem.costCoins} Coins</span>
               </div>
             </div>
 
-            <div className="bg-emerald-950/30 border border-emerald-500/40 p-3 rounded-xl text-xs text-emerald-200">
+            <div className="bg-emerald-50 border border-emerald-500/40 p-3 rounded-xl text-xs text-emerald-800">
               💡 <strong>Team Contribution:</strong> You are spending <strong>{purchasingItem.costCoins} of your individual coins</strong> to supply <strong>{guild.name}</strong>. Your teacher will be notified to deliver this item to your team!
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
               <button
                 type="button"
                 onClick={() => setPurchasingItem(null)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs min-h-[44px]"
+                className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 font-bold rounded-xl text-xs min-h-[44px]"
               >
                 Cancel
               </button>
@@ -1425,7 +1425,7 @@ export default function GuildPanel({
                 type="button"
                 disabled={buyingProcess}
                 onClick={handleExecuteBuyStemSupply}
-                className="px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition-colors shadow min-h-[44px]"
+                className="px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs transition-colors shadow min-h-[44px]"
               >
                 {buyingProcess ? 'Processing...' : `Confirm & Spend ${purchasingItem.costCoins} Coins`}
               </button>

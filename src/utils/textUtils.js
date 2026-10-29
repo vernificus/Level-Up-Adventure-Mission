@@ -46,9 +46,9 @@ export function renderFormattedText(text) {
       parts.push(React.createElement('span', { key: key++ }, text.slice(lastIndex, match.index)));
     }
     if (match[2]) {
-      parts.push(React.createElement('strong', { key: key++, className: 'font-bold text-white' }, match[2]));
+      parts.push(React.createElement('strong', { key: key++, className: 'font-bold text-slate-900' }, match[2]));
     } else if (match[3]) {
-      parts.push(React.createElement('em', { key: key++, className: 'italic text-slate-200' }, match[3]));
+      parts.push(React.createElement('em', { key: key++, className: 'italic text-slate-800' }, match[3]));
     }
     lastIndex = match.index + match[0].length;
   }

@@ -964,47 +964,47 @@ export default function TeacherPortal({
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 sm:p-6 lg:p-8 font-sans">
+    <div className="min-h-screen bg-slate-50 text-slate-900 p-4 sm:p-6 lg:p-8 font-sans">
       <div className="w-full max-w-[1920px] mx-auto">
 
         {/* Header */}
-        <header className="flex items-center justify-between mb-8 pb-8 border-b border-slate-700">
+        <header className="flex items-center justify-between mb-8 pb-8 border-b border-slate-200">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-green-600 rounded-lg" aria-hidden="true">
+            <div className="text-white p-3 bg-green-600 rounded-lg" aria-hidden="true">
               <GraduationCap className="w-8 h-8 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-3xl font-black uppercase italic">Teacher Portal</h1>
+                <h1 className="text-3xl font-display font-bold">Teacher Portal</h1>
                 {user.organizationName && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-950/60 text-blue-300 border border-blue-800/40 rounded-lg text-xs font-semibold">
-                    <Building2 className="w-3.5 h-3.5 text-blue-400" />
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-semibold">
+                    <Building2 className="w-3.5 h-3.5 text-blue-700" />
                     {user.organizationName}
                   </span>
                 )}
                 {isAdmin && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 rounded-lg text-xs font-bold">
-                    <Crown className="w-3.5 h-3.5 text-yellow-400" />
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-yellow-100 text-yellow-800 border border-yellow-500/40 rounded-lg text-xs font-bold">
+                    <Crown className="w-3.5 h-3.5 text-yellow-800" />
                     Super Admin Access
                   </span>
                 )}
               </div>
-              <p className="text-slate-400">Welcome, {user.name}</p>
+              <p className="text-slate-600">Welcome, {user.name}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             {isAdmin && onSwitchToAdmin && (
               <button
                 onClick={onSwitchToAdmin}
-                className="flex items-center gap-2 px-3.5 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 border border-yellow-500/40 rounded-lg text-xs font-bold transition-all shadow-md"
+                className="flex items-center gap-2 px-3.5 py-2 bg-yellow-100 hover:bg-yellow-100 text-yellow-800 border border-yellow-500/40 rounded-lg text-xs font-bold transition-all shadow-md"
               >
-                <Crown className="w-4 h-4 text-yellow-400" />
+                <Crown className="w-4 h-4 text-yellow-800" />
                 <span>Admin Dashboard</span>
               </button>
             )}
             <button
               onClick={logout}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition-colors text-xs font-semibold"
+              className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-100 rounded-lg text-slate-700 transition-colors text-xs font-semibold"
             >
               <LogOut className="w-5 h-5" aria-hidden="true" /> Logout
             </button>
@@ -1017,18 +1017,18 @@ export default function TeacherPortal({
           <div className="lg:col-span-4 xl:col-span-3 space-y-4">
             {/* Super Admin View Scope Switcher: My Classes vs All Org Classes */}
             {isAdmin && (
-              <div className="bg-slate-900 border border-amber-500/30 rounded-xl p-3 shadow-md space-y-2.5">
+              <div className="bg-slate-50 border border-amber-500/30 rounded-xl p-3 shadow-md space-y-2.5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
-                    <Crown className="w-3.5 h-3.5 text-amber-400" /> Admin Scope
+                  <span className="font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
+                    <Crown className="w-3.5 h-3.5 text-amber-800" /> Admin Scope
                   </span>
-                  <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded font-mono font-bold">
+                  <span className="text-[10px] bg-white text-slate-600 px-1.5 py-0.5 rounded font-mono font-bold">
                     {classes.length} {classes.length === 1 ? 'class' : 'classes'}
                   </span>
                 </div>
 
                 {/* Scope Toggle: My Classes vs All Org Classes */}
-                <div className="grid grid-cols-2 p-1 bg-slate-950 rounded-lg border border-slate-800 gap-1 text-xs">
+                <div className="grid grid-cols-2 p-1 bg-slate-50 rounded-lg border border-slate-200 gap-1 text-xs">
                   <button
                     type="button"
                     onClick={() => {
@@ -1041,7 +1041,7 @@ export default function TeacherPortal({
                     className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md font-bold transition-all ${
                       adminViewScope === 'mine'
                         ? 'bg-amber-500 text-slate-950 shadow-sm'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                     }`}
                   >
                     <User className="w-3.5 h-3.5" />
@@ -1059,7 +1059,7 @@ export default function TeacherPortal({
                     className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md font-bold transition-all ${
                       adminViewScope === 'org'
                         ? 'bg-amber-500 text-slate-950 shadow-sm'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                     }`}
                   >
                     <Building2 className="w-3.5 h-3.5" />
@@ -1069,8 +1069,8 @@ export default function TeacherPortal({
 
                 {/* Sub-filter when Org scope is active */}
                 {adminViewScope === 'org' && (
-                  <div className="space-y-1 pt-1 border-t border-slate-800/80">
-                    <label className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">
+                  <div className="space-y-1 pt-1 border-t border-slate-200">
+                    <label className="text-[10px] uppercase font-semibold text-slate-600 tracking-wider">
                       Organization Filter
                     </label>
                     <select
@@ -1081,7 +1081,7 @@ export default function TeacherPortal({
                         sessionStorage.setItem('lvlup_admin_selected_org', val);
                         loadClasses('org', val);
                       }}
-                      className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white font-medium outline-none focus:border-amber-400 transition-colors"
+                      className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 font-medium outline-none focus:border-amber-400 transition-colors"
                     >
                       <option value="all">🌐 All Organizations ({adminOrgs.length})</option>
                       {adminOrgs.map(o => (
@@ -1094,7 +1094,7 @@ export default function TeacherPortal({
             )}
 
             <div className="flex items-center justify-between mb-2">
-              <h2 className="font-bold text-slate-400 uppercase text-xs tracking-widest">
+              <h2 className="font-bold text-slate-600 uppercase text-xs tracking-widest">
                 {isAdmin ? (adminViewScope === 'mine' ? 'My Personal Classes' : 'Organization Classes') : 'Your Classes'}
               </h2>
               <button
@@ -1102,7 +1102,7 @@ export default function TeacherPortal({
                   setNewClassOrgId(adminViewScope === 'org' && adminOrgFilter !== 'all' && adminOrgFilter !== 'personal' ? adminOrgFilter : 'none');
                   setCreatingClass(true);
                 }}
-                className="text-green-400 hover:text-green-300"
+                className="text-green-800 hover:text-green-800"
                 aria-label="Create new class"
               >
                 <Plus className="w-5 h-5" aria-hidden="true" />
@@ -1110,7 +1110,7 @@ export default function TeacherPortal({
             </div>
 
             {creatingClass && (
-              <form onSubmit={handleCreateClass} className="mb-4 bg-slate-800 p-3 rounded-lg border border-slate-600" aria-label="Create new class">
+              <form onSubmit={handleCreateClass} className="mb-4 bg-white p-3 rounded-lg border border-slate-300" aria-label="Create new class">
                 <label htmlFor="new-class-name" className="sr-only">Class Name</label>
                 <input
                   id="new-class-name"
@@ -1119,17 +1119,17 @@ export default function TeacherPortal({
                   placeholder="Class Name"
                   value={newClassName}
                   onChange={e => setNewClassName(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-700 rounded text-sm text-white mb-2"
+                  className="w-full px-3 py-2 bg-slate-100 rounded text-sm text-slate-900 mb-2"
                 />
                 {isAdmin && (
                   <div className="mb-2">
-                    <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                       Organization
                     </label>
                     <select
                       value={newClassOrgId}
                       onChange={e => setNewClassOrgId(e.target.value)}
-                      className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded text-xs text-white outline-none focus:border-amber-400"
+                      className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded text-xs text-slate-900 outline-none focus:border-amber-400"
                     >
                       <option value="none">🌟 Personal (No Organization)</option>
                       {adminOrgs.map(o => (
@@ -1139,26 +1139,26 @@ export default function TeacherPortal({
                   </div>
                 )}
                 <div className="flex gap-2">
-                  <button type="submit" className="flex-1 bg-green-600 text-xs font-bold py-1 rounded">Create</button>
-                  <button type="button" onClick={() => setCreatingClass(false)} className="flex-1 bg-slate-600 text-xs font-bold py-1 rounded">Cancel</button>
+                  <button type="submit" className="text-white flex-1 bg-green-600 text-xs font-bold py-1 rounded">Create</button>
+                  <button type="button" onClick={() => setCreatingClass(false)} className="flex-1 bg-slate-200 text-xs font-bold py-1 rounded">Cancel</button>
                 </div>
               </form>
             )}
 
             {/* Active / Archived Class Filter Tabs */}
-            <div className="flex items-center gap-1 p-1 bg-slate-900 border border-slate-800 rounded-lg mb-3">
+            <div className="flex items-center gap-1 p-1 bg-slate-50 border border-slate-200 rounded-lg mb-3">
               <button
                 type="button"
                 onClick={() => setClassArchiveFilter('active')}
                 className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors flex items-center justify-center gap-1.5 ${
                   classArchiveFilter === 'active'
                     ? 'bg-green-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-white'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <span>Active</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                  classArchiveFilter === 'active' ? 'bg-green-700 text-green-100' : 'bg-slate-800 text-slate-400'
+                  classArchiveFilter === 'active' ? 'bg-green-700 text-white' : 'bg-white text-slate-600'
                 }`}>
                   {classes.filter(c => !c.archived).length}
                 </span>
@@ -1169,13 +1169,13 @@ export default function TeacherPortal({
                 className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors flex items-center justify-center gap-1.5 ${
                   classArchiveFilter === 'archived'
                     ? 'bg-amber-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-white'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <Archive className="w-3 h-3" />
                 <span>Archived</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                  classArchiveFilter === 'archived' ? 'bg-amber-700 text-amber-100' : 'bg-slate-800 text-slate-400'
+                  classArchiveFilter === 'archived' ? 'bg-amber-700 text-white' : 'bg-white text-slate-600'
                 }`}>
                   {classes.filter(c => !!c.archived).length}
                 </span>
@@ -1196,39 +1196,39 @@ export default function TeacherPortal({
                   className={`w-full p-4 rounded-xl text-left transition-all cursor-pointer relative group ${
                     selectedClass?.id === cls.id
                       ? (cls.archived ? 'bg-amber-700 text-white shadow-lg shadow-amber-950/50' : 'bg-green-600 text-white shadow-lg shadow-green-900/50')
-                      : (cls.archived ? 'bg-slate-800/70 border border-amber-900/30 text-slate-300 hover:bg-slate-800' : 'bg-slate-800 text-slate-300 hover:bg-slate-700')
+                      : (cls.archived ? 'bg-white border border-amber-200 text-slate-700 hover:bg-white' : 'bg-white text-slate-700 hover:bg-slate-100')
                   }`}
                 >
                   <div className="flex items-center gap-2 pr-14">
                     <div className="font-bold text-lg truncate">{cls.name}</div>
                     {cls.archived && (
-                      <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-500/30">
                         Archived
                       </span>
                     )}
                   </div>
                   {cls.teacherName && cls.teacherId !== user.id && (
-                    <div className="text-xs text-yellow-300/90 font-medium flex items-center gap-1 mt-0.5">
+                    <div className="text-xs text-white font-medium flex items-center gap-1 mt-0.5">
                       <User className="w-3 h-3 text-yellow-400" />
                       <span>Teacher: {cls.teacherName}</span>
                     </div>
                   )}
                   {isAdmin && cls.organizationId && (
-                    <div className="text-[11px] text-amber-300/80 font-medium flex items-center gap-1 mt-0.5 truncate">
+                    <div className="text-[11px] text-white font-medium flex items-center gap-1 mt-0.5 truncate">
                       <Building2 className="w-3 h-3 text-amber-400 shrink-0" />
                       <span className="truncate">{adminOrgs.find(o => o.id === cls.organizationId)?.name || 'Assigned Org'}</span>
                     </div>
                   )}
-                  <div className="flex justify-between items-center mt-2 text-sm opacity-80">
+                  <div className="flex justify-between items-center mt-2 text-sm">
                     <span className="flex items-center gap-1"><Users className="w-4 h-4" aria-hidden="true" /> {cls.studentCount || 0} Students</span>
-                    <span className="font-mono bg-black/20 px-2 rounded text-xs">Code: {cls.code}</span>
+                    <span className="font-mono bg-black/10 px-2 rounded text-xs">Code: {cls.code}</span>
                   </div>
 
                   <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     {cls.archived ? (
                       <button
                         onClick={(e) => handleUnarchiveClass(cls.id, e)}
-                        className="p-1.5 text-amber-300 hover:text-white hover:bg-amber-900/50 rounded"
+                        className="p-1.5 text-white hover:text-white hover:bg-amber-50 rounded"
                         title="Restore class to active"
                         aria-label={`Restore class ${cls.name}`}
                       >
@@ -1237,7 +1237,7 @@ export default function TeacherPortal({
                     ) : (
                       <button
                         onClick={(e) => handleArchiveClass(cls.id, e)}
-                        className="p-1.5 text-slate-300 hover:text-amber-300 hover:bg-black/20 rounded"
+                        className="p-1.5 text-white hover:text-amber-300 hover:bg-black/20 rounded"
                         title="Archive class (preserves records, disables student login)"
                         aria-label={`Archive class ${cls.name}`}
                       >
@@ -1250,7 +1250,7 @@ export default function TeacherPortal({
                           e.stopPropagation();
                           handleStartMoveClassOrg(cls);
                         }}
-                        className="p-1.5 text-amber-300 hover:text-white hover:bg-black/20 rounded"
+                        className="p-1.5 text-white hover:text-white hover:bg-black/20 rounded"
                         title="Move to another organization"
                         aria-label={`Move class ${cls.name} to another organization`}
                       >
@@ -1262,7 +1262,7 @@ export default function TeacherPortal({
                         e.stopPropagation();
                         handleStartRenameClass(cls);
                       }}
-                      className="p-1.5 text-slate-300 hover:text-white hover:bg-black/20 rounded"
+                      className="p-1.5 text-white hover:text-white hover:bg-black/20 rounded"
                       title="Rename class"
                       aria-label={`Rename class ${cls.name}`}
                     >
@@ -1270,7 +1270,7 @@ export default function TeacherPortal({
                     </button>
                     <button
                       onClick={(e) => handleDeleteClass(cls.id, e)}
-                      className="p-1.5 text-red-300 hover:text-white hover:bg-red-900/40 rounded"
+                      className="p-1.5 text-white hover:text-white hover:bg-red-50 rounded"
                       title="Delete class permanently"
                       aria-label={`Delete class ${cls.name}`}
                     >
@@ -1281,22 +1281,22 @@ export default function TeacherPortal({
               ))}
 
               {classArchiveFilter === 'archived' && classes.filter(c => !!c.archived).length === 0 && (
-                <div className="text-center py-8 text-slate-500 border-2 border-dashed border-slate-700/60 rounded-xl px-4 text-xs">
-                  <Archive className="w-6 h-6 text-slate-600 mx-auto mb-2" />
-                  <p className="font-semibold text-slate-400 mb-1">No archived classes.</p>
-                  <p className="text-slate-500">
+                <div className="text-center py-8 text-slate-600 border-2 border-dashed border-slate-200 rounded-xl px-4 text-xs">
+                  <Archive className="w-6 h-6 text-slate-500 mx-auto mb-2" />
+                  <p className="font-semibold text-slate-600 mb-1">No archived classes.</p>
+                  <p className="text-slate-600">
                     When you archive completed or past classes, they will be safely kept here for reference.
                   </p>
                 </div>
               )}
 
               {classArchiveFilter === 'active' && classes.filter(c => !c.archived).length === 0 && !creatingClass && (
-                <div className="text-center py-8 text-slate-500 border-2 border-dashed border-slate-700 rounded-xl px-4 text-xs">
+                <div className="text-center py-8 text-slate-600 border-2 border-dashed border-slate-200 rounded-xl px-4 text-xs">
                   {isAdmin && adminViewScope === 'mine' ? (
                     <>
-                      <p className="font-semibold text-slate-400 mb-1">No personal classes yet.</p>
-                      <p className="text-slate-500">
-                        Click <strong className="text-green-400">+</strong> above to create your own class, or switch to <strong className="text-amber-400">All Org</strong> to oversee all school classes.
+                      <p className="font-semibold text-slate-600 mb-1">No personal classes yet.</p>
+                      <p className="text-slate-600">
+                        Click <strong className="text-green-800">+</strong> above to create your own class, or switch to <strong className="text-amber-800">All Org</strong> to oversee all school classes.
                       </p>
                     </>
                   ) : (
@@ -1315,17 +1315,17 @@ export default function TeacherPortal({
               <div>
                 {/* Super Admin Oversight Banner */}
                 {isAdmin && (
-                  <div className="bg-gradient-to-r from-yellow-950/40 via-slate-900 to-slate-900 border border-yellow-500/30 rounded-xl p-3 mb-4 flex flex-wrap items-center justify-between gap-3 shadow-md">
-                    <div className="flex items-center gap-2 text-xs text-yellow-300">
-                      <Crown className="w-4 h-4 text-yellow-400 shrink-0" />
+                  <div className="bg-gradient-to-r from-yellow-50 via-slate-50 to-slate-50 border border-yellow-500/30 rounded-xl p-3 mb-4 flex flex-wrap items-center justify-between gap-3 shadow-md">
+                    <div className="flex items-center gap-2 text-xs text-yellow-800">
+                      <Crown className="w-4 h-4 text-yellow-800 shrink-0" />
                       <span>
                         {selectedClass.teacherId === user.id ? (
                           <>
-                            <strong>Your Personal Class:</strong> Managing <strong className="text-white">{selectedClass.name}</strong> with full teacher privileges.
+                            <strong>Your Personal Class:</strong> Managing <strong className="text-slate-900">{selectedClass.name}</strong> with full teacher privileges.
                           </>
                         ) : (
                           <>
-                            <strong>Super Admin Oversight:</strong> Managing <strong className="text-white">{selectedClass.name}</strong>
+                            <strong>Super Admin Oversight:</strong> Managing <strong className="text-slate-900">{selectedClass.name}</strong>
                             {selectedClass.teacherName ? ` (Teacher: ${selectedClass.teacherName})` : ''} as a Super Admin with full teacher privileges.
                           </>
                         )}
@@ -1334,7 +1334,7 @@ export default function TeacherPortal({
                     {onSwitchToAdmin && (
                       <button
                         onClick={onSwitchToAdmin}
-                        className="px-3 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 border border-yellow-500/40 rounded-lg text-xs font-bold transition-all flex items-center gap-1"
+                        className="px-3 py-1 bg-yellow-100 hover:bg-yellow-100 text-yellow-800 border border-yellow-500/40 rounded-lg text-xs font-bold transition-all flex items-center gap-1"
                       >
                         <span>Admin Dashboard</span>
                         <ChevronRight className="w-3.5 h-3.5" />
@@ -1345,12 +1345,12 @@ export default function TeacherPortal({
 
                 {/* Archived Class Notice Banner */}
                 {selectedClass.archived && (
-                  <div className="bg-amber-950/40 border border-amber-500/40 rounded-xl p-3.5 mb-4 flex flex-wrap items-center justify-between gap-3 shadow-md">
-                    <div className="flex items-center gap-2.5 text-xs text-amber-200">
-                      <Archive className="w-4 h-4 text-amber-400 shrink-0" />
+                  <div className="bg-amber-50 border border-amber-500/40 rounded-xl p-3.5 mb-4 flex flex-wrap items-center justify-between gap-3 shadow-md">
+                    <div className="flex items-center gap-2.5 text-xs text-amber-800">
+                      <Archive className="w-4 h-4 text-amber-800 shrink-0" />
                       <div>
-                        <strong className="text-white">This class is archived.</strong>
-                        <span className="ml-1 text-slate-300">
+                        <strong className="text-slate-900">This class is archived.</strong>
+                        <span className="ml-1 text-slate-700">
                           Student logins and task submissions are disabled. All past student submissions, grades, and records remain preserved.
                         </span>
                       </div>
@@ -1365,55 +1365,55 @@ export default function TeacherPortal({
                   </div>
                 )}
 
-                <div className="bg-slate-800 p-6 rounded-2xl mb-6 border border-slate-700">
+                <div className="bg-white p-6 rounded-2xl mb-6 border border-slate-200">
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="flex items-center gap-2.5 flex-wrap">
-                        <h2 className="text-2xl font-black text-white">{selectedClass.name}</h2>
+                        <h2 className="text-2xl font-display font-bold text-slate-900">{selectedClass.name}</h2>
                         <button
                           onClick={() => handleStartRenameClass(selectedClass)}
-                          className="px-2.5 py-1 text-slate-400 hover:text-white hover:bg-slate-700/60 rounded-lg transition-colors flex items-center gap-1 text-xs font-semibold bg-slate-800/80 border border-slate-700"
+                          className="px-2.5 py-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-1 text-xs font-semibold bg-white border border-slate-200"
                           title="Rename class"
                           aria-label={`Rename class ${selectedClass.name}`}
                         >
-                          <Pencil className="w-3.5 h-3.5 text-yellow-400" />
+                          <Pencil className="w-3.5 h-3.5 text-yellow-800" />
                           <span>Rename Class</span>
                         </button>
                         {isAdmin && (
                           <button
                             onClick={() => handleStartMoveClassOrg(selectedClass)}
-                            className="px-2.5 py-1 text-amber-300 hover:text-white hover:bg-amber-950/40 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-semibold bg-slate-900/90 border border-amber-500/40"
+                            className="px-2.5 py-1 text-amber-800 hover:text-slate-900 hover:bg-amber-50 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-semibold bg-slate-50 border border-amber-500/40"
                             title="Move class to another organization"
                             aria-label={`Move class ${selectedClass.name} to another organization`}
                           >
-                            <Building2 className="w-3.5 h-3.5 text-amber-400" />
+                            <Building2 className="w-3.5 h-3.5 text-amber-800" />
                             <span>Move Organization</span>
                           </button>
                         )}
                       </div>
                       {isAdmin && (
                         <div className="flex items-center gap-2 mt-1.5">
-                          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Organization:</span>
+                          <span className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider">Organization:</span>
                           {selectedClass.organizationId ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                              <Building2 className="w-3 h-3 text-amber-400" />
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800 border border-amber-500/30">
+                              <Building2 className="w-3 h-3 text-amber-800" />
                               {adminOrgs.find(o => o.id === selectedClass.organizationId)?.name || 'Assigned Org'}
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-slate-700/60 text-slate-300 border border-slate-600">
-                              <User className="w-3 h-3 text-slate-400" />
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-slate-100 text-slate-700 border border-slate-300">
+                              <User className="w-3 h-3 text-slate-600" />
                               Personal Class (No Organization)
                             </span>
                           )}
                         </div>
                       )}
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-slate-400 text-sm">Class Code:</span>
-                        <code className="text-xl font-mono font-bold text-green-400 tracking-widest">{selectedClass.code}</code>
-                        <button onClick={() => copyCode(selectedClass.code)} className="text-slate-500 hover:text-white" aria-label="Copy class code">
+                        <span className="text-slate-600 text-sm">Class Code:</span>
+                        <code className="text-xl font-mono font-bold text-green-800 tracking-widest">{selectedClass.code}</code>
+                        <button onClick={() => copyCode(selectedClass.code)} className="text-slate-600 hover:text-slate-900" aria-label="Copy class code">
                           <Copy className="w-4 h-4" aria-hidden="true" />
                         </button>
-                        <button onClick={() => copyJoinLink(selectedClass.code)} className="flex items-center gap-1 text-xs text-slate-500 hover:text-white ml-2" aria-label="Copy join link">
+                        <button onClick={() => copyJoinLink(selectedClass.code)} className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 ml-2" aria-label="Copy join link">
                           <Link className="w-4 h-4" aria-hidden="true" /> Copy Join Link
                         </button>
                       </div>
@@ -1422,37 +1422,37 @@ export default function TeacherPortal({
                       <button
                         onClick={handleRefresh}
                         disabled={loading}
-                        className="p-2 text-slate-400 hover:text-white transition-colors"
+                        className="p-2 text-slate-600 hover:text-slate-900 transition-colors"
                         aria-label={loading ? 'Refreshing data...' : 'Refresh data'}
                       >
                         <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
                       </button>
                       <div className="text-right">
-                        <p className="text-3xl font-black text-white">{pending.length}</p>
-                        <p className="text-slate-400 text-xs uppercase font-bold">Pending Reviews</p>
+                        <p className="text-3xl font-display font-bold text-slate-900">{pending.length}</p>
+                        <p className="text-slate-600 text-xs uppercase font-bold">Pending Reviews</p>
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-4 mt-3">
                     <div className="text-right">
-                      <p className="text-3xl font-black text-white">{students.length}</p>
-                      <p className="text-slate-400 text-xs uppercase font-bold">Students</p>
+                      <p className="text-3xl font-display font-bold text-slate-900">{students.length}</p>
+                      <p className="text-slate-600 text-xs uppercase font-bold">Students</p>
                     </div>
-                    <div className="text-right border-l border-slate-600 pl-4">
-                      <p className="text-3xl font-black text-white">{pending.length}</p>
-                      <p className="text-slate-400 text-xs uppercase font-bold">Pending</p>
+                    <div className="text-right border-l border-slate-300 pl-4">
+                      <p className="text-3xl font-display font-bold text-slate-900">{pending.length}</p>
+                      <p className="text-slate-600 text-xs uppercase font-bold">Pending</p>
                     </div>
-                    <div className="text-right border-l border-slate-600 pl-4">
-                      <p className="text-3xl font-black text-white">{reviewed.filter(s => s.status === 'approved').length}</p>
-                      <p className="text-slate-400 text-xs uppercase font-bold">Approved</p>
+                    <div className="text-right border-l border-slate-300 pl-4">
+                      <p className="text-3xl font-display font-bold text-slate-900">{reviewed.filter(s => s.status === 'approved').length}</p>
+                      <p className="text-slate-600 text-xs uppercase font-bold">Approved</p>
                     </div>
-                    <div className="text-right border-l border-slate-600 pl-4">
-                      <p className="text-3xl font-black text-white">{reviewed.filter(s => s.status === 'rejected').length}</p>
-                      <p className="text-slate-400 text-xs uppercase font-bold">Rejected</p>
+                    <div className="text-right border-l border-slate-300 pl-4">
+                      <p className="text-3xl font-display font-bold text-slate-900">{reviewed.filter(s => s.status === 'rejected').length}</p>
+                      <p className="text-slate-600 text-xs uppercase font-bold">Rejected</p>
                     </div>
-                    <div className="text-right border-l border-slate-600 pl-4">
-                      <p className="text-3xl font-black text-green-400">{students.length > 0 ? Math.round(students.reduce((sum, s) => sum + (s.xp || 0), 0) / students.length) : 0}</p>
-                      <p className="text-slate-400 text-xs uppercase font-bold">Avg XP</p>
+                    <div className="text-right border-l border-slate-300 pl-4">
+                      <p className="text-3xl font-display font-bold text-green-800">{students.length > 0 ? Math.round(students.reduce((sum, s) => sum + (s.xp || 0), 0) / students.length) : 0}</p>
+                      <p className="text-slate-600 text-xs uppercase font-bold">Avg XP</p>
                     </div>
                     <div className="ml-auto flex flex-wrap items-start gap-3">
                       <button
@@ -1461,7 +1461,7 @@ export default function TeacherPortal({
                           loadArenaData();
                           setShowClubArena(true);
                         }}
-                        className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 border border-cyan-400/50 text-white rounded-lg text-sm font-black uppercase italic shadow-lg shadow-cyan-950/50 transition-all"
+                        className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 border border-cyan-400/50 text-white rounded-lg text-sm font-bold shadow-lg shadow-cyan-950/50 transition-all"
                         title="Open Big-Screen Projector Mode for STEM Club Meetings (Live Guild Race, VEX Pitch Timer & Boss Raid)"
                       >
                         <span>📺 Live Club Arena</span>
@@ -1469,7 +1469,7 @@ export default function TeacherPortal({
                       <button
                         type="button"
                         onClick={() => setShowGuideModal(true)}
-                        className="flex items-center gap-1.5 px-3 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 rounded-lg text-sm font-bold transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-2 bg-amber-100 hover:bg-amber-100 border border-amber-500/40 text-amber-800 rounded-lg text-sm font-bold transition-colors"
                         title="View Level XP Requirements & Gold Economy Guide"
                       >
                         <Award className="w-4 h-4" /> Levels & Gold Guide
@@ -1478,7 +1478,7 @@ export default function TeacherPortal({
                       <button
                         type="button"
                         onClick={() => setShowStorageModal(true)}
-                        className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 rounded-lg text-sm font-bold transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-2 bg-emerald-100 hover:bg-emerald-100 border border-emerald-500/40 text-emerald-800 rounded-lg text-sm font-bold transition-colors"
                         title="Free Tier Cloud Storage Monitor & Pruning (Keep costs at $0)"
                       >
                         <HardDrive className="w-4 h-4" /> Storage: $0 Free Tier
@@ -1486,7 +1486,7 @@ export default function TeacherPortal({
                       <div>
                         <button
                           onClick={handleResetClassActivities}
-                          className="flex items-center gap-2 px-4 py-2 bg-orange-600/20 hover:bg-orange-600/40 border border-orange-500/50 text-orange-300 rounded-lg text-sm font-bold transition-colors"
+                          className="flex items-center gap-2 px-4 py-2 bg-orange-100 hover:bg-orange-100 border border-orange-500/50 text-orange-800 rounded-lg text-sm font-bold transition-colors"
                           aria-label="Reset activity completion for all students"
                         >
                           <RotateCcw className="w-4 h-4" aria-hidden="true" /> Reset Activities
@@ -1494,11 +1494,11 @@ export default function TeacherPortal({
                         <button
                           type="button"
                           onClick={handleToggleAutoReset}
-                          className="text-xs text-slate-400 hover:text-white mt-1.5 flex items-center gap-1 transition-colors group cursor-pointer"
+                          className="text-xs text-slate-600 hover:text-slate-900 mt-1.5 flex items-center gap-1 transition-colors group cursor-pointer"
                           title="Click to toggle automatic weekly reset on Mondays at 7am"
                         >
                           <span>Auto-resets Mondays:</span>
-                          <span className={`font-bold underline decoration-dotted ${selectedClass.autoResetWeekly !== false ? 'text-green-400' : 'text-amber-400'}`}>
+                          <span className={`font-bold underline decoration-dotted ${selectedClass.autoResetWeekly !== false ? 'text-green-800' : 'text-amber-800'}`}>
                             {selectedClass.autoResetWeekly !== false ? 'ON (7am)' : 'OFF (Manual)'}
                           </span>
                         </button>
@@ -1508,14 +1508,14 @@ export default function TeacherPortal({
                 </div>
 
                 {/* Tabs */}
-                <div className="flex gap-2 sm:gap-4 mb-6 border-b border-slate-700 overflow-x-auto flex-nowrap scrollbar-none pb-1" role="tablist" aria-label="Class management">
+                <div className="flex gap-2 sm:gap-4 mb-6 border-b border-slate-200 overflow-x-auto flex-nowrap scrollbar-none pb-1" role="tablist" aria-label="Class management">
                   <button
                     role="tab"
                     aria-selected={activeTab === 'submissions'}
                     aria-controls="tabpanel-submissions"
                     id="tab-submissions"
                     onClick={() => setActiveTab('submissions')}
-                    className={`pb-3 px-3 font-bold whitespace-nowrap flex-shrink-0 transition-colors ${activeTab === 'submissions' ? 'text-green-400 border-b-2 border-green-400' : 'text-slate-400 hover:text-white'}`}
+                    className={`pb-3 px-3 font-bold whitespace-nowrap flex-shrink-0 transition-colors ${activeTab === 'submissions' ? 'text-green-800 border-b-2 border-green-400' : 'text-slate-600 hover:text-slate-900'}`}
                   >
                     Submissions
                   </button>
@@ -1525,7 +1525,7 @@ export default function TeacherPortal({
                     aria-controls="tabpanel-students"
                     id="tab-students"
                     onClick={() => setActiveTab('students')}
-                    className={`pb-3 px-3 font-bold whitespace-nowrap flex-shrink-0 transition-colors ${activeTab === 'students' ? 'text-green-400 border-b-2 border-green-400' : 'text-slate-400 hover:text-white'}`}
+                    className={`pb-3 px-3 font-bold whitespace-nowrap flex-shrink-0 transition-colors ${activeTab === 'students' ? 'text-green-800 border-b-2 border-green-400' : 'text-slate-600 hover:text-slate-900'}`}
                   >
                     Students
                   </button>
@@ -1535,7 +1535,7 @@ export default function TeacherPortal({
                     aria-controls="tabpanel-activities"
                     id="tab-activities"
                     onClick={() => setActiveTab('activities')}
-                    className={`pb-3 px-3 font-bold whitespace-nowrap flex-shrink-0 transition-colors ${activeTab === 'activities' ? 'text-green-400 border-b-2 border-green-400' : 'text-slate-400 hover:text-white'}`}
+                    className={`pb-3 px-3 font-bold whitespace-nowrap flex-shrink-0 transition-colors ${activeTab === 'activities' ? 'text-green-800 border-b-2 border-green-400' : 'text-slate-600 hover:text-slate-900'}`}
                   >
                     Activities
                   </button>
@@ -1545,7 +1545,7 @@ export default function TeacherPortal({
                     aria-controls="tabpanel-categories"
                     id="tab-categories"
                     onClick={() => setActiveTab('categories')}
-                    className={`pb-3 px-3 font-bold whitespace-nowrap flex-shrink-0 transition-colors ${activeTab === 'categories' ? 'text-green-400 border-b-2 border-green-400' : 'text-slate-400 hover:text-white'}`}
+                    className={`pb-3 px-3 font-bold whitespace-nowrap flex-shrink-0 transition-colors ${activeTab === 'categories' ? 'text-green-800 border-b-2 border-green-400' : 'text-slate-600 hover:text-slate-900'}`}
                   >
                     Categories
                   </button>
@@ -1555,7 +1555,7 @@ export default function TeacherPortal({
                     aria-controls="tabpanel-spotlight"
                     id="tab-spotlight"
                     onClick={() => setActiveTab('spotlight')}
-                    className={`pb-3 px-3 font-bold whitespace-nowrap flex-shrink-0 transition-colors ${activeTab === 'spotlight' ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-slate-400 hover:text-white'}`}
+                    className={`pb-3 px-3 font-bold whitespace-nowrap flex-shrink-0 transition-colors ${activeTab === 'spotlight' ? 'text-yellow-800 border-b-2 border-yellow-400' : 'text-slate-600 hover:text-slate-900'}`}
                   >
                     <span className="flex items-center gap-1"><Sparkles className="w-4 h-4" aria-hidden="true" /> Spotlight</span>
                   </button>
@@ -1565,7 +1565,7 @@ export default function TeacherPortal({
                     aria-controls="tabpanel-guilds"
                     id="tab-guilds"
                     onClick={() => setActiveTab('guilds')}
-                    className={`pb-3 px-3 font-bold whitespace-nowrap flex-shrink-0 transition-colors ${activeTab === 'guilds' ? 'text-purple-400 border-b-2 border-purple-400' : 'text-slate-400 hover:text-white'}`}
+                    className={`pb-3 px-3 font-bold whitespace-nowrap flex-shrink-0 transition-colors ${activeTab === 'guilds' ? 'text-purple-700 border-b-2 border-purple-400' : 'text-slate-600 hover:text-slate-900'}`}
                   >
                     <span className="flex items-center gap-1"><Users className="w-4 h-4" aria-hidden="true" /> Guilds</span>
                   </button>
@@ -1575,7 +1575,7 @@ export default function TeacherPortal({
                     aria-controls="tabpanel-sharing"
                     id="tab-sharing"
                     onClick={() => setActiveTab('sharing')}
-                    className={`pb-3 px-3 font-bold whitespace-nowrap flex-shrink-0 transition-colors ${activeTab === 'sharing' ? 'text-green-400 border-b-2 border-green-400' : 'text-slate-400 hover:text-white'}`}
+                    className={`pb-3 px-3 font-bold whitespace-nowrap flex-shrink-0 transition-colors ${activeTab === 'sharing' ? 'text-green-800 border-b-2 border-green-400' : 'text-slate-600 hover:text-slate-900'}`}
                   >
                     Sharing
                   </button>
@@ -1585,7 +1585,7 @@ export default function TeacherPortal({
                     aria-controls="tabpanel-rewards"
                     id="tab-rewards"
                     onClick={() => setActiveTab('rewards')}
-                    className={`pb-3 px-3 font-bold whitespace-nowrap flex-shrink-0 transition-colors ${activeTab === 'rewards' ? 'text-green-400 border-b-2 border-green-400' : 'text-slate-400 hover:text-white'}`}
+                    className={`pb-3 px-3 font-bold whitespace-nowrap flex-shrink-0 transition-colors ${activeTab === 'rewards' ? 'text-green-800 border-b-2 border-green-400' : 'text-slate-600 hover:text-slate-900'}`}
                   >
                     <span className="flex items-center gap-1"><Gift className="w-4 h-4" aria-hidden="true" /> Rewards</span>
                   </button>
@@ -1594,14 +1594,14 @@ export default function TeacherPortal({
                 {activeTab === 'activities' && (
                   <div role="tabpanel" id="tabpanel-activities" aria-labelledby="tab-activities">
                     {user.organizationId && (
-                      <div className="mb-6 p-4 bg-slate-800 rounded-xl border border-slate-700 flex flex-wrap items-center justify-between gap-4 shadow-md">
+                      <div className="mb-6 p-4 bg-white rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-4 shadow-md">
                         <div className="flex items-center gap-3">
-                          <div className="p-2.5 bg-purple-950/80 text-purple-400 border border-purple-800/40 rounded-xl">
+                          <div className="p-2.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-xl">
                             <Layers className="w-5 h-5" />
                           </div>
                           <div>
-                            <h4 className="font-bold text-white text-sm">Organization Choice Board Templates</h4>
-                            <p className="text-xs text-slate-400">Import master choice boards configured for {user.organizationName || 'your organization'}</p>
+                            <h4 className="font-bold text-slate-900 text-sm">Organization Choice Board Templates</h4>
+                            <p className="text-xs text-slate-600">Import master choice boards configured for {user.organizationName || 'your organization'}</p>
                           </div>
                         </div>
                         <button
@@ -1630,11 +1630,11 @@ export default function TeacherPortal({
 
                 {activeTab === 'categories' && (
                   <div role="tabpanel" id="tabpanel-categories" aria-labelledby="tab-categories">
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-6">
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 space-y-6">
                       <div className="flex flex-wrap items-center justify-between gap-4">
                         <div>
-                          <h3 className="text-xl font-bold text-white mb-1">Categories & Layout</h3>
-                          <p className="text-slate-400 text-sm">Customize learning path category names, reorder them, and select column layout on the student choice board. You can have 1 to {MAX_CATEGORIES} categories.</p>
+                          <h3 className="text-xl font-bold text-slate-900 mb-1">Categories & Layout</h3>
+                          <p className="text-slate-600 text-sm">Customize learning path category names, reorder them, and select column layout on the student choice board. You can have 1 to {MAX_CATEGORIES} categories.</p>
                         </div>
                         <button
                           onClick={handleSaveCategories}
@@ -1646,12 +1646,12 @@ export default function TeacherPortal({
                       </div>
 
                       {/* Layout Settings Card */}
-                      <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700/80 flex flex-wrap items-center justify-between gap-4">
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-4">
                         <div className="max-w-md">
-                          <label htmlFor="categories-per-row" className="block text-sm font-bold text-white mb-1">
+                          <label htmlFor="categories-per-row" className="block text-sm font-bold text-slate-900 mb-1">
                             Choice Board Columns (Student View)
                           </label>
-                          <p className="text-xs text-slate-400">
+                          <p className="text-xs text-slate-600">
                             Configure how many category columns appear per row. Content wraps responsively on mobile displays to ensure accessibility (min 44×44px touch targets).
                           </p>
                         </div>
@@ -1659,7 +1659,7 @@ export default function TeacherPortal({
                           id="categories-per-row"
                           value={categoriesPerRow}
                           onChange={e => setCategoriesPerRow(e.target.value)}
-                          className="px-3.5 py-2.5 bg-slate-800 border border-slate-600 rounded-lg text-white font-semibold focus:border-green-500 outline-none text-sm cursor-pointer"
+                          className="px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 font-semibold focus:border-green-500 outline-none text-sm cursor-pointer"
                         >
                           <option value="auto">Auto / Responsive (Recommended)</option>
                           <option value="1">1 Column (Single Flow)</option>
@@ -1677,13 +1677,13 @@ export default function TeacherPortal({
                           const borderColors = ['border-blue-500', 'border-purple-500', 'border-orange-500', 'border-green-500', 'border-pink-500', 'border-teal-500'];
                           const color = borderColors[idx % borderColors.length];
                           return (
-                            <div key={key} className={`p-4 bg-slate-700/90 rounded-xl border-l-4 ${color} shadow`}>
+                            <div key={key} className={`p-4 bg-slate-100 rounded-xl border-l-4 ${color} shadow`}>
                               <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-xs font-bold px-2 py-0.5 bg-slate-800 text-slate-300 rounded">
+                                  <span className="text-xs font-bold px-2 py-0.5 bg-white text-slate-700 rounded">
                                     #{idx + 1}
                                   </span>
-                                  <span className="text-xs text-slate-400 font-mono">{key}</span>
+                                  <span className="text-xs text-slate-600 font-mono">{key}</span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
                                   <button
@@ -1692,7 +1692,7 @@ export default function TeacherPortal({
                                     disabled={idx === 0}
                                     title="Move Up"
                                     aria-label={`Move ${categoryNames[key] || key} up`}
-                                    className="p-1.5 bg-slate-800 hover:bg-slate-600 text-slate-300 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed min-w-[36px] min-h-[36px] flex items-center justify-center"
+                                    className="p-1.5 bg-white hover:bg-slate-200 text-slate-700 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed min-w-[36px] min-h-[36px] flex items-center justify-center"
                                   >
                                     <ChevronUp className="w-4 h-4" />
                                   </button>
@@ -1702,7 +1702,7 @@ export default function TeacherPortal({
                                     disabled={idx === categoryOrder.length - 1}
                                     title="Move Down"
                                     aria-label={`Move ${categoryNames[key] || key} down`}
-                                    className="p-1.5 bg-slate-800 hover:bg-slate-600 text-slate-300 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed min-w-[36px] min-h-[36px] flex items-center justify-center"
+                                    className="p-1.5 bg-white hover:bg-slate-200 text-slate-700 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed min-w-[36px] min-h-[36px] flex items-center justify-center"
                                   >
                                     <ChevronDown className="w-4 h-4" />
                                   </button>
@@ -1712,7 +1712,7 @@ export default function TeacherPortal({
                                     disabled={categoryOrder.length <= 1}
                                     title="Remove Category"
                                     aria-label={`Remove category ${categoryNames[key] || key}`}
-                                    className="px-2.5 py-1.5 bg-red-900/40 hover:bg-red-800/60 border border-red-700/50 text-red-300 text-xs rounded transition-colors flex items-center gap-1 min-h-[36px] disabled:opacity-30 disabled:cursor-not-allowed"
+                                    className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 text-xs rounded transition-colors flex items-center gap-1 min-h-[36px] disabled:opacity-30 disabled:cursor-not-allowed"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" /> Remove
                                   </button>
@@ -1720,25 +1720,25 @@ export default function TeacherPortal({
                               </div>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                  <label htmlFor={`cat-name-${key}`} className="block text-xs text-slate-400 font-bold uppercase mb-1">Category Name</label>
+                                  <label htmlFor={`cat-name-${key}`} className="block text-xs text-slate-600 font-bold uppercase mb-1">Category Name</label>
                                   <input
                                     id={`cat-name-${key}`}
                                     type="text"
                                     value={categoryNames[key] || ''}
                                     onChange={e => setCategoryNames(prev => ({ ...prev, [key]: e.target.value }))}
                                     placeholder="Category name"
-                                    className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-green-500 outline-none"
+                                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 focus:border-green-500 outline-none"
                                   />
                                 </div>
                                 <div>
-                                  <label htmlFor={`cat-sub-${key}`} className="block text-xs text-slate-400 font-bold uppercase mb-1">Subtitle</label>
+                                  <label htmlFor={`cat-sub-${key}`} className="block text-xs text-slate-600 font-bold uppercase mb-1">Subtitle</label>
                                   <input
                                     id={`cat-sub-${key}`}
                                     type="text"
                                     value={categorySubtitles[key] || ''}
                                     onChange={e => setCategorySubtitles(prev => ({ ...prev, [key]: e.target.value }))}
                                     placeholder="Subtitle"
-                                    className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-green-500 outline-none"
+                                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 focus:border-green-500 outline-none"
                                   />
                                 </div>
                               </div>
@@ -1752,12 +1752,12 @@ export default function TeacherPortal({
                           <button
                             type="button"
                             onClick={handleAddCategory}
-                            className="flex items-center gap-2 px-4 py-2 border-2 border-dashed border-slate-600 hover:border-green-500 text-slate-300 hover:text-green-400 rounded-lg transition-colors font-medium text-sm"
+                            className="flex items-center gap-2 px-4 py-2 border-2 border-dashed border-slate-300 hover:border-green-500 text-slate-700 hover:text-green-800 rounded-lg transition-colors font-medium text-sm"
                           >
                             <Plus className="w-4 h-4" /> Add Category
                           </button>
                         ) : (
-                          <span className="text-xs text-slate-500 italic">Maximum {MAX_CATEGORIES} categories configured</span>
+                          <span className="text-xs text-slate-600 italic">Maximum {MAX_CATEGORIES} categories configured</span>
                         )}
 
                         <button
@@ -1777,15 +1777,15 @@ export default function TeacherPortal({
                   <div role="tabpanel" id="tabpanel-sharing" aria-labelledby="tab-sharing">
                     <div className="space-y-6">
                       {/* Student Join Link */}
-                      <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
-                        <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-                          <Link className="w-5 h-5 text-blue-400" aria-hidden="true" /> Student Join Link
+                      <div className="bg-white p-6 rounded-xl border border-slate-200">
+                        <h3 className="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+                          <Link className="w-5 h-5 text-blue-700" aria-hidden="true" /> Student Join Link
                         </h3>
-                        <p className="text-slate-400 text-sm mb-4">
+                        <p className="text-slate-600 text-sm mb-4">
                           Share this link with students. They can create their own account and join the class directly.
                         </p>
-                        <div className="flex items-center gap-3 bg-slate-900 p-3 rounded-lg border border-slate-700">
-                          <code className="flex-1 text-blue-400 text-sm break-all">
+                        <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                          <code className="flex-1 text-blue-700 text-sm break-all">
                             {`${window.location.origin}/?code=${selectedClass.code}`}
                           </code>
                           <button
@@ -1795,24 +1795,24 @@ export default function TeacherPortal({
                             <Copy className="w-4 h-4" aria-hidden="true" /> Copy Link
                           </button>
                         </div>
-                        <p className="text-xs text-slate-500 mt-2">
+                        <p className="text-xs text-slate-600 mt-2">
                           Students who use this link can sign up with their own name and password. You can edit their info from the Students tab.
                         </p>
                       </div>
 
                       {/* Co-Teacher Management */}
-                      <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
-                        <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-                          <Share2 className="w-5 h-5 text-purple-400" aria-hidden="true" /> Co-Teachers
+                      <div className="bg-white p-6 rounded-xl border border-slate-200">
+                        <h3 className="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+                          <Share2 className="w-5 h-5 text-purple-700" aria-hidden="true" /> Co-Teachers
                         </h3>
-                        <p className="text-slate-400 text-sm mb-4">
+                        <p className="text-slate-600 text-sm mb-4">
                           Add other teachers to help manage this class. They'll see it in their dashboard and can review submissions, manage students, and edit activities.
                         </p>
 
                         {!selectedClass.isCoTeacher && (
                           <form onSubmit={handleAddCoTeacher} className="flex gap-3 mb-6" aria-label="Add co-teacher">
                             <div className="flex-1 relative">
-                              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" aria-hidden="true" />
+                              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 w-4 h-4" aria-hidden="true" />
                               <label htmlFor="co-teacher-email" className="sr-only">Co-teacher email</label>
                               <input
                                 id="co-teacher-email"
@@ -1820,7 +1820,7 @@ export default function TeacherPortal({
                                 placeholder="Enter teacher's email address"
                                 value={coTeacherEmail}
                                 onChange={e => setCoTeacherEmail(e.target.value)}
-                                className="w-full px-4 py-2 pl-10 bg-slate-700 rounded-lg text-white border border-slate-600 focus:border-purple-500 outline-none"
+                                className="w-full px-4 py-2 pl-10 bg-slate-100 rounded-lg text-slate-900 border border-slate-300 focus:border-purple-500 outline-none"
                               />
                             </div>
                             <button
@@ -1834,7 +1834,7 @@ export default function TeacherPortal({
                         )}
 
                         {selectedClass.isCoTeacher && (
-                          <div className="mb-4 p-3 bg-purple-900/20 border border-purple-500/30 rounded-lg text-purple-300 text-sm">
+                          <div className="mb-4 p-3 bg-purple-50 border border-purple-500/30 rounded-lg text-purple-700 text-sm">
                             You are a co-teacher on this class. Only the class owner can add or remove co-teachers.
                           </div>
                         )}
@@ -1842,20 +1842,20 @@ export default function TeacherPortal({
                         {coTeachers.length > 0 ? (
                           <div className="space-y-2">
                             {coTeachers.map(ct => (
-                              <div key={ct.id} className="flex items-center justify-between p-3 bg-slate-700 rounded-lg border border-slate-600">
+                              <div key={ct.id} className="flex items-center justify-between p-3 bg-slate-100 rounded-lg border border-slate-300">
                                 <div className="flex items-center gap-3">
                                   <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-sm font-bold text-white" aria-hidden="true">
                                     {ct.name?.charAt(0)?.toUpperCase() || '?'}
                                   </div>
                                   <div>
-                                    <p className="font-bold text-white text-sm">{ct.name}</p>
-                                    <p className="text-xs text-slate-400">{ct.email}</p>
+                                    <p className="font-bold text-slate-900 text-sm">{ct.name}</p>
+                                    <p className="text-xs text-slate-600">{ct.email}</p>
                                   </div>
                                 </div>
                                 {!selectedClass.isCoTeacher && (
                                   <button
                                     onClick={() => handleRemoveCoTeacher(ct.id, ct.name)}
-                                    className="p-2 text-slate-400 hover:text-red-400 transition-colors"
+                                    className="p-2 text-slate-600 hover:text-red-700 transition-colors"
                                     aria-label={`Remove ${ct.name} as co-teacher`}
                                   >
                                     <X className="w-4 h-4" aria-hidden="true" />
@@ -1865,7 +1865,7 @@ export default function TeacherPortal({
                             ))}
                           </div>
                         ) : (
-                          <p className="text-slate-500 text-sm italic">No co-teachers added yet.</p>
+                          <p className="text-slate-600 text-sm italic">No co-teachers added yet.</p>
                         )}
                       </div>
                     </div>
@@ -1876,12 +1876,12 @@ export default function TeacherPortal({
                   <div role="tabpanel" id="tabpanel-spotlight" aria-labelledby="tab-spotlight">
                     <div className="space-y-6">
                       {/* Current Spotlight */}
-                      <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
-                        <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                          <Sparkles className="w-5 h-5 text-yellow-400" aria-hidden="true" /> Current Spotlight
+                      <div className="bg-white p-6 rounded-xl border border-slate-200">
+                        <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+                          <Sparkles className="w-5 h-5 text-yellow-800" aria-hidden="true" /> Current Spotlight
                         </h3>
                         {spotlight ? (
-                          <div className="bg-gradient-to-r from-yellow-900/30 to-amber-900/30 border-2 border-yellow-500/50 rounded-xl p-6">
+                          <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-500/50 rounded-xl p-6">
                             <div className="flex items-center gap-4">
                               <Avatar3D avatar={spotlight.avatar} level={(() => {
                                 let lvl = 1;
@@ -1896,20 +1896,20 @@ export default function TeacherPortal({
                                     {spotlight.category === 'team_player' && '🤝'}
                                     {spotlight.category === 'creative_genius' && '🎨'}
                                   </span>
-                                  <span className="text-xs font-bold uppercase tracking-widest text-yellow-400">
+                                  <span className="text-xs font-bold uppercase tracking-widest text-yellow-800">
                                     {spotlight.category === 'star_student' && 'Star Student'}
                                     {spotlight.category === 'most_improved' && 'Most Improved'}
                                     {spotlight.category === 'team_player' && 'Team Player'}
                                     {spotlight.category === 'creative_genius' && 'Creative Genius'}
                                   </span>
                                 </div>
-                                <p className="text-2xl font-black text-white">{spotlight.studentName}</p>
-                                <p className="text-slate-300 italic mt-1">"{spotlight.message}"</p>
-                                <p className="text-xs text-slate-500 mt-2">Set by {spotlight.setBy} on {new Date(spotlight.setAt).toLocaleDateString()}</p>
+                                <p className="text-2xl font-display font-bold text-slate-900">{spotlight.studentName}</p>
+                                <p className="text-slate-700 italic mt-1">"{spotlight.message}"</p>
+                                <p className="text-xs text-slate-600 mt-2">Set by {spotlight.setBy} on {new Date(spotlight.setAt).toLocaleDateString()}</p>
                               </div>
                               <button
                                 onClick={handleClearSpotlight}
-                                className="p-2 text-slate-400 hover:text-red-400 transition-colors"
+                                className="p-2 text-slate-600 hover:text-red-700 transition-colors"
                                 aria-label="Remove spotlight"
                               >
                                 <X className="w-5 h-5" aria-hidden="true" />
@@ -1917,7 +1917,7 @@ export default function TeacherPortal({
                             </div>
                           </div>
                         ) : (
-                          <div className="text-center py-8 text-slate-500 border-2 border-dashed border-slate-700 rounded-xl">
+                          <div className="text-center py-8 text-slate-600 border-2 border-dashed border-slate-200 rounded-xl">
                             <Sparkles className="w-12 h-12 mx-auto mb-2 opacity-20" aria-hidden="true" />
                             No student spotlight set. Select a student below to highlight them for the class!
                           </div>
@@ -1925,14 +1925,14 @@ export default function TeacherPortal({
                       </div>
 
                       {/* Set Spotlight */}
-                      <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
-                        <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                          <Star className="w-5 h-5 text-yellow-400" aria-hidden="true" /> Highlight a Student
+                      <div className="bg-white p-6 rounded-xl border border-slate-200">
+                        <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+                          <Star className="w-5 h-5 text-yellow-800" aria-hidden="true" /> Highlight a Student
                         </h3>
 
                         {/* Category Selection */}
                         <div className="mb-4">
-                          <label className="block text-xs text-slate-400 font-bold uppercase mb-2">Spotlight Category</label>
+                          <label className="block text-xs text-slate-600 font-bold uppercase mb-2">Spotlight Category</label>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                             {[
                               { id: 'star_student', label: 'Star Student', emoji: '⭐' },
@@ -1946,7 +1946,7 @@ export default function TeacherPortal({
                                 className={`p-2 rounded-lg text-sm font-bold transition-colors ${
                                   spotlightCategory === cat.id
                                     ? 'bg-yellow-500 text-slate-900'
-                                    : 'bg-slate-700 text-slate-400 hover:text-white'
+                                    : 'bg-slate-100 text-slate-600 hover:text-slate-900'
                                 }`}
                               >
                                 {cat.emoji} {cat.label}
@@ -1957,14 +1957,14 @@ export default function TeacherPortal({
 
                         {/* Custom Message */}
                         <div className="mb-4">
-                          <label htmlFor="spotlight-message" className="block text-xs text-slate-400 font-bold uppercase mb-1">Custom Message</label>
+                          <label htmlFor="spotlight-message" className="block text-xs text-slate-600 font-bold uppercase mb-1">Custom Message</label>
                           <input
                             id="spotlight-message"
                             type="text"
                             value={spotlightMessage}
                             onChange={e => setSpotlightMessage(e.target.value)}
                             placeholder="Keep up the great work!"
-                            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-yellow-500 outline-none"
+                            className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-900 focus:border-yellow-500 outline-none"
                             maxLength={100}
                           />
                         </div>
@@ -1972,7 +1972,7 @@ export default function TeacherPortal({
                         {/* Student List */}
                         <div className="space-y-2 max-h-[300px] overflow-y-auto">
                           {students.length === 0 ? (
-                            <p className="text-slate-500 text-center py-4">No students in this class.</p>
+                            <p className="text-slate-600 text-center py-4">No students in this class.</p>
                           ) : (
                             students
                               .sort((a, b) => (b.xp || 0) - (a.xp || 0))
@@ -1981,15 +1981,15 @@ export default function TeacherPortal({
                                 return (
                                   <div
                                     key={student.id}
-                                    className="flex items-center gap-3 p-3 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors"
+                                    className="flex items-center gap-3 p-3 bg-slate-100 rounded-lg hover:bg-slate-100 transition-colors"
                                   >
                                     <Avatar3D avatar={student.avatar || { color: 'default', hat: 'none', accessory: 'none', face: 'happy' }} level={level.level} size="sm" />
                                     <div className="flex-1">
-                                      <p className="font-bold text-white text-sm">{student.name}</p>
+                                      <p className="font-bold text-slate-900 text-sm">{student.name}</p>
                                       <p className={`text-xs ${level.color}`}>Lv.{level.level} {level.title} - {student.xp || 0} XP</p>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                      <span className="text-xs text-slate-400">
+                                      <span className="text-xs text-slate-600">
                                         {(student.unlockedAchievements || []).length} <Trophy className="w-3 h-3 inline" aria-hidden="true" />
                                       </span>
                                       <button
@@ -2048,26 +2048,26 @@ export default function TeacherPortal({
                 {activeTab === 'submissions' && (
                   <div role="tabpanel" id="tabpanel-submissions" aria-labelledby="tab-submissions" className="space-y-6">
                     {loading ? (
-                      <div className="text-center py-12 text-slate-500" role="status" aria-live="polite">Loading submissions...</div>
+                      <div className="text-center py-12 text-slate-600" role="status" aria-live="polite">Loading submissions...</div>
                     ) : (
                       <>
                         {/* ── SUBMISSIONS VIEW CONTROLS ── */}
-                        <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-slate-800/80 rounded-2xl border border-slate-700 shadow-sm">
+                        <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
                           {/* View Mode Toggle: Queue vs By Student */}
-                          <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold">
+                          <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200 text-xs font-bold">
                             <button
                               type="button"
                               onClick={() => setSubmissionsViewMode('queue')}
                               className={`flex items-center gap-2 px-3.5 py-2 rounded-lg transition-all ${
                                 submissionsViewMode === 'queue'
-                                  ? 'bg-slate-800 text-white shadow-sm'
-                                  : 'text-slate-400 hover:text-white'
+                                  ? 'bg-white text-slate-900 shadow-sm'
+                                  : 'text-slate-600 hover:text-slate-900'
                               }`}
                             >
-                              <Clock className="w-4 h-4 text-amber-400" />
+                              <Clock className="w-4 h-4 text-amber-800" />
                               <span>Activity Queue</span>
                               {pending.length > 0 && (
-                                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-slate-950">
+                                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950">
                                   {pending.length}
                                 </span>
                               )}
@@ -2079,12 +2079,12 @@ export default function TeacherPortal({
                               className={`flex items-center gap-2 px-3.5 py-2 rounded-lg transition-all ${
                                 submissionsViewMode === 'by_student'
                                   ? 'bg-green-600 text-white shadow-sm'
-                                  : 'text-slate-400 hover:text-white'
+                                  : 'text-slate-600 hover:text-slate-900'
                               }`}
                             >
                               <Users className="w-4 h-4" />
                               <span>Organized By Student</span>
-                              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300">
+                              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-white text-slate-700">
                                 {students.length}
                               </span>
                             </button>
@@ -2096,27 +2096,27 @@ export default function TeacherPortal({
                               <button
                                 type="button"
                                 onClick={() => setShowStorageModal(true)}
-                                className="flex items-center gap-1.5 px-3 py-2 bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-emerald-500/50 rounded-xl text-xs text-slate-300 font-semibold transition-colors cursor-pointer"
+                                className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-slate-50 border border-slate-200 hover:border-emerald-500/50 rounded-xl text-xs text-slate-700 font-semibold transition-colors cursor-pointer"
                                 title="Click to view Cloud Storage quota & media pruning controls"
                               >
-                                <HardDrive className="w-3.5 h-3.5 text-emerald-400" />
+                                <HardDrive className="w-3.5 h-3.5 text-emerald-800" />
                                 <span>Storage:</span>
-                                <span className="text-emerald-400 font-bold">{storageStats.estimatedMb} MB</span>
-                                <span className="text-slate-500">/ 5GB ($0)</span>
+                                <span className="text-emerald-800 font-bold">{storageStats.estimatedMb} MB</span>
+                                <span className="text-slate-600">/ 5GB ($0)</span>
                                 {storageStats.eligibleForPruningCount > 0 && (
-                                  <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                                  <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-500/40">
                                     {storageStats.eligibleForPruningCount} to prune
                                   </span>
                                 )}
                               </button>
 
-                              <span className="text-xs text-slate-400 font-semibold flex items-center gap-1">
-                                <Filter className="w-3.5 h-3.5 text-green-400" /> Filter Student:
+                              <span className="text-xs text-slate-600 font-semibold flex items-center gap-1">
+                                <Filter className="w-3.5 h-3.5 text-green-800" /> Filter Student:
                               </span>
                               <select
                                 value={selectedStudentFilterId}
                                 onChange={(e) => setSelectedStudentFilterId(e.target.value)}
-                                className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs font-semibold focus:border-green-500 focus:outline-none max-w-[240px]"
+                                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-semibold focus:border-green-500 focus:outline-none max-w-[240px]"
                                 aria-label="Filter submissions by student"
                               >
                                 <option value="all">All Students ({submissions.length} submissions)</option>
@@ -2142,9 +2142,9 @@ export default function TeacherPortal({
 
                         {/* ── FILTERED STUDENT BANNER (IF FILTERED IN QUEUE) ── */}
                         {submissionsViewMode === 'queue' && selectedStudentObj && (
-                          <div className="bg-gradient-to-r from-slate-900 to-slate-800 border border-green-500/40 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-md">
+                          <div className="bg-gradient-to-r from-slate-50 to-white border border-green-500/40 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-md">
                             <div className="flex items-center gap-3">
-                              <div className="rounded-xl overflow-hidden bg-slate-950 p-1 border border-slate-700 flex-shrink-0">
+                              <div className="rounded-xl overflow-hidden bg-slate-50 p-1 border border-slate-200 flex-shrink-0">
                                 <Avatar3D
                                   avatar={selectedStudentObj.avatar || { color: 'default', hat: 'none', accessory: 'none', face: 'happy' }}
                                   level={(() => {
@@ -2156,12 +2156,12 @@ export default function TeacherPortal({
                               </div>
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <h4 className="font-bold text-white text-base">{selectedStudentObj.name}</h4>
-                                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-green-500/20 text-green-300 border border-green-500/30">
+                                  <h4 className="font-bold text-slate-900 text-base">{selectedStudentObj.name}</h4>
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-green-100 text-green-800 border border-green-500/30">
                                     Filtered View
                                   </span>
                                 </div>
-                                <p className="text-xs text-slate-400 mt-0.5">
+                                <p className="text-xs text-slate-600 mt-0.5">
                                   {activeSubmissions.length} Total &bull; {pending.length} Pending &bull; {reviewed.filter(s => s.status === 'approved').length} Approved
                                 </p>
                               </div>
@@ -2179,7 +2179,7 @@ export default function TeacherPortal({
                               <button
                                 type="button"
                                 onClick={() => setSelectedStudentFilterId('all')}
-                                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold border border-slate-700 transition-colors"
+                                className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold border border-slate-200 transition-colors"
                               >
                                 Show All Students
                               </button>
@@ -2191,19 +2191,19 @@ export default function TeacherPortal({
                         {submissionsViewMode === 'queue' ? (
                           <>
                             <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
-                              <h3 className="font-bold text-slate-400 uppercase text-xs tracking-widest flex items-center gap-2">
-                                <Clock className="w-4 h-4 text-amber-400" aria-hidden="true" />
+                              <h3 className="font-bold text-slate-600 uppercase text-xs tracking-widest flex items-center gap-2">
+                                <Clock className="w-4 h-4 text-amber-800" aria-hidden="true" />
                                 Pending Reviews ({pending.length})
-                                {selectedStudentObj && <span className="text-slate-500 lowercase">for {selectedStudentObj.name}</span>}
+                                {selectedStudentObj && <span className="text-slate-600 lowercase">for {selectedStudentObj.name}</span>}
                               </h3>
                               {pending.length > 0 && (
                                 <button
                                   type="button"
                                   onClick={() => setGlobalExpandDirections(prev => !prev)}
-                                  className="text-xs text-amber-300 hover:text-amber-200 font-bold flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 rounded-xl transition-all shadow-sm"
+                                  className="text-xs text-amber-800 hover:text-amber-800 font-bold flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 hover:bg-amber-100 border border-amber-500/30 rounded-xl transition-all shadow-sm"
                                   title={globalExpandDirections ? 'Collapse directions on all cards' : 'Expand directions on all cards'}
                                 >
-                                  <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+                                  <BookOpen className="w-3.5 h-3.5 text-amber-800" />
                                   <span>{globalExpandDirections ? 'Collapse All Directions' : 'Expand All Directions'}</span>
                                 </button>
                               )}
@@ -2211,22 +2211,22 @@ export default function TeacherPortal({
 
                             {/* ── BATCH REVIEW TOOLBAR (FE-3) ── */}
                             {pending.length > 0 && (
-                              <div className="bg-slate-800/90 border border-slate-700 rounded-xl p-3 mb-4 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+                              <div className="bg-white border border-slate-200 rounded-xl p-3 mb-4 flex flex-wrap items-center justify-between gap-3 shadow-sm">
                                 <div className="flex items-center gap-3">
-                                  <label className="flex items-center gap-2 text-xs font-bold text-slate-300 cursor-pointer select-none">
+                                  <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer select-none">
                                     <input
                                       type="checkbox"
                                       checked={isAllSelected}
                                       onChange={handleToggleSelectAllPending}
                                       disabled={batchProcessing}
-                                      className="w-4 h-4 rounded border-slate-600 text-green-600 focus:ring-green-400 cursor-pointer bg-slate-700"
+                                      className="w-4 h-4 rounded border-slate-300 text-green-600 focus:ring-green-400 cursor-pointer bg-slate-100"
                                       aria-label="Select all pending submissions"
                                     />
                                     <span>Select All ({pending.length})</span>
                                   </label>
 
                                   {visibleSelectedCount > 0 && (
-                                    <span className="text-xs bg-green-950/60 text-green-300 border border-green-700/50 font-bold px-2 py-0.5 rounded-full">
+                                    <span className="text-xs bg-green-50 text-green-800 border border-green-300 font-bold px-2 py-0.5 rounded-full">
                                       {visibleSelectedCount} selected
                                     </span>
                                   )}
@@ -2264,15 +2264,15 @@ export default function TeacherPortal({
                                 <div
                                   className={`mb-4 p-3 rounded-xl text-xs font-bold flex items-center justify-between border ${
                                     batchNotice.type === 'error'
-                                      ? 'bg-rose-950/60 border-rose-800 text-rose-200'
-                                      : 'bg-emerald-950/60 border-emerald-800 text-emerald-200'
+                                      ? 'bg-rose-50 border-rose-200 text-rose-800'
+                                      : 'bg-emerald-50 border-emerald-200 text-emerald-800'
                                   }`}
                                 >
                                   <span>{batchNotice.text}</span>
                                   <button
                                     type="button"
                                     onClick={() => setBatchNotice(null)}
-                                    className="text-slate-400 hover:text-white ml-2"
+                                    className="text-slate-600 hover:text-slate-900 ml-2"
                                     aria-label="Dismiss notice"
                                   >
                                     ✕
@@ -2284,35 +2284,35 @@ export default function TeacherPortal({
                             {/* Batch Approve All Confirmation Modal */}
                             {showConfirmApproveAllModal && (
                               <div
-                                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+                                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
                                 role="dialog"
                                 aria-modal="true"
                                 aria-labelledby="confirm-approve-all-title"
                               >
-                                <div className="bg-slate-800 border-2 border-yellow-500 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+                                <div className="bg-white border-2 border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
                                   <div className="flex items-center gap-3">
-                                    <div className="p-2.5 bg-yellow-500/20 text-yellow-400 rounded-xl">
+                                    <div className="p-2.5 bg-yellow-100 text-yellow-800 rounded-xl">
                                       <CheckCircle2 className="w-6 h-6" />
                                     </div>
                                     <div>
-                                      <h4 id="confirm-approve-all-title" className="font-bold text-lg text-white">
+                                      <h4 id="confirm-approve-all-title" className="font-bold text-lg text-slate-900">
                                         Approve All Pending Submissions?
                                       </h4>
-                                      <p className="text-xs text-slate-400">Class: {selectedClass?.name}</p>
+                                      <p className="text-xs text-slate-600">Class: {selectedClass?.name}</p>
                                     </div>
                                   </div>
 
-                                  <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700 text-xs text-slate-300 space-y-2">
+                                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-slate-700 space-y-2">
                                     <p>
-                                      You are about to approve <strong className="text-white">{pending.length}</strong> pending submission(s).
+                                      You are about to approve <strong className="text-slate-900">{pending.length}</strong> pending submission(s).
                                     </p>
                                     <p>
                                       Total XP awarded to students:{' '}
-                                      <strong className="text-green-400">
+                                      <strong className="text-green-800">
                                         +{calculateBatchTotalXp(pending)} XP
                                       </strong>
                                     </p>
-                                    <p className="text-slate-400">
+                                    <p className="text-slate-600">
                                       This will mark all activities as approved in student accounts, credit their XP, and advance class guild challenge progression.
                                     </p>
                                   </div>
@@ -2322,7 +2322,7 @@ export default function TeacherPortal({
                                       type="button"
                                       disabled={batchProcessing}
                                       onClick={() => setShowConfirmApproveAllModal(false)}
-                                      className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold text-xs rounded-xl transition-colors"
+                                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors"
                                     >
                                       Cancel
                                     </button>
@@ -2347,8 +2347,8 @@ export default function TeacherPortal({
                             )}
 
                             {pending.length === 0 ? (
-                              <div className="bg-slate-800/50 rounded-xl p-8 text-center text-slate-500 mb-8">
-                                <CheckCircle2 className="w-12 h-12 mx-auto mb-2 opacity-20 text-green-400" aria-hidden="true" />
+                              <div className="bg-white rounded-xl p-8 text-center text-slate-600 mb-8">
+                                <CheckCircle2 className="w-12 h-12 mx-auto mb-2 opacity-20 text-green-800" aria-hidden="true" />
                                 {selectedStudentObj
                                   ? `No pending submissions for ${selectedStudentObj.name}. All caught up!`
                                   : "No pending submissions. You're all caught up!"}
@@ -2381,7 +2381,7 @@ export default function TeacherPortal({
                                 activeBoss={activeBoss}
                               />
                             ) : selectedStudentObj && (
-                              <div className="bg-slate-800/30 rounded-xl p-6 text-center text-slate-500 border border-slate-800">
+                              <div className="bg-white rounded-xl p-6 text-center text-slate-600 border border-slate-200">
                                 No reviewed submissions found for {selectedStudentObj.name} yet.
                               </div>
                             )}
@@ -2390,21 +2390,21 @@ export default function TeacherPortal({
                           /* ── VIEW MODE: ORGANIZED BY STUDENT DIRECTORY ── */
                           <div className="space-y-5">
                             {/* Student Directory Controls */}
-                            <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-800/80 p-4 rounded-xl border border-slate-700">
+                            <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200">
                               <div className="relative flex-1 min-w-[240px] max-w-md">
-                                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                                <Search className="w-4 h-4 text-slate-600 absolute left-3 top-1/2 -translate-y-1/2" />
                                 <input
                                   type="text"
                                   placeholder="Search students in this class..."
                                   value={studentDirectorySearch}
                                   onChange={e => setStudentDirectorySearch(e.target.value)}
-                                  className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs placeholder:text-slate-500 focus:border-green-500 focus:outline-none"
+                                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs placeholder:text-slate-600 focus:border-green-500 focus:outline-none"
                                 />
                                 {studentDirectorySearch && (
                                   <button
                                     type="button"
                                     onClick={() => setStudentDirectorySearch('')}
-                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs"
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-900 text-xs"
                                   >
                                     ✕
                                   </button>
@@ -2443,8 +2443,8 @@ export default function TeacherPortal({
                                         studentDirectoryFilter === pill.id
                                           ? 'bg-green-600 text-white shadow-sm'
                                           : pill.isAlert
-                                          ? 'bg-amber-500/10 text-amber-300 border border-amber-500/40 hover:bg-amber-500/20'
-                                          : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-700/60'
+                                          ? 'bg-amber-100 text-amber-800 border border-amber-500/40 hover:bg-amber-100'
+                                          : 'bg-slate-50 text-slate-600 hover:text-slate-900 border border-slate-200'
                                       }`}
                                     >
                                       {pill.label}
@@ -2483,10 +2483,10 @@ export default function TeacherPortal({
 
                               if (filteredList.length === 0) {
                                 return (
-                                  <div className="bg-slate-800/40 border border-dashed border-slate-800 rounded-2xl p-12 text-center">
-                                    <Users className="w-12 h-12 text-slate-600 mx-auto mb-3 opacity-40" />
-                                    <h4 className="text-base font-bold text-white mb-1">No Students Found</h4>
-                                    <p className="text-xs text-slate-400">No students match your directory filter or search term.</p>
+                                  <div className="bg-white border border-dashed border-slate-200 rounded-2xl p-12 text-center">
+                                    <Users className="w-12 h-12 text-slate-500 mx-auto mb-3 opacity-40" />
+                                    <h4 className="text-base font-bold text-slate-900 mb-1">No Students Found</h4>
+                                    <p className="text-xs text-slate-600">No students match your directory filter or search term.</p>
                                   </div>
                                 );
                               }
@@ -2510,8 +2510,8 @@ export default function TeacherPortal({
                                     return (
                                       <div
                                         key={st.id}
-                                        className={`bg-slate-800 rounded-2xl p-5 border transition-all shadow-md flex flex-col justify-between group hover:border-slate-600 ${
-                                          stPending.length > 0 ? 'border-amber-500/50 bg-gradient-to-br from-slate-800 to-amber-950/20' : 'border-slate-700/80'
+                                        className={`bg-white rounded-2xl p-5 border transition-all shadow-md flex flex-col justify-between group hover:border-slate-300 ${
+                                          stPending.length > 0 ? 'border-amber-500/50 bg-gradient-to-br from-white to-amber-50' : 'border-slate-200'
                                         }`}
                                       >
                                         <div>
@@ -2520,7 +2520,7 @@ export default function TeacherPortal({
                                               <button
                                                 type="button"
                                                 onClick={() => setInspectingStudentSubmissions(st)}
-                                                className="rounded-xl overflow-hidden bg-slate-950 p-1 border border-slate-700 flex-shrink-0 hover:ring-2 hover:ring-green-400 transition-all cursor-pointer"
+                                                className="rounded-xl overflow-hidden bg-slate-50 p-1 border border-slate-200 flex-shrink-0 hover:ring-2 hover:ring-green-400 transition-all cursor-pointer"
                                                 title={`View ${st.name}'s submission portfolio`}
                                               >
                                                 <Avatar3D
@@ -2533,7 +2533,7 @@ export default function TeacherPortal({
                                                 <button
                                                   type="button"
                                                   onClick={() => setInspectingStudentSubmissions(st)}
-                                                  className="font-bold text-white text-base leading-tight hover:text-green-400 transition-colors text-left"
+                                                  className="font-bold text-slate-900 text-base leading-tight hover:text-green-800 transition-colors text-left"
                                                 >
                                                   {st.name}
                                                 </button>
@@ -2544,49 +2544,49 @@ export default function TeacherPortal({
                                             </div>
 
                                             {stPending.length > 0 ? (
-                                              <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-full text-[10px] font-black uppercase tracking-wider animate-pulse flex items-center gap-1">
+                                              <span className="px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-500/40 rounded-full text-[10px] font-bold uppercase tracking-wider animate-pulse flex items-center gap-1">
                                                 <Clock className="w-3 h-3" /> {stPending.length} Pending
                                               </span>
                                             ) : stSubs.length > 0 ? (
-                                              <span className="px-2 py-0.5 bg-emerald-950 text-emerald-300 border border-emerald-800/40 rounded-full text-[10px] font-bold">
+                                              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full text-[10px] font-bold">
                                                 {stApproved.length} Approved
                                               </span>
                                             ) : (
-                                              <span className="px-2 py-0.5 bg-slate-900 text-slate-500 rounded-full text-[10px]">
+                                              <span className="px-2 py-0.5 bg-slate-50 text-slate-600 rounded-full text-[10px]">
                                                 No work yet
                                               </span>
                                             )}
                                           </div>
 
                                           {/* Metrics Breakdown */}
-                                          <div className="grid grid-cols-3 gap-2 my-3 p-2.5 bg-slate-900/70 rounded-xl border border-slate-800 text-center text-xs">
+                                          <div className="grid grid-cols-3 gap-2 my-3 p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-center text-xs">
                                             <div>
-                                              <span className="text-[10px] text-slate-400 uppercase font-bold block">Total</span>
-                                              <strong className="text-white font-mono text-sm">{stSubs.length}</strong>
+                                              <span className="text-[10px] text-slate-600 uppercase font-bold block">Total</span>
+                                              <strong className="text-slate-900 font-mono text-sm">{stSubs.length}</strong>
                                             </div>
                                             <div>
-                                              <span className="text-[10px] text-emerald-400 uppercase font-bold block">Approved</span>
-                                              <strong className="text-emerald-300 font-mono text-sm">{stApproved.length}</strong>
+                                              <span className="text-[10px] text-emerald-800 uppercase font-bold block">Approved</span>
+                                              <strong className="text-emerald-800 font-mono text-sm">{stApproved.length}</strong>
                                             </div>
                                             <div>
-                                              <span className="text-[10px] text-yellow-400 uppercase font-bold block">XP Won</span>
-                                              <strong className="text-yellow-400 font-mono text-sm">+{stXp}</strong>
+                                              <span className="text-[10px] text-yellow-800 uppercase font-bold block">XP Won</span>
+                                              <strong className="text-yellow-800 font-mono text-sm">+{stXp}</strong>
                                             </div>
                                           </div>
 
                                           {/* Most recent submission */}
-                                          <div className="text-[11px] text-slate-400 mb-4 truncate">
+                                          <div className="text-[11px] text-slate-600 mb-4 truncate">
                                             {latestSub ? (
                                               <span title={`Latest: ${latestSub.activityTitle}`}>
-                                                <strong className="text-slate-300">Latest:</strong> {latestSub.activityTitle} ({new Date(latestSub.submittedAt || Date.now()).toLocaleDateString()})
+                                                <strong className="text-slate-700">Latest:</strong> {latestSub.activityTitle} ({new Date(latestSub.submittedAt || Date.now()).toLocaleDateString()})
                                               </span>
                                             ) : (
-                                              <span className="text-slate-500 italic">No submissions submitted yet.</span>
+                                              <span className="text-slate-600 italic">No submissions submitted yet.</span>
                                             )}
                                           </div>
                                         </div>
 
-                                        <div className="flex items-center gap-2 pt-2 border-t border-slate-700/60">
+                                        <div className="flex items-center gap-2 pt-2 border-t border-slate-200">
                                           <button
                                             type="button"
                                             onClick={() => setInspectingStudentSubmissions(st)}
@@ -2602,7 +2602,7 @@ export default function TeacherPortal({
                                                 setSelectedStudentFilterId(st.id);
                                                 setSubmissionsViewMode('queue');
                                               }}
-                                              className="p-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl text-xs font-bold transition-colors border border-slate-600"
+                                              className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-colors border border-slate-300"
                                               title="Filter activity queue to this student"
                                               aria-label="Filter activity queue to this student"
                                             >
@@ -2624,7 +2624,7 @@ export default function TeacherPortal({
                 )}
               </div>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-slate-500 border-2 border-dashed border-slate-800 rounded-3xl min-h-[400px]">
+              <div className="h-full flex flex-col items-center justify-center text-slate-600 border-2 border-dashed border-slate-200 rounded-3xl min-h-[400px]">
                 <BookOpen className="w-16 h-16 mb-4 opacity-20" aria-hidden="true" />
                 <p>Select a class to view dashboard</p>
               </div>
@@ -2636,23 +2636,23 @@ export default function TeacherPortal({
 
       {/* ================= MODAL: BROWSE & APPLY ORG TEMPLATES ================= */}
       {showOrgTemplatesModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="browse-templates-title">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-4xl w-full p-6 shadow-2xl my-auto max-h-[92vh] flex flex-col">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="browse-templates-title">
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl max-w-4xl w-full p-6 shadow-2xl my-auto max-h-[92vh] flex flex-col">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 mb-4">
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-purple-400">Organization Choice Boards</span>
-                <h3 id="browse-templates-title" className="text-xl font-bold text-white">{user.organizationName || 'Organization'} Master Templates</h3>
+                <span className="text-xs font-bold uppercase tracking-wider text-purple-700">Organization Choice Boards</span>
+                <h3 id="browse-templates-title" className="text-xl font-bold text-slate-900">{user.organizationName || 'Organization'} Master Templates</h3>
               </div>
-              <button onClick={() => setShowOrgTemplatesModal(false)} aria-label="Close templates modal" className="text-slate-400 hover:text-white text-xl font-bold p-1">✕</button>
+              <button onClick={() => setShowOrgTemplatesModal(false)} aria-label="Close templates modal" className="text-slate-600 hover:text-slate-900 text-xl font-bold p-1">✕</button>
             </div>
 
             <div className="space-y-6 overflow-y-auto flex-1 pr-1">
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-600">
                 Browse master choice board templates configured for your organization. You can choose specific individual activities to import into <strong>{selectedClass?.name || 'your class'}</strong> without removing any of your current activities!
               </p>
 
               {orgTemplates.length === 0 ? (
-                <div className="text-center py-12 text-slate-500 border border-slate-800 rounded-xl">
+                <div className="text-center py-12 text-slate-600 border border-slate-200 rounded-xl">
                   No organization templates found for {user.organizationName || 'your organization'}.
                 </div>
               ) : (
@@ -2662,15 +2662,15 @@ export default function TeacherPortal({
                     const isSelectedFull = selectedTemplateToApply?.id === tmp.id;
 
                     return (
-                      <div key={tmp.id} className="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg space-y-4">
+                      <div key={tmp.id} className="bg-white border border-slate-200 rounded-xl p-5 shadow-lg space-y-4">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div>
-                            <h4 className="text-lg font-bold text-white flex items-center gap-2">
-                              <Layers className="w-5 h-5 text-purple-400" />
+                            <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                              <Layers className="w-5 h-5 text-purple-700" />
                               {tmp.title}
                             </h4>
-                            <p className="text-xs text-slate-400 mt-1">{tmp.description || 'No description provided.'}</p>
-                            <div className="flex items-center gap-3 mt-2 text-[11px] text-slate-500">
+                            <p className="text-xs text-slate-600 mt-1">{tmp.description || 'No description provided.'}</p>
+                            <div className="flex items-center gap-3 mt-2 text-[11px] text-slate-600">
                               <span>Created by: {tmp.createdBy || 'Admin'}</span>
                               <span>&middot;</span>
                               <span>{tmp.activities?.length || 0} Categories</span>
@@ -2680,7 +2680,7 @@ export default function TeacherPortal({
                           <div className="flex items-center gap-2 flex-wrap">
                             <button
                               onClick={() => setInspectingTemplate(isInspecting ? null : tmp)}
-                              className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs rounded-lg transition-colors border border-slate-600 flex items-center gap-1.5"
+                              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-lg transition-colors border border-slate-300 flex items-center gap-1.5"
                             >
                               <Eye className="w-3.5 h-3.5" />
                               {isInspecting ? 'Hide Preview' : 'Inspect Activities'}
@@ -2698,14 +2698,14 @@ export default function TeacherPortal({
 
                         {/* Selective Activity Inspector */}
                         {isInspecting && (
-                          <div className="mt-4 pt-4 border-t border-slate-700/80 space-y-4 bg-slate-900/60 p-4 rounded-xl">
+                          <div className="mt-4 pt-4 border-t border-slate-200 space-y-4 bg-slate-50 p-4 rounded-xl">
                             <div className="flex items-center justify-between">
-                              <h5 className="text-xs font-bold text-yellow-400 uppercase tracking-wider">
+                              <h5 className="text-xs font-bold text-yellow-800 uppercase tracking-wider">
                                 Activities in "{tmp.title}"
                               </h5>
                               <button
                                 onClick={() => handleOpenImportModal(tmp)}
-                                className="text-xs text-purple-400 hover:text-purple-300 font-bold underline"
+                                className="text-xs text-purple-700 hover:text-purple-700 font-bold underline"
                               >
                                 Open 3-Way Import Options →
                               </button>
@@ -2717,24 +2717,24 @@ export default function TeacherPortal({
                                 const categorySub = tmp.categorySubtitles?.[path.id] || path.subtitle;
 
                                 return (
-                                  <div key={path.id} className="bg-slate-800 rounded-lg border border-slate-700 p-3 space-y-2">
+                                  <div key={path.id} className="bg-white rounded-lg border border-slate-200 p-3 space-y-2">
                                     <div className="flex items-center justify-between">
                                       <div>
-                                        <span className="font-bold text-sm text-white">{categoryName}</span>
-                                        {categorySub && <span className="text-xs text-slate-400 ml-2 italic">({categorySub})</span>}
+                                        <span className="font-bold text-sm text-slate-900">{categoryName}</span>
+                                        {categorySub && <span className="text-xs text-slate-600 ml-2 italic">({categorySub})</span>}
                                       </div>
-                                      <span className="text-[11px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full">
+                                      <span className="text-[11px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full">
                                         {path.options?.length || 0} activities
                                       </span>
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
                                       {(path.options || []).map(opt => (
-                                        <div key={opt.id} className="p-2.5 bg-slate-950/80 rounded-lg border border-slate-800 flex items-start justify-between gap-2">
+                                        <div key={opt.id} className="p-2.5 bg-slate-50 rounded-lg border border-slate-200 flex items-start justify-between gap-2">
                                           <div className="min-w-0">
-                                            <div className="font-bold text-xs text-white truncate">{opt.title}</div>
-                                            <div className="text-[11px] text-slate-400 line-clamp-1">{opt.desc}</div>
-                                            <div className="text-[10px] text-yellow-400 font-semibold mt-0.5">{opt.type} &middot; {opt.xp} XP</div>
+                                            <div className="font-bold text-xs text-slate-900 truncate">{opt.title}</div>
+                                            <div className="text-[11px] text-slate-600 line-clamp-1">{opt.desc}</div>
+                                            <div className="text-[10px] text-yellow-800 font-semibold mt-0.5">{opt.type} &middot; {opt.xp} XP</div>
                                           </div>
                                           <button
                                             onClick={() => handleImportSingleActivity(tmp, path.id, opt)}
@@ -2760,11 +2760,11 @@ export default function TeacherPortal({
               )}
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800 mt-4">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 mt-4">
               <button
                 type="button"
                 onClick={() => setShowOrgTemplatesModal(false)}
-                className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-semibold"
+                className="px-5 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-sm font-semibold"
               >
                 Close
               </button>
@@ -2775,23 +2775,23 @@ export default function TeacherPortal({
 
       {/* ================= MODAL: 3-WAY CHOICE BOARD TEMPLATE IMPORTER ================= */}
       {templateForImport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="template-importer-title">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full p-6 shadow-2xl my-auto max-h-[92vh] flex flex-col">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="template-importer-title">
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl max-w-3xl w-full p-6 shadow-2xl my-auto max-h-[92vh] flex flex-col">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 mb-5">
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-purple-400">Import Choice Board Template</span>
-                <h3 id="template-importer-title" className="text-xl font-bold text-white flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-purple-400" />
+                <span className="text-xs font-bold uppercase tracking-wider text-purple-700">Import Choice Board Template</span>
+                <h3 id="template-importer-title" className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-purple-700" />
                   {templateForImport.title}
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Target Class: <strong className="text-green-400">{selectedClass?.name}</strong>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  Target Class: <strong className="text-green-800">{selectedClass?.name}</strong>
                 </p>
               </div>
               <button
                 onClick={() => setTemplateForImport(null)}
                 aria-label="Close import dialog"
-                className="text-slate-400 hover:text-white text-xl font-bold p-1"
+                className="text-slate-600 hover:text-slate-900 text-xl font-bold p-1"
               >
                 ✕
               </button>
@@ -2799,21 +2799,21 @@ export default function TeacherPortal({
 
             {importOptionTab === 'menu' ? (
               <div className="space-y-4 overflow-y-auto flex-1 pr-1">
-                <p className="text-xs text-slate-300 mb-3">
+                <p className="text-xs text-slate-700 mb-3">
                   How would you like to apply this template to <strong>{selectedClass?.name}</strong>? Choose one of the 3 options below:
                 </p>
 
                 {/* Option 1: Overwrite */}
-                <div className="p-5 bg-red-950/30 border-2 border-red-600/50 rounded-xl hover:border-red-500 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="p-5 bg-red-50 border-2 border-red-600/50 rounded-xl hover:border-red-500 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="space-y-1 max-w-lg">
                     <div className="flex items-center gap-2">
-                      <RotateCcw className="w-5 h-5 text-red-400 flex-shrink-0" />
-                      <h4 className="font-bold text-white text-base">Option 1: Overwrite Current Choice Board</h4>
+                      <RotateCcw className="w-5 h-5 text-red-700 flex-shrink-0" />
+                      <h4 className="font-bold text-slate-900 text-base">Option 1: Overwrite Current Choice Board</h4>
                     </div>
-                    <p className="text-xs text-red-200/80">
+                    <p className="text-xs text-red-800">
                       Replaces all current activities and categories in {selectedClass?.name} with this template.
                     </p>
-                    <span className="inline-block text-[11px] bg-red-900/60 text-red-300 px-2 py-0.5 rounded font-semibold">
+                    <span className="inline-block text-[11px] bg-red-50 text-red-700 px-2 py-0.5 rounded font-semibold">
                       ⚠️ Replaces current activities
                     </span>
                   </div>
@@ -2828,16 +2828,16 @@ export default function TeacherPortal({
                 </div>
 
                 {/* Option 2: Merge / Keep Existing */}
-                <div className="p-5 bg-purple-950/30 border-2 border-purple-600/50 rounded-xl hover:border-purple-500 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="p-5 bg-purple-50 border-2 border-purple-600/50 rounded-xl hover:border-purple-500 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="space-y-1 max-w-lg">
                     <div className="flex items-center gap-2">
-                      <Layers className="w-5 h-5 text-purple-400 flex-shrink-0" />
-                      <h4 className="font-bold text-white text-base">Option 2: Merge & Keep Existing</h4>
+                      <Layers className="w-5 h-5 text-purple-700 flex-shrink-0" />
+                      <h4 className="font-bold text-slate-900 text-base">Option 2: Merge & Keep Existing</h4>
                     </div>
-                    <p className="text-xs text-purple-200/80">
+                    <p className="text-xs text-purple-800">
                       Appends all activities from this template into your class. Your current activities and categories will NOT be deleted.
                     </p>
-                    <span className="inline-block text-[11px] bg-purple-900/60 text-purple-300 px-2 py-0.5 rounded font-semibold">
+                    <span className="inline-block text-[11px] bg-purple-50 text-purple-700 px-2 py-0.5 rounded font-semibold">
                       ✨ Safe: keeps existing activities
                     </span>
                   </div>
@@ -2852,16 +2852,16 @@ export default function TeacherPortal({
                 </div>
 
                 {/* Option 3: Select Specific Activities */}
-                <div className="p-5 bg-emerald-950/30 border-2 border-emerald-600/50 rounded-xl hover:border-emerald-500 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="p-5 bg-emerald-50 border-2 border-emerald-600/50 rounded-xl hover:border-emerald-500 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="space-y-1 max-w-lg">
                     <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                      <h4 className="font-bold text-white text-base">Option 3: Select Specific Activities</h4>
+                      <CheckCircle2 className="w-5 h-5 text-emerald-800 flex-shrink-0" />
+                      <h4 className="font-bold text-slate-900 text-base">Option 3: Select Specific Activities</h4>
                     </div>
-                    <p className="text-xs text-emerald-200/80">
+                    <p className="text-xs text-emerald-800">
                       Cherry-pick only the specific activities and categories you want to import into your class.
                     </p>
-                    <span className="inline-block text-[11px] bg-emerald-900/60 text-emerald-300 px-2 py-0.5 rounded font-semibold">
+                    <span className="inline-block text-[11px] bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded font-semibold">
                       🎯 Custom activity selection
                     </span>
                   </div>
@@ -2878,15 +2878,15 @@ export default function TeacherPortal({
             ) : (
               /* Selective Mode Checklist */
               <div className="space-y-4 overflow-y-auto flex-1 pr-1">
-                <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-800/80 p-3 rounded-xl border border-slate-700">
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200">
                   <button
                     onClick={() => setImportOptionTab('menu')}
-                    className="text-xs text-slate-400 hover:text-white font-bold flex items-center gap-1"
+                    className="text-xs text-slate-600 hover:text-slate-900 font-bold flex items-center gap-1"
                   >
                     ← Back to Options
                   </button>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-yellow-400 font-bold">
+                    <span className="text-xs text-yellow-800 font-bold">
                       {selectiveActivities.size} Selected
                     </span>
                     <button
@@ -2897,13 +2897,13 @@ export default function TeacherPortal({
                         });
                         setSelectiveActivities(allIds);
                       }}
-                      className="text-[11px] px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded font-semibold"
+                      className="text-[11px] px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded font-semibold"
                     >
                       Select All
                     </button>
                     <button
                       onClick={() => setSelectiveActivities(new Set())}
-                      className="text-[11px] px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded font-semibold"
+                      className="text-[11px] px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded font-semibold"
                     >
                       Deselect All
                     </button>
@@ -2917,8 +2917,8 @@ export default function TeacherPortal({
                     const allCategorySelected = pathActivityKeys.length > 0 && pathActivityKeys.every(k => selectiveActivities.has(k));
 
                     return (
-                      <div key={path.id} className="bg-slate-800 rounded-xl border border-slate-700 p-4 space-y-3">
-                        <div className="flex items-center justify-between pb-2 border-b border-slate-700/60">
+                      <div key={path.id} className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-200">
                           <label className="flex items-center gap-2 cursor-pointer">
                             <input
                               type="checkbox"
@@ -2934,11 +2934,11 @@ export default function TeacherPortal({
                                   return next;
                                 });
                               }}
-                              className="w-4 h-4 rounded text-green-500 focus:ring-0 cursor-pointer"
+                              className="w-4 h-4 rounded text-green-800 focus:ring-0 cursor-pointer"
                             />
-                            <span className="font-bold text-white text-sm">{categoryName}</span>
+                            <span className="font-bold text-slate-900 text-sm">{categoryName}</span>
                           </label>
-                          <span className="text-[11px] text-slate-400">
+                          <span className="text-[11px] text-slate-600">
                             {path.options?.length || 0} activities
                           </span>
                         </div>
@@ -2952,8 +2952,8 @@ export default function TeacherPortal({
                                 key={opt.id}
                                 className={`p-3 rounded-lg border text-left cursor-pointer transition-colors flex items-start gap-2.5 ${
                                   isChecked
-                                    ? 'bg-slate-700/90 border-green-500/80 shadow-sm'
-                                    : 'bg-slate-900/60 border-slate-700/80 hover:border-slate-600'
+                                    ? 'bg-slate-100 border-green-500/80 shadow-sm'
+                                    : 'bg-slate-50 border-slate-200 hover:border-slate-300'
                                 }`}
                               >
                                 <input
@@ -2967,12 +2967,12 @@ export default function TeacherPortal({
                                       return next;
                                     });
                                   }}
-                                  className="mt-0.5 w-4 h-4 rounded text-green-500 focus:ring-0 cursor-pointer flex-shrink-0"
+                                  className="mt-0.5 w-4 h-4 rounded text-green-800 focus:ring-0 cursor-pointer flex-shrink-0"
                                 />
                                 <div className="min-w-0 flex-1">
-                                  <div className="font-bold text-xs text-white truncate">{opt.title}</div>
-                                  <div className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">{opt.desc}</div>
-                                  <div className="text-[10px] text-yellow-400 font-semibold mt-1">
+                                  <div className="font-bold text-xs text-slate-900 truncate">{opt.title}</div>
+                                  <div className="text-[11px] text-slate-600 line-clamp-1 mt-0.5">{opt.desc}</div>
+                                  <div className="text-[10px] text-yellow-800 font-semibold mt-1">
                                     {opt.type} &middot; {opt.xp} XP
                                   </div>
                                 </div>
@@ -2987,11 +2987,11 @@ export default function TeacherPortal({
               </div>
             )}
 
-            <div className="flex items-center justify-between gap-3 pt-4 border-t border-slate-800 mt-4">
+            <div className="flex items-center justify-between gap-3 pt-4 border-t border-slate-200 mt-4">
               <button
                 type="button"
                 onClick={() => setTemplateForImport(null)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold"
+                className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold"
               >
                 Cancel
               </button>
@@ -3013,30 +3013,30 @@ export default function TeacherPortal({
       )}
 
         {/* Legal & Student Data Privacy Footer */}
-        <footer className="mt-12 pt-6 border-t border-slate-800 text-center text-xs text-slate-500 space-y-2 print:hidden">
+        <footer className="mt-12 pt-6 border-t border-slate-200 text-center text-xs text-slate-600 space-y-2 print:hidden">
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
             <button
               onClick={() => { setLegalTab('privacy'); setLegalModalOpen(true); }}
-              className="hover:text-blue-400 transition-colors underline underline-offset-2"
+              className="hover:text-blue-700 transition-colors underline underline-offset-2"
             >
               Privacy Policy
             </button>
-            <span className="text-slate-700">•</span>
+            <span className="text-slate-400">•</span>
             <button
               onClick={() => { setLegalTab('terms'); setLegalModalOpen(true); }}
-              className="hover:text-blue-400 transition-colors underline underline-offset-2"
+              className="hover:text-blue-700 transition-colors underline underline-offset-2"
             >
               Terms of Service
             </button>
-            <span className="text-slate-700">•</span>
+            <span className="text-slate-400">•</span>
             <button
               onClick={() => { setLegalTab('compliance'); setLegalModalOpen(true); }}
-              className="hover:text-emerald-400 transition-colors flex items-center gap-1 inline-flex"
+              className="hover:text-emerald-800 transition-colors flex items-center gap-1 inline-flex"
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Student Data Privacy & FERPA / COPPA
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-800" /> Student Data Privacy & FERPA / COPPA
             </button>
           </div>
-          <p className="text-[11px] text-slate-600">
+          <p className="text-[11px] text-slate-500">
             Protected under Federal & State Student Privacy Laws. Zero ads & zero data selling.
           </p>
         </footer>
@@ -3049,20 +3049,20 @@ export default function TeacherPortal({
 
         {/* ================= MODAL: RENAME CLASS ================= */}
         {showRenameModal && renamingClass && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl animate-in fade-in duration-200">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl animate-in fade-in duration-200">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                    <Pencil className="w-5 h-5 text-yellow-400" /> Rename Class
+                  <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                    <Pencil className="w-5 h-5 text-yellow-800" /> Rename Class
                   </h3>
-                  <p className="text-slate-400 text-xs mt-1">
-                    Updating name for <strong className="text-slate-300">{renamingClass.name}</strong> (Code: {renamingClass.code})
+                  <p className="text-slate-600 text-xs mt-1">
+                    Updating name for <strong className="text-slate-700">{renamingClass.name}</strong> (Code: {renamingClass.code})
                   </p>
                 </div>
                 <button
                   onClick={() => { setShowRenameModal(false); setRenamingClass(null); }}
-                  className="text-slate-400 hover:text-white"
+                  className="text-slate-600 hover:text-slate-900"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -3070,7 +3070,7 @@ export default function TeacherPortal({
 
               <form onSubmit={handleSaveRenameClass} className="space-y-4">
                 <div>
-                  <label htmlFor="teacher-rename-input" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                  <label htmlFor="teacher-rename-input" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                     New Class Name *
                   </label>
                   <input
@@ -3081,7 +3081,7 @@ export default function TeacherPortal({
                     placeholder="e.g. 5th Grade Science & Robotics"
                     required
                     autoFocus
-                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm outline-none focus:border-yellow-400"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm outline-none focus:border-yellow-400"
                   />
                 </div>
 
@@ -3089,7 +3089,7 @@ export default function TeacherPortal({
                   <button
                     type="button"
                     onClick={() => { setShowRenameModal(false); setRenamingClass(null); }}
-                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-semibold"
+                    className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-sm font-semibold"
                   >
                     Cancel
                   </button>
@@ -3118,29 +3118,29 @@ export default function TeacherPortal({
 
         {/* ================= MODAL: MOVE CLASS ORGANIZATION ================= */}
         {showMoveOrgModal && movingClass && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-            <div className="bg-slate-900 border border-amber-500/30 rounded-2xl max-w-md w-full p-6 shadow-2xl animate-in fade-in duration-200">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <div className="bg-slate-50 border border-amber-500/30 rounded-2xl max-w-md w-full p-6 shadow-2xl animate-in fade-in duration-200">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                    <Building2 className="w-5 h-5 text-amber-400" /> Move Class Organization
+                  <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                    <Building2 className="w-5 h-5 text-amber-800" /> Move Class Organization
                   </h3>
-                  <p className="text-slate-400 text-xs mt-1">
-                    Reassign <strong className="text-slate-200">{movingClass.name}</strong> (Code: {movingClass.code}) to another organization.
+                  <p className="text-slate-600 text-xs mt-1">
+                    Reassign <strong className="text-slate-800">{movingClass.name}</strong> (Code: {movingClass.code}) to another organization.
                   </p>
                 </div>
                 <button
                   onClick={() => { setShowMoveOrgModal(false); setMovingClass(null); }}
-                  className="text-slate-400 hover:text-white"
+                  className="text-slate-600 hover:text-slate-900"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               <form onSubmit={handleSaveMoveClassOrg} className="space-y-4">
-                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs space-y-1">
-                  <div className="text-slate-400">Current Organization:</div>
-                  <div className="font-bold text-amber-300">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
+                  <div className="text-slate-600">Current Organization:</div>
+                  <div className="font-bold text-amber-800">
                     {movingClass.organizationId
                       ? (adminOrgs.find(o => o.id === movingClass.organizationId)?.name || movingClass.organizationId)
                       : '🌟 Personal Class (No Organization)'}
@@ -3148,14 +3148,14 @@ export default function TeacherPortal({
                 </div>
 
                 <div>
-                  <label htmlFor="teacher-target-org-select" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                  <label htmlFor="teacher-target-org-select" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                     Destination Organization *
                   </label>
                   <select
                     id="teacher-target-org-select"
                     value={selectedMoveOrgId}
                     onChange={(e) => setSelectedMoveOrgId(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-sm outline-none focus:border-amber-400"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm outline-none focus:border-amber-400"
                   >
                     <option value="none">🌟 Personal (No Organization)</option>
                     {adminOrgs.map(o => (
@@ -3164,7 +3164,7 @@ export default function TeacherPortal({
                   </select>
                 </div>
 
-                <div className="p-3 bg-amber-950/20 border border-amber-500/20 rounded-xl text-[11px] text-amber-200/80 leading-relaxed">
+                <div className="p-3 bg-amber-50 border border-amber-500/20 rounded-xl text-[11px] text-amber-800 leading-relaxed">
                   Moving this class will update its registered organization without altering your overall Super Admin designation or privileges.
                 </div>
 
@@ -3172,7 +3172,7 @@ export default function TeacherPortal({
                   <button
                     type="button"
                     onClick={() => { setShowMoveOrgModal(false); setMovingClass(null); }}
-                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-semibold"
+                    className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-sm font-semibold"
                   >
                     Cancel
                   </button>
@@ -3751,16 +3751,16 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
   return (
     <div className="space-y-6">
       {/* Sub-Tabs Header */}
-      <div className="flex items-center gap-2 border-b border-slate-700 pb-3 overflow-x-auto text-xs font-bold">
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-3 overflow-x-auto text-xs font-bold">
         <button
           onClick={() => setSubTab('roster')}
           className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all min-h-[44px] ${
-            subTab === 'roster' ? 'bg-purple-600 text-white font-black shadow' : 'bg-slate-800 text-slate-300 hover:text-white'
+            subTab === 'roster' ? 'bg-purple-600 text-white font-bold shadow' : 'bg-white text-slate-700 hover:text-slate-900'
           }`}
         >
           <Users className="w-4 h-4" /> Guild Rosters & Drag-and-Drop
           {unassigned.length > 0 && (
-            <span className="bg-amber-400 text-slate-950 text-[10px] font-black px-1.5 py-0.2 rounded-full">
+            <span className="bg-amber-400 text-slate-950 text-[10px] font-bold px-1.5 py-0.2 rounded-full">
               {unassigned.length}
             </span>
           )}
@@ -3769,7 +3769,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
         <button
           onClick={() => setSubTab('standings')}
           className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all min-h-[44px] ${
-            subTab === 'standings' ? 'bg-yellow-500 text-slate-950 font-black shadow' : 'bg-slate-800 text-slate-300 hover:text-white'
+            subTab === 'standings' ? 'bg-yellow-500 text-slate-950 font-bold shadow' : 'bg-white text-slate-700 hover:text-slate-900'
           }`}
         >
           <Trophy className="w-4 h-4" /> Leaderboard & Spirits
@@ -3778,7 +3778,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
         <button
           onClick={() => setSubTab('setup')}
           className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all min-h-[44px] ${
-            subTab === 'setup' ? 'bg-indigo-600 text-white font-black shadow' : 'bg-slate-800 text-slate-300 hover:text-white'
+            subTab === 'setup' ? 'bg-indigo-600 text-white font-bold shadow' : 'bg-white text-slate-700 hover:text-slate-900'
           }`}
         >
           <Settings className="w-4 h-4" /> Guild Customizer ({activeGuilds.length}/15)
@@ -3787,12 +3787,12 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
         <button
           onClick={() => setSubTab('stem_orders')}
           className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all min-h-[44px] relative ${
-            subTab === 'stem_orders' ? 'bg-emerald-600 text-white font-black shadow' : 'bg-slate-800 text-slate-300 hover:text-white'
+            subTab === 'stem_orders' ? 'bg-emerald-600 text-white font-bold shadow' : 'bg-white text-slate-700 hover:text-slate-900'
           }`}
         >
           <Package className="w-4 h-4" /> STEM Supplies Audit
           {stemPurchases.filter(p => !p.fulfilled).length > 0 && (
-            <span className="bg-amber-400 text-slate-950 text-[10px] font-black px-1.5 py-0.2 rounded-full">
+            <span className="bg-amber-400 text-slate-950 text-[10px] font-bold px-1.5 py-0.2 rounded-full">
               {stemPurchases.filter(p => !p.fulfilled).length}
             </span>
           )}
@@ -3801,7 +3801,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
         <button
           onClick={() => setSubTab('boss')}
           className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all min-h-[44px] ${
-            subTab === 'boss' ? 'bg-red-600 text-white font-black shadow' : 'bg-slate-800 text-slate-300 hover:text-white'
+            subTab === 'boss' ? 'bg-red-600 text-white font-bold shadow' : 'bg-white text-slate-700 hover:text-slate-900'
           }`}
         >
           <Swords className="w-4 h-4" /> Class Weekly Boss
@@ -3810,20 +3810,20 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
 
       {/* SUB-TAB 0: DRAG & DROP GUILD ROSTERS */}
       {subTab === 'roster' && (
-        <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-6">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 space-y-6">
           {/* Top Control Bar */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-xl font-black text-white flex items-center gap-2">
-                  <Users className="w-6 h-6 text-purple-400" aria-hidden="true" />
+                <h3 className="text-xl font-display font-bold text-slate-900 flex items-center gap-2">
+                  <Users className="w-6 h-6 text-purple-700" aria-hidden="true" />
                   Guild Rosters & Drag-and-Drop
                 </h3>
-                <span className="text-xs font-black uppercase px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                <span className="text-xs font-bold uppercase px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-500/30">
                   {students.length - unassigned.length} / {students.length} Assigned
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-600 mt-1">
                 Drag and drop student cards between guilds or unassigned, or use the 1-click guild picker on any card.
               </p>
             </div>
@@ -3834,7 +3834,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                 <button
                   type="button"
                   onClick={() => handleAutoBalance('unassigned')}
-                  className="px-3.5 py-2 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1.5 shadow transition-all min-h-[44px]"
+                  className="px-3.5 py-2 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-1.5 shadow transition-all min-h-[44px]"
                   title="Automatically distribute all unassigned students evenly"
                 >
                   <Sparkles className="w-3.5 h-3.5" /> Auto-Assign ({unassigned.length}) Unassigned
@@ -3843,30 +3843,30 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
               <button
                 type="button"
                 onClick={() => handleAutoBalance('all')}
-                className="px-3.5 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl text-xs flex items-center gap-1.5 border border-slate-600 transition-colors min-h-[44px]"
+                className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl text-xs flex items-center gap-1.5 border border-slate-300 transition-colors min-h-[44px]"
                 title={`Evenly rebalance all students across the ${activeGuilds.length} guilds`}
               >
-                <RefreshCw className="w-3.5 h-3.5 text-blue-400" /> Rebalance All {activeGuilds.length} Guilds
+                <RefreshCw className="w-3.5 h-3.5 text-blue-700" /> Rebalance All {activeGuilds.length} Guilds
               </button>
             </div>
           </div>
 
           {/* Search, Alphabetical Sort & Student Self-Selection Policy Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-slate-900/80 rounded-xl border border-slate-700/80">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
             {/* Real-time Search */}
             <div className="relative flex-1 min-w-[200px] max-w-sm">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-4 h-4 text-slate-600 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search students in guilds..."
                 value={rosterSearch}
                 onChange={e => setRosterSearch(e.target.value)}
-                className="w-full pl-9 pr-8 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs placeholder:text-slate-500 outline-none focus:border-purple-500 transition-colors min-h-[38px]"
+                className="w-full pl-9 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-slate-900 text-xs placeholder:text-slate-600 outline-none focus:border-purple-500 transition-colors min-h-[38px]"
               />
               {rosterSearch && (
                 <button
                   onClick={() => setRosterSearch('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-900"
                   title="Clear search"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -3875,14 +3875,14 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
             </div>
 
             {/* Alphabetical & XP Sort Control */}
-            <div className="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
-              <span className="text-slate-400 font-bold flex items-center gap-1.5 uppercase text-[10px] tracking-wider shrink-0">
-                <ArrowRightLeft className="w-3.5 h-3.5 text-purple-400" /> Sort Students:
+            <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 text-xs">
+              <span className="text-slate-600 font-bold flex items-center gap-1.5 uppercase text-[10px] tracking-wider shrink-0">
+                <ArrowRightLeft className="w-3.5 h-3.5 text-purple-700" /> Sort Students:
               </span>
               <select
                 value={studentSortOrder}
                 onChange={e => setStudentSortOrder(e.target.value)}
-                className="bg-slate-900 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg border border-slate-700 focus:border-purple-400 outline-none cursor-pointer min-h-[34px]"
+                className="bg-slate-50 text-slate-900 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-purple-400 outline-none cursor-pointer min-h-[34px]"
                 aria-label="Sort student roster"
               >
                 <option value="alpha-asc">Name: A → Z (Alphabetical)</option>
@@ -3893,19 +3893,19 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
             </div>
 
             {/* Student Guild Choice Policy Toggle */}
-            <div className="flex items-center gap-2.5 bg-slate-800 px-3.5 py-2 rounded-xl border border-slate-700 text-xs">
-              <span className="text-slate-300 font-semibold flex items-center gap-1.5">
+            <div className="flex items-center gap-2.5 bg-white px-3.5 py-2 rounded-xl border border-slate-200 text-xs">
+              <span className="text-slate-700 font-semibold flex items-center gap-1.5">
                 {allowStudentGuildSelect ? (
-                  <CheckCircle2 className="w-4 h-4 text-green-400" />
+                  <CheckCircle2 className="w-4 h-4 text-green-800" />
                 ) : (
-                  <Lock className="w-4 h-4 text-amber-400" />
+                  <Lock className="w-4 h-4 text-amber-800" />
                 )}
                 Student Self-Selection:
               </span>
               <button
                 type="button"
                 onClick={handleToggleAllowStudentGuildSelect}
-                className={`px-2.5 py-1 rounded-lg font-black text-[11px] uppercase transition-all ${
+                className={`px-2.5 py-1 rounded-lg font-bold text-[11px] uppercase transition-all ${
                   allowStudentGuildSelect
                     ? 'bg-green-600 text-white shadow-sm hover:bg-green-500'
                     : 'bg-amber-500 text-slate-950 shadow-sm hover:bg-amber-400'
@@ -3932,30 +3932,30 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
             }}
             className={`p-4 rounded-2xl border-2 transition-all duration-200 ${
               dragOverGuildId === 'unassigned'
-                ? 'border-amber-400 bg-amber-500/15 shadow-xl ring-2 ring-amber-400/50 scale-[1.01]'
+                ? 'border-amber-400 bg-amber-100 shadow-xl ring-2 ring-amber-400/50 scale-[1.01]'
                 : unassigned.length > 0
-                ? 'border-dashed border-amber-500/50 bg-amber-500/5'
-                : 'border-dashed border-slate-700 bg-slate-900/40'
+                ? 'border-dashed border-amber-500/50 bg-amber-100'
+                : 'border-dashed border-slate-200 bg-slate-50'
             }`}
           >
             <div className="flex items-center justify-between mb-3.5 flex-wrap gap-2">
               <div className="flex items-center gap-2">
-                <span className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-black text-xs">
+                <span className="w-6 h-6 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xs">
                   ⚡
                 </span>
-                <h4 className="text-sm font-black text-white flex items-center gap-2">
+                <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                   Unassigned Students
-                  <span className="text-[11px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-500/40">
                     {unassigned.length}
                   </span>
                 </h4>
-                <span className="text-[11px] text-slate-400 italic hidden sm:inline">
+                <span className="text-[11px] text-slate-600 italic hidden sm:inline">
                   (Drag students here or into any guild column below)
                 </span>
               </div>
 
               {unassigned.length > 0 && (
-                <span className="text-[11px] font-bold text-amber-300/80">
+                <span className="text-[11px] font-bold text-amber-800">
                   {filteredUnassigned.length} showing {rosterSearch ? `(matching "${rosterSearch}")` : ''}
                 </span>
               )}
@@ -3981,32 +3981,32 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                         setDraggingStudentId(null);
                         setDragOverGuildId(null);
                       }}
-                      className={`p-3 rounded-2xl border flex flex-col justify-between bg-slate-900/95 text-white transition-all cursor-grab active:cursor-grabbing hover:border-amber-400 hover:shadow-lg ${
-                        isDragging ? 'opacity-40 border-amber-400 ring-2 ring-amber-400 scale-95' : 'border-slate-700'
+                      className={`p-3 rounded-2xl border flex flex-col justify-between bg-slate-50 text-slate-900 transition-all cursor-grab active:cursor-grabbing hover:border-amber-400 hover:shadow-lg ${
+                        isDragging ? 'opacity-40 border-amber-400 ring-2 ring-amber-400 scale-95' : 'border-slate-200'
                       } ${isMoving ? 'animate-pulse' : ''}`}
                     >
                       <div className="flex items-start gap-2.5">
-                        <GripVertical className="w-4 h-4 text-slate-500 hover:text-slate-300 flex-shrink-0 mt-1 cursor-grab" />
+                        <GripVertical className="w-4 h-4 text-slate-600 hover:text-slate-700 flex-shrink-0 mt-1 cursor-grab" />
                         <Avatar3D avatar={student.avatar || { color: 'default', hat: 'none', accessory: 'none', face: 'happy' }} level={level.level} size="sm" />
                         <div className="flex-1 min-w-0">
-                          <p className="font-bold text-xs text-white leading-snug break-words" title={student.name}>
+                          <p className="font-bold text-xs text-slate-900 leading-snug break-words" title={student.name}>
                             {student.name}
                           </p>
                           <div className="flex items-center gap-1.5 text-[10px] mt-0.5 flex-wrap">
                             <span className={`font-semibold ${level.color}`}>Lv.{level.level}</span>
-                            <span className="text-slate-500">•</span>
-                            <span className="text-yellow-400 font-bold">{student.xp || 0} XP</span>
+                            <span className="text-slate-600">•</span>
+                            <span className="text-yellow-800 font-bold">{student.xp || 0} XP</span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="mt-2.5 pt-2 border-t border-slate-800">
+                      <div className="mt-2.5 pt-2 border-t border-slate-200">
                         <select
                           value=""
                           onChange={(e) => {
                             if (e.target.value) handleMoveStudentToGuild(student.id, e.target.value);
                           }}
-                          className="w-full text-xs font-bold px-2.5 py-1.5 bg-slate-800 hover:bg-slate-750 text-yellow-300 rounded-xl border border-slate-700 hover:border-amber-400 focus:border-amber-400 outline-none cursor-pointer transition-colors min-h-[36px]"
+                          className="w-full text-xs font-bold px-2.5 py-1.5 bg-white hover:bg-slate-100 text-yellow-800 rounded-xl border border-slate-200 hover:border-amber-400 focus:border-amber-400 outline-none cursor-pointer transition-colors min-h-[36px]"
                           title={`Assign ${student.name} to a guild`}
                           aria-label={`Assign ${student.name} to a guild`}
                         >
@@ -4023,10 +4023,10 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                 })}
               </div>
             ) : unassigned.length > 0 && rosterSearch ? (
-              <p className="text-xs text-slate-500 italic py-2">No unassigned students match "{rosterSearch}".</p>
+              <p className="text-xs text-slate-600 italic py-2">No unassigned students match "{rosterSearch}".</p>
             ) : (
-              <div className="py-3 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-green-400" />
+              <div className="py-3 text-center text-xs text-slate-600 flex items-center justify-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-green-800" />
                 <span>All students are assigned to guilds! Drag any student here to remove them from their guild.</span>
               </div>
             )}
@@ -4057,8 +4057,8 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                   }}
                   className={`flex flex-col rounded-2xl border-2 transition-all duration-200 overflow-hidden shadow-lg ${
                     isOver
-                      ? 'border-yellow-400 bg-yellow-500/15 shadow-2xl ring-2 ring-yellow-400/50 scale-[1.02]'
-                      : 'border-slate-700 bg-slate-900/80 hover:border-slate-600'
+                      ? 'border-yellow-400 bg-yellow-100 shadow-2xl ring-2 ring-yellow-400/50 scale-[1.02]'
+                      : 'border-slate-200 bg-slate-50 hover:border-slate-300'
                   }`}
                 >
                   {/* Guild Column Header - Full Name and Clear Badges */}
@@ -4077,7 +4077,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                           </span>
                         )}
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-black text-sm text-white leading-snug break-words drop-shadow-sm">
+                          <h4 className="font-bold text-sm text-white leading-snug break-words drop-shadow-sm">
                             {guild.name}
                           </h4>
                           <p className="text-[11px] text-white/80 line-clamp-1 mt-0.5 font-medium">
@@ -4085,20 +4085,20 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                           </p>
                         </div>
                       </div>
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-black/40 text-yellow-300 border border-white/20 shrink-0 whitespace-nowrap shadow-sm">
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-black/40 text-white border border-white/20 shrink-0 whitespace-nowrap shadow-sm">
                         {members.length} {members.length === 1 ? 'member' : 'members'}
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between text-[11px] font-bold text-white/95 mt-2.5 pt-2 border-t border-white/15">
                       <span>Lvl {levelInfo.level} • {levelInfo.name}</span>
-                      <span className="text-yellow-300 font-black">{(stats?.totalXp || 0).toLocaleString()} XP</span>
+                      <span className="text-white font-bold">{(stats?.totalXp || 0).toLocaleString()} XP</span>
                     </div>
                   </div>
 
                   {/* Drop Indicator */}
                   {isOver && (
-                    <div className="p-3 mx-2 mt-2 rounded-xl border-2 border-dashed border-yellow-400 bg-yellow-500/20 text-yellow-300 text-xs font-black text-center animate-pulse">
+                    <div className="p-3 mx-2 mt-2 rounded-xl border-2 border-dashed border-yellow-400 bg-yellow-100 text-yellow-800 text-xs font-bold text-center animate-pulse">
                       + Drop student here to assign to {guild.name}
                     </div>
                   )}
@@ -4124,31 +4124,31 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                               setDraggingStudentId(null);
                               setDragOverGuildId(null);
                             }}
-                            className={`p-3 rounded-xl border flex flex-col justify-between bg-slate-800/95 text-white transition-all cursor-grab active:cursor-grabbing hover:border-purple-400 hover:shadow-md group ${
-                              isDragging ? 'opacity-40 border-purple-400 ring-2 ring-purple-400 scale-95' : 'border-slate-700/80'
+                            className={`p-3 rounded-xl border flex flex-col justify-between bg-white text-slate-900 transition-all cursor-grab active:cursor-grabbing hover:border-purple-400 hover:shadow-md group ${
+                              isDragging ? 'opacity-40 border-purple-400 ring-2 ring-purple-400 scale-95' : 'border-slate-200'
                             } ${isMoving ? 'animate-pulse' : ''}`}
                           >
                             <div className="flex items-start gap-2.5">
-                              <GripVertical className="w-4 h-4 text-slate-500 group-hover:text-slate-300 flex-shrink-0 mt-1 cursor-grab" />
+                              <GripVertical className="w-4 h-4 text-slate-600 group-hover:text-slate-700 flex-shrink-0 mt-1 cursor-grab" />
                               <Avatar3D avatar={member.avatar || { color: 'default', hat: 'none', accessory: 'none', face: 'happy' }} level={level.level} size="sm" />
                               <div className="flex-1 min-w-0">
-                                <p className="font-bold text-xs text-white leading-snug break-words" title={member.name}>
+                                <p className="font-bold text-xs text-slate-900 leading-snug break-words" title={member.name}>
                                   {member.name}
                                 </p>
                                 <div className="flex items-center gap-1.5 text-[10px] mt-0.5 flex-wrap">
                                   <span className={`font-semibold ${level.color}`}>Lv.{level.level}</span>
-                                  <span className="text-slate-500">•</span>
-                                  <span className="text-yellow-400 font-bold">{member.xp || 0} XP</span>
+                                  <span className="text-slate-600">•</span>
+                                  <span className="text-yellow-800 font-bold">{member.xp || 0} XP</span>
                                 </div>
                               </div>
                             </div>
 
                             {/* Guild Selector Footer */}
-                            <div className="mt-2.5 pt-2 border-t border-slate-700/70 flex items-center justify-between gap-1.5">
+                            <div className="mt-2.5 pt-2 border-t border-slate-200 flex items-center justify-between gap-1.5">
                               <select
                                 value={guild.id}
                                 onChange={(e) => handleMoveStudentToGuild(member.id, e.target.value)}
-                                className="flex-1 text-xs font-bold px-2 py-1.5 bg-slate-900 text-slate-200 hover:text-white rounded-lg border border-slate-700 hover:border-purple-400 outline-none cursor-pointer transition-colors min-h-[34px]"
+                                className="flex-1 text-xs font-bold px-2 py-1.5 bg-slate-50 text-slate-800 hover:text-slate-900 rounded-lg border border-slate-200 hover:border-purple-400 outline-none cursor-pointer transition-colors min-h-[34px]"
                                 title={`Change ${member.name}'s guild`}
                                 aria-label={`Change ${member.name}'s guild`}
                               >
@@ -4163,7 +4163,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                               <button
                                 type="button"
                                 onClick={() => handleMoveStudentToGuild(member.id, 'unassigned')}
-                                className="p-2 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-lg border border-transparent hover:border-red-500/30 transition-colors min-h-[34px] min-w-[34px] flex items-center justify-center shrink-0"
+                                className="p-2 hover:bg-red-100 text-slate-600 hover:text-red-700 rounded-lg border border-transparent hover:border-red-500/30 transition-colors min-h-[34px] min-w-[34px] flex items-center justify-center shrink-0"
                                 title={`Unassign ${member.name} from ${guild.name}`}
                                 aria-label={`Unassign ${member.name}`}
                               >
@@ -4174,10 +4174,10 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                         );
                       })
                     ) : (
-                      <div className="h-full min-h-[120px] flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-800 rounded-xl text-center">
+                      <div className="h-full min-h-[120px] flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-200 rounded-xl text-center">
                         <span className="text-2xl opacity-40 mb-1">{guild.emoji || '🛡️'}</span>
-                        <p className="text-xs text-slate-500 font-bold">No members yet</p>
-                        <p className="text-[10px] text-slate-600 mt-0.5">Drag students here or select from dropdown</p>
+                        <p className="text-xs text-slate-600 font-bold">No members yet</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">Drag students here or select from dropdown</p>
                       </div>
                     )}
                   </div>
@@ -4190,13 +4190,13 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
 
       {/* SUB-TAB 1: STANDINGS & LEADERBOARD */}
       {subTab === 'standings' && (
-        <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-4">
+        <div className="bg-white p-6 rounded-xl border border-slate-200 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div>
-              <h3 className="text-xl font-black text-white flex items-center gap-2">
-                <Trophy className="w-6 h-6 text-yellow-400" aria-hidden="true" /> Guild Hub & Leaderboard
+              <h3 className="text-xl font-display font-bold text-slate-900 flex items-center gap-2">
+                <Trophy className="w-6 h-6 text-yellow-800" aria-hidden="true" /> Guild Hub & Leaderboard
               </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-600 mt-0.5">
                 Monitor team progression, guild perks, bot showcase, award trophies, and auto-balance student rosters.
               </p>
             </div>
@@ -4206,48 +4206,48 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
               {unassigned.length > 0 && (
                 <button
                   onClick={() => handleAutoBalance('unassigned')}
-                  className="px-3.5 py-2 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1.5 shadow transition-all min-h-[44px]"
+                  className="px-3.5 py-2 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-1.5 shadow transition-all min-h-[44px]"
                 >
                   <Sparkles className="w-3.5 h-3.5" /> Auto-Assign ({unassigned.length}) Unassigned
                 </button>
               )}
               <button
                 onClick={() => handleAutoBalance('all')}
-                className="px-3.5 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl text-xs flex items-center gap-1.5 border border-slate-600 transition-colors min-h-[44px]"
+                className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl text-xs flex items-center gap-1.5 border border-slate-300 transition-colors min-h-[44px]"
                 title={`Evenly rebalance all students across the ${activeGuilds.length} guilds`}
               >
-                <RefreshCw className="w-3.5 h-3.5 text-blue-400" /> Rebalance All {activeGuilds.length} Guilds
+                <RefreshCw className="w-3.5 h-3.5 text-blue-700" /> Rebalance All {activeGuilds.length} Guilds
               </button>
             </div>
           </div>
 
           {/* High-Five Cooldown Policy / Exploit Limiter */}
-          <div className="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 border border-amber-500/20 flex items-center justify-center text-amber-800">
                 <Zap className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h4 className="text-sm font-bold text-white">Teammate High-Five Policy</h4>
-                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                  <h4 className="text-sm font-bold text-slate-900">Teammate High-Five Policy</h4>
+                  <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-500/30">
                     Spam Limiter
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-600 mt-0.5">
                   Controls how often students can cheer guildmates in the Members tab (+10 XP sender, +15 XP teammate). Prevents class period spam.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-slate-800 p-1 rounded-xl border border-slate-700">
+            <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-200">
               <button
                 type="button"
                 onClick={() => handleUpdateHighFiveLimit('daily')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   highFiveLimit === 'daily'
-                    ? 'bg-amber-500 text-slate-950 font-black shadow'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-amber-500 text-slate-950 font-bold shadow'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 Once Per Day
@@ -4257,8 +4257,8 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                 onClick={() => handleUpdateHighFiveLimit('weekly')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   highFiveLimit === 'weekly'
-                    ? 'bg-amber-500 text-slate-950 font-black shadow'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-amber-500 text-slate-950 font-bold shadow'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 Once Per Week
@@ -4268,8 +4268,8 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                 onClick={() => handleUpdateHighFiveLimit('disabled')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   highFiveLimit === 'disabled'
-                    ? 'bg-red-600 text-white font-black shadow'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-red-600 text-white font-bold shadow'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 Disabled
@@ -4278,7 +4278,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
           </div>
 
           {loading ? (
-            <p className="text-slate-500 text-center py-4" role="status">Loading guild data...</p>
+            <p className="text-slate-600 text-center py-4" role="status">Loading guild data...</p>
           ) : (
             <div className="space-y-3">
               {sortedGuilds.map((guild, idx) => {
@@ -4313,10 +4313,10 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                     }}
                     className={`p-5 rounded-2xl border-2 transition-all ${
                       dragOverGuildId === guild.id
-                        ? 'border-yellow-400 bg-yellow-500/15 shadow-2xl ring-2 ring-yellow-400/50 scale-[1.005]'
+                        ? 'border-yellow-400 bg-yellow-100 shadow-2xl ring-2 ring-yellow-400/50 scale-[1.005]'
                         : idx === 0
-                        ? 'border-yellow-500/50 bg-yellow-500/5 shadow-lg'
-                        : 'border-slate-700 bg-slate-700/30'
+                        ? 'border-yellow-500/50 bg-yellow-100 shadow-lg'
+                        : 'border-slate-200 bg-slate-100'
                     }`}
                   >
                     <div className="flex items-center gap-4 flex-wrap sm:flex-nowrap">
@@ -4324,7 +4324,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                         {idx === 0 && <span className="text-2xl" aria-hidden="true">🥇</span>}
                         {idx === 1 && <span className="text-2xl" aria-hidden="true">🥈</span>}
                         {idx === 2 && <span className="text-2xl" aria-hidden="true">🥉</span>}
-                        {idx >= 3 && <span className="text-lg font-bold text-slate-500">#{idx + 1}</span>}
+                        {idx >= 3 && <span className="text-lg font-bold text-slate-600">#{idx + 1}</span>}
                       </div>
 
                       {/* Bot picture or Guild Avatar */}
@@ -4335,40 +4335,40 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                             alt={`${guild.name} robot`}
                             className="w-12 h-12 rounded-xl object-cover border border-yellow-400 shadow"
                           />
-                          <span className="absolute -bottom-1 -right-1 bg-slate-950 text-[8px] font-black uppercase px-1 rounded text-yellow-300 border border-yellow-500/50">
+                          <span className="absolute -bottom-1 -right-1 bg-slate-50 text-[8px] font-bold uppercase px-1 rounded text-yellow-800 border border-yellow-500/50">
                             Bot
                           </span>
                         </div>
                       ) : (
-                        <div className={`w-12 h-12 rounded-2xl ${guild.color || 'bg-slate-700'} flex items-center justify-center shadow flex-shrink-0`}>
+                        <div className={`text-white w-12 h-12 rounded-2xl ${guild.color || 'bg-slate-700'} flex items-center justify-center shadow flex-shrink-0`}>
                           <span className="text-2xl" aria-hidden="true">{guild.emoji || '🛡️'}</span>
                         </div>
                       )}
 
                       <div className="flex-1 min-w-[200px]">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-black text-white text-lg">{guild.name}</p>
-                          <span className="text-[11px] font-black uppercase px-2.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">
+                          <p className="font-display font-bold text-slate-900 text-lg">{guild.name}</p>
+                          <span className="text-[11px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-500/30">
                             Level {levelInfo.level} • {levelInfo.name}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-400 mt-0.5">Perk: <span className="text-slate-300 font-semibold">{levelInfo.perk}</span></p>
+                        <p className="text-xs text-slate-600 mt-0.5">Perk: <span className="text-slate-700 font-semibold">{levelInfo.perk}</span></p>
                       </div>
 
                       <div className="text-right px-2">
-                        <p className="text-xl font-black text-yellow-400">{(stats?.totalXp || 0).toLocaleString()} XP</p>
-                        <p className="text-[11px] text-slate-400">{levelInfo.isMax ? 'Max Level' : `${levelInfo.xpNeeded.toLocaleString()} to Lvl ${levelInfo.level + 1}`}</p>
+                        <p className="text-xl font-display font-bold text-yellow-800">{(stats?.totalXp || 0).toLocaleString()} XP</p>
+                        <p className="text-[11px] text-slate-600">{levelInfo.isMax ? 'Max Level' : `${levelInfo.xpNeeded.toLocaleString()} to Lvl ${levelInfo.level + 1}`}</p>
                       </div>
 
                       <div className="text-right px-2">
-                        <p className="text-lg font-bold text-blue-400">{stats?.memberCount || 0}</p>
-                        <p className="text-xs text-slate-400">Members</p>
+                        <p className="text-lg font-bold text-blue-700">{stats?.memberCount || 0}</p>
+                        <p className="text-xs text-slate-600">Members</p>
                       </div>
 
                       <div className="flex gap-2">
                         <button
                           onClick={() => { setRewardGuild(guild.id); setRewardType('xp'); setRewardAmount(''); setRewardMode('grant'); }}
-                          className="p-2.5 bg-slate-800 hover:bg-yellow-500/20 text-slate-400 hover:text-yellow-400 rounded-xl border border-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                          className="p-2.5 bg-white hover:bg-yellow-100 text-slate-600 hover:text-yellow-800 rounded-xl border border-slate-200 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                           title={`Give direct reward drop or penalty to ${guild.name}`}
                           aria-label={`Give reward to ${guild.name}`}
                         >
@@ -4376,7 +4376,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                         </button>
                         <button
                           onClick={() => { setTrophyGuild(guild.id); setSelectedTrophy(''); setTrophyMessage(''); }}
-                          className="p-2.5 bg-slate-800 hover:bg-purple-500/20 text-slate-400 hover:text-purple-400 rounded-xl border border-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                          className="p-2.5 bg-white hover:bg-purple-100 text-slate-600 hover:text-purple-700 rounded-xl border border-slate-200 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                           title={`Award trophy to ${guild.name}`}
                           aria-label={`Award trophy to ${guild.name}`}
                         >
@@ -4384,17 +4384,17 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                         </button>
                         <button
                           onClick={() => handleResetGuildExploit(guild.id, guild.name)}
-                          className="p-2.5 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl border border-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                          className="p-2.5 bg-white hover:bg-red-100 text-slate-600 hover:text-red-700 rounded-xl border border-slate-200 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                           title={`Reset exploit XP for ${guild.name} (sets all member XP & Guild XP to 0)`}
                           aria-label={`Reset exploit XP for ${guild.name}`}
                         >
-                          <RotateCcw className="w-4 h-4 text-red-400" aria-hidden="true" />
+                          <RotateCcw className="w-4 h-4 text-red-700" aria-hidden="true" />
                         </button>
                       </div>
                     </div>
 
                     {/* Level Progress Bar */}
-                    <div className="mt-3 w-full h-2 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-700">
+                    <div className="mt-3 w-full h-2 bg-slate-50 rounded-full overflow-hidden p-0.5 border border-slate-200">
                       <div
                         className="h-full bg-gradient-to-r from-yellow-400 to-amber-300 rounded-full transition-all duration-500"
                         style={{ width: `${levelInfo.progress}%` }}
@@ -4403,11 +4403,11 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
 
                     {/* Guild Hall Trophies Preview */}
                     {hallTrophies.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-slate-600/50 flex items-center gap-2 flex-wrap">
-                        <span className="text-xs text-slate-400 uppercase font-black">Hall Trophies:</span>
+                      <div className="mt-3 pt-3 border-t border-slate-300 flex items-center gap-2 flex-wrap">
+                        <span className="text-xs text-slate-600 uppercase font-bold">Hall Trophies:</span>
                         {hallTrophies.map((t, i) => (
-                          <span key={i} className="text-lg bg-slate-800/80 px-2 py-0.5 rounded-lg border border-slate-700" title={`${t.title}${t.message ? ': ' + t.message : ''}`} aria-label={t.title}>
-                            {t.icon} <span className="text-xs font-bold text-slate-300 ml-1">{t.title}</span>
+                          <span key={i} className="text-lg bg-white px-2 py-0.5 rounded-lg border border-slate-200" title={`${t.title}${t.message ? ': ' + t.message : ''}`} aria-label={t.title}>
+                            {t.icon} <span className="text-xs font-bold text-slate-700 ml-1">{t.title}</span>
                           </span>
                         ))}
                       </div>
@@ -4415,7 +4415,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
 
                     {/* Member List */}
                     {stats && stats.members.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-slate-600/50">
+                      <div className="mt-3 pt-3 border-t border-slate-300">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                           {stats.members.map(member => {
                             const level = LEVELS.reduce((acc, l) => member.totalXp >= l.xpRequired ? l : acc, LEVELS[0]);
@@ -4433,25 +4433,25 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                                   setDraggingStudentId(null);
                                   setDragOverGuildId(null);
                                 }}
-                                className={`flex items-center gap-2 p-2 bg-slate-800/80 rounded-xl border text-sm transition-all cursor-grab active:cursor-grabbing hover:border-slate-500 ${
-                                  isDragging ? 'opacity-40 border-yellow-400 scale-95' : 'border-slate-700/50'
+                                className={`flex items-center gap-2 p-2 bg-white rounded-xl border text-sm transition-all cursor-grab active:cursor-grabbing hover:border-slate-400 ${
+                                  isDragging ? 'opacity-40 border-yellow-400 scale-95' : 'border-slate-200'
                                 }`}
                               >
-                                <GripVertical className="w-3.5 h-3.5 text-slate-500 shrink-0 hover:text-slate-300" aria-hidden="true" />
+                                <GripVertical className="w-3.5 h-3.5 text-slate-600 shrink-0 hover:text-slate-700" aria-hidden="true" />
                                 <Avatar3D avatar={member.avatar} level={level.level} size="sm" />
                                 <div className="flex-1 min-w-0">
-                                  <p className="font-bold text-white truncate text-xs">{member.name}</p>
+                                  <p className="font-bold text-slate-900 truncate text-xs">{member.name}</p>
                                   <p className={`text-[10px] ${level.color}`}>Lv.{level.level} • {member.currentStreak || 0}d streak</p>
                                 </div>
                                 <div className="text-right">
-                                  <span className="text-yellow-400 font-black text-xs block">{member.xp} XP</span>
-                                  <span className="text-[10px] text-slate-400 block font-medium">{member.guildXpContributed || 0} Guild XP</span>
+                                  <span className="text-yellow-800 font-bold text-xs block">{member.xp} XP</span>
+                                  <span className="text-[10px] text-slate-600 block font-medium">{member.guildXpContributed || 0} Guild XP</span>
                                 </div>
                                 <select
                                   value={guild.id}
                                   onChange={(e) => handleMoveStudentToGuild(member.id, e.target.value)}
                                   disabled={movingStudentId === member.id}
-                                  className="bg-slate-900 border border-slate-700 hover:border-purple-400 text-slate-300 text-[10px] font-bold rounded-lg px-1.5 py-1 outline-none cursor-pointer focus:ring-1 focus:ring-purple-400 transition-colors min-h-[32px] shrink-0"
+                                  className="bg-slate-50 border border-slate-200 hover:border-purple-400 text-slate-700 text-[10px] font-bold rounded-lg px-1.5 py-1 outline-none cursor-pointer focus:ring-1 focus:ring-purple-400 transition-colors min-h-[32px] shrink-0"
                                   title="Move student to another guild or unassign"
                                   aria-label={`Assign guild for ${member.name}`}
                                 >
@@ -4500,20 +4500,20 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
               }}
               className={`mt-6 p-5 rounded-2xl border-2 border-dashed transition-all ${
                 dragOverGuildId === 'unassigned'
-                  ? 'border-amber-400 bg-amber-500/20 ring-2 ring-amber-400/50'
-                  : 'border-amber-500/40 bg-slate-900/60'
+                  ? 'border-amber-400 bg-amber-100 ring-2 ring-amber-400/50'
+                  : 'border-amber-500/40 bg-slate-50'
               }`}
             >
               <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                 <div>
-                  <h4 className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
                     <Users className="w-4 h-4" /> Students Without a Guild ({unassigned.length})
                   </h4>
-                  <p className="text-[11px] text-slate-400 mt-0.5">Drag to any guild card above or select a guild below to place them.</p>
+                  <p className="text-[11px] text-slate-600 mt-0.5">Drag to any guild card above or select a guild below to place them.</p>
                 </div>
                 <button
                   onClick={() => handleAutoBalance('unassigned')}
-                  className="px-3 py-1 bg-yellow-500 text-slate-950 font-black rounded-lg text-xs hover:bg-yellow-400 transition-colors min-h-[44px]"
+                  className="px-3 py-1 bg-yellow-500 text-slate-950 font-bold rounded-lg text-xs hover:bg-yellow-400 transition-colors min-h-[44px]"
                 >
                   Auto-Distribute Now
                 </button>
@@ -4534,11 +4534,11 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                         setDraggingStudentId(null);
                         setDragOverGuildId(null);
                       }}
-                      className={`px-3 py-1.5 bg-slate-800 border rounded-xl text-xs font-bold text-slate-200 flex items-center gap-2 cursor-grab active:cursor-grabbing hover:border-amber-400/60 transition-all ${
-                        isDragging ? 'opacity-40 border-amber-400 scale-95' : 'border-slate-700'
+                      className={`px-3 py-1.5 bg-white border rounded-xl text-xs font-bold text-slate-800 flex items-center gap-2 cursor-grab active:cursor-grabbing hover:border-amber-400/60 transition-all ${
+                        isDragging ? 'opacity-40 border-amber-400 scale-95' : 'border-slate-200'
                       }`}
                     >
-                      <GripVertical className="w-3.5 h-3.5 text-slate-500 shrink-0" aria-hidden="true" />
+                      <GripVertical className="w-3.5 h-3.5 text-slate-600 shrink-0" aria-hidden="true" />
                       <span className="truncate max-w-[120px]">{s.name}</span>
                       <select
                         value=""
@@ -4546,7 +4546,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                           if (e.target.value) handleMoveStudentToGuild(s.id, e.target.value);
                         }}
                         disabled={movingStudentId === s.id}
-                        className="bg-slate-900 border border-slate-700 hover:border-amber-400 text-amber-300 text-[10px] font-bold rounded-md px-1.5 py-0.5 outline-none cursor-pointer min-h-[30px]"
+                        className="bg-slate-50 border border-slate-200 hover:border-amber-400 text-amber-800 text-[10px] font-bold rounded-md px-1.5 py-0.5 outline-none cursor-pointer min-h-[30px]"
                         title={`Assign ${s.name} to a guild`}
                         aria-label={`Assign ${s.name} to a guild`}
                       >
@@ -4568,16 +4568,16 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
 
       {/* SUB-TAB 2: GUILD CUSTOMIZER (UP TO 15 GUILDS & BOT PHOTOS) */}
       {subTab === 'setup' && (
-        <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-6">
+        <div className="bg-white p-6 rounded-xl border border-slate-200 space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-xl font-black text-white">Class Guild Customizer</h3>
-                <span className="text-xs font-black uppercase px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                <h3 className="text-xl font-display font-bold text-slate-900">Class Guild Customizer</h3>
+                <span className="text-xs font-bold uppercase px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-500/30">
                   {activeGuilds.length} / 15 Guilds Active
                 </span>
               </div>
-              <p className="text-slate-400 text-xs mt-1">
+              <p className="text-slate-600 text-xs mt-1">
                 Customize guild names, robot photos, team colors, and add up to 15 guilds per class.
               </p>
             </div>
@@ -4597,7 +4597,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                 type="button"
                 onClick={handleSaveGuilds}
                 disabled={savingGuilds}
-                className="px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white font-black rounded-xl text-xs flex items-center gap-1.5 shadow transition-colors disabled:opacity-50 min-h-[44px]"
+                className="px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow transition-colors disabled:opacity-50 min-h-[44px]"
               >
                 <Save className="w-4 h-4" /> {savingGuilds ? 'Saving Guilds...' : 'Save Guild Configuration'}
               </button>
@@ -4609,18 +4609,18 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
             {activeGuilds.map((g, idx) => (
               <div
                 key={g.id}
-                className="bg-slate-900/90 rounded-2xl border border-slate-700 p-4 space-y-3 shadow-lg"
+                className="bg-slate-50 rounded-2xl border border-slate-200 p-4 space-y-3 shadow-lg"
               >
-                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-200">
                   <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-slate-800 text-slate-400 text-xs font-black flex items-center justify-center">
+                    <span className="w-6 h-6 rounded-full bg-white text-slate-600 text-xs font-bold flex items-center justify-center">
                       {idx + 1}
                     </span>
                     <input
                       type="text"
                       value={g.emoji || '🛡️'}
                       onChange={e => handleUpdateGuildField(g.id, 'emoji', e.target.value)}
-                      className="w-10 text-center py-1 bg-slate-800 border border-slate-700 rounded-lg text-lg outline-none focus:border-purple-500"
+                      className="w-10 text-center py-1 bg-white border border-slate-200 rounded-lg text-lg outline-none focus:border-purple-500"
                       title="Guild Emoji"
                       maxLength={4}
                     />
@@ -4629,7 +4629,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                       value={g.name}
                       onChange={e => handleUpdateGuildField(g.id, 'name', e.target.value)}
                       placeholder="Guild Name"
-                      className="px-3 py-1 bg-slate-800 border border-slate-700 rounded-lg text-white font-bold text-sm outline-none focus:border-purple-500 flex-1 min-w-[140px]"
+                      className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-slate-900 font-bold text-sm outline-none focus:border-purple-500 flex-1 min-w-[140px]"
                     />
                   </div>
 
@@ -4637,7 +4637,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                     <button
                       type="button"
                       onClick={() => handleRemoveGuild(g.id, g.name)}
-                      className="p-1.5 text-slate-400 hover:text-red-400 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+                      className="p-1.5 text-slate-600 hover:text-red-700 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
                       title="Remove Guild"
                       aria-label={`Remove guild ${g.name}`}
                     >
@@ -4649,17 +4649,17 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                 {/* Motto & Symbol */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Motto</label>
+                    <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Motto</label>
                     <input
                       type="text"
                       value={g.motto || ''}
                       onChange={e => handleUpdateGuildField(g.id, 'motto', e.target.value)}
                       placeholder="e.g. Together we build!"
-                      className="w-full px-2.5 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs outline-none focus:border-purple-500 min-h-[36px]"
+                      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-900 text-xs outline-none focus:border-purple-500 min-h-[36px]"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Theme Color</label>
+                    <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Theme Color</label>
                     <select
                       value={g.color || 'bg-slate-600'}
                       onChange={e => {
@@ -4673,7 +4673,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                           } : item));
                         }
                       }}
-                      className="w-full px-2.5 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs outline-none focus:border-purple-500 min-h-[36px] cursor-pointer"
+                      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-900 text-xs outline-none focus:border-purple-500 min-h-[36px] cursor-pointer"
                     >
                       {GUILD_COLOR_THEMES.map(t => (
                         <option key={t.color} value={t.color}>{t.name}</option>
@@ -4683,8 +4683,8 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                 </div>
 
                 {/* Bot Picture Section */}
-                <div className="pt-2 border-t border-slate-800">
-                  <label className="block text-[11px] font-black text-yellow-400 uppercase mb-1 flex items-center gap-1.5">
+                <div className="pt-2 border-t border-slate-200">
+                  <label className="block text-[11px] font-bold text-yellow-800 uppercase mb-1 flex items-center gap-1.5">
                     <Camera className="w-3.5 h-3.5" /> Guild Robot Picture
                   </label>
                   <div className="flex items-center gap-3 flex-wrap">
@@ -4705,7 +4705,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                         </button>
                       </div>
                     ) : (
-                      <div className="w-14 h-14 rounded-xl bg-slate-800 border border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-500 flex-shrink-0 text-[10px]">
+                      <div className="w-14 h-14 rounded-xl bg-white border border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-600 flex-shrink-0 text-[10px]">
                         <ImageIcon className="w-4 h-4 mb-0.5 opacity-50" /> No Photo
                       </div>
                     )}
@@ -4716,10 +4716,10 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                         value={g.botPictureUrl && !g.botPictureUrl.startsWith('data:') ? g.botPictureUrl : ''}
                         onChange={e => handleUpdateGuildField(g.id, 'botPictureUrl', e.target.value)}
                         placeholder="Paste image link URL..."
-                        className="w-full px-2.5 py-1 bg-slate-800 border border-slate-700 rounded-lg text-white text-[11px] outline-none focus:border-yellow-500 min-h-[32px]"
+                        className="w-full px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-900 text-[11px] outline-none focus:border-yellow-500 min-h-[32px]"
                       />
-                      <label className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] font-bold border border-slate-700 cursor-pointer transition-colors min-h-[32px]">
-                        <Upload className="w-3 h-3 text-yellow-400" /> Upload Image File
+                      <label className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 rounded-lg text-[11px] font-bold border border-slate-200 cursor-pointer transition-colors min-h-[32px]">
+                        <Upload className="w-3 h-3 text-yellow-800" /> Upload Image File
                         <input
                           type="file"
                           accept="image/*"
@@ -4737,30 +4737,30 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
           {/* Add Guild Modal */}
           {showAddGuildModal && (
             <div
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
               role="dialog"
               aria-modal="true"
               onClick={() => setShowAddGuildModal(false)}
             >
               <div
-                className="bg-slate-900 border-2 border-purple-500 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
+                className="bg-slate-50 border-2 border-slate-200 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
                 onClick={e => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-black text-white flex items-center gap-2">
-                    <Plus className="w-5 h-5 text-purple-400" /> Add Guild to Class
+                  <h3 className="text-lg font-display font-bold text-slate-900 flex items-center gap-2">
+                    <Plus className="w-5 h-5 text-purple-700" /> Add Guild to Class
                   </h3>
-                  <button onClick={() => setShowAddGuildModal(false)} className="text-slate-400 hover:text-white">
+                  <button onClick={() => setShowAddGuildModal(false)} className="text-slate-600 hover:text-slate-900">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                <p className="text-xs text-slate-300">
+                <p className="text-xs text-slate-700">
                   Select a themed preset or create a custom guild for this class. You can have up to 15 guilds.
                 </p>
 
                 <div className="space-y-2">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-purple-400">Available Themed Presets</h4>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-purple-700">Available Themed Presets</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {DEFAULT_15_GUILDS.filter(p => !activeGuilds.some(g => g.id === p.id)).map(preset => (
                       <button
@@ -4771,25 +4771,25 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                         <span className="text-2xl">{preset.emoji}</span>
                         <div>
                           <p className="font-bold text-sm">{preset.name}</p>
-                          <p className="text-[10px] opacity-80 italic">"{preset.motto}"</p>
+                          <p className="text-[10px] italic">"{preset.motto}"</p>
                         </div>
                       </button>
                     ))}
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-slate-800 flex items-center justify-between gap-3">
+                <div className="pt-3 border-t border-slate-200 flex items-center justify-between gap-3">
                   <button
                     type="button"
                     onClick={handleAddCustomGuild}
-                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-purple-300 font-bold rounded-xl text-xs border border-purple-500/40 flex items-center gap-1.5 min-h-[44px]"
+                    className="px-4 py-2 bg-white hover:bg-slate-100 text-purple-700 font-bold rounded-xl text-xs border border-purple-500/40 flex items-center gap-1.5 min-h-[44px]"
                   >
                     <Plus className="w-3.5 h-3.5" /> Blank Custom Guild
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowAddGuildModal(false)}
-                    className="px-4 py-2 bg-slate-800 text-slate-400 hover:text-white rounded-xl text-xs font-semibold min-h-[44px]"
+                    className="px-4 py-2 bg-white text-slate-600 hover:text-slate-900 rounded-xl text-xs font-semibold min-h-[44px]"
                   >
                     Cancel
                   </button>
@@ -4802,13 +4802,13 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
 
       {/* SUB-TAB 3: STEM SUPPLIES AUDIT & CATALOG */}
       {subTab === 'stem_orders' && (
-        <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-6">
+        <div className="bg-white p-6 rounded-xl border border-slate-200 space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h3 className="text-xl font-black text-white flex items-center gap-2">
-                <Package className="w-6 h-6 text-emerald-400" /> STEM Supplies & Guild Orders Audit
+              <h3 className="text-xl font-display font-bold text-slate-900 flex items-center gap-2">
+                <Package className="w-6 h-6 text-emerald-800" /> STEM Supplies & Guild Orders Audit
               </h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-600 mt-1">
                 Track all student coin expenditures for guild STEM hardware and extra VEX Pitch time. Mark orders fulfilled as you deliver materials in class.
               </p>
             </div>
@@ -4817,25 +4817,25 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
               <button
                 type="button"
                 onClick={() => setShowCatalogEditor(!showCatalogEditor)}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl text-xs flex items-center gap-1.5 border border-slate-600 transition-colors min-h-[44px]"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl text-xs flex items-center gap-1.5 border border-slate-300 transition-colors min-h-[44px]"
               >
-                <Settings className="w-4 h-4 text-emerald-400" /> {showCatalogEditor ? 'Hide Catalog Editor' : 'Edit Catalog & Pricing'}
+                <Settings className="w-4 h-4 text-emerald-800" /> {showCatalogEditor ? 'Hide Catalog Editor' : 'Edit Catalog & Pricing'}
               </button>
             </div>
           </div>
 
           {/* Catalog Editor Accordion */}
           {showCatalogEditor && (
-            <div className="p-5 bg-slate-900/90 rounded-2xl border border-emerald-500/40 space-y-4 animate-in slide-in-from-top-2">
+            <div className="p-5 bg-slate-50 rounded-2xl border border-emerald-500/40 space-y-4 animate-in slide-in-from-top-2">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-black text-white flex items-center gap-2">
-                  <Settings className="w-4 h-4 text-emerald-400" /> Customize STEM Supplies Shop & Prices
+                <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <Settings className="w-4 h-4 text-emerald-800" /> Customize STEM Supplies Shop & Prices
                 </h4>
                 <button
                   type="button"
                   onClick={handleSaveStemCatalog}
                   disabled={savingCatalog}
-                  className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition-colors shadow min-h-[36px]"
+                  className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs transition-colors shadow min-h-[36px]"
                 >
                   {savingCatalog ? 'Saving...' : 'Save Catalog Changes'}
                 </button>
@@ -4843,7 +4843,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {stemCatalog.map(item => (
-                  <div key={item.id} className="p-3 bg-slate-800 rounded-xl border border-slate-700 space-y-2 text-xs">
+                  <div key={item.id} className="p-3 bg-white rounded-xl border border-slate-200 space-y-2 text-xs">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xl">{item.icon || '⚙️'}</span>
                       <input
@@ -4853,10 +4853,10 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                           const val = e.target.value;
                           setStemCatalog(prev => prev.map(i => i.id === item.id ? { ...i, name: val } : i));
                         }}
-                        className="px-2.5 py-1 bg-slate-900 border border-slate-700 rounded-lg text-white font-bold flex-1 text-xs"
+                        className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-bold flex-1 text-xs"
                       />
                       <div className="flex items-center gap-1">
-                        <span className="text-yellow-400 font-bold">🪙</span>
+                        <span className="text-yellow-800 font-bold">🪙</span>
                         <input
                           type="number"
                           min="1"
@@ -4865,7 +4865,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                             const val = parseInt(e.target.value) || 0;
                             setStemCatalog(prev => prev.map(i => i.id === item.id ? { ...i, costCoins: val } : i));
                           }}
-                          className="w-16 px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-yellow-400 font-bold text-center text-xs"
+                          className="w-16 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-yellow-800 font-bold text-center text-xs"
                         />
                       </div>
                     </div>
@@ -4877,7 +4877,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                         setStemCatalog(prev => prev.map(i => i.id === item.id ? { ...i, desc: val } : i));
                       }}
                       placeholder="Item description"
-                      className="w-full px-2.5 py-1 bg-slate-900 border border-slate-700 rounded-lg text-slate-300 text-[11px]"
+                      className="w-full px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 text-[11px]"
                     />
                   </div>
                 ))}
@@ -4886,9 +4886,9 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
           )}
 
           {/* Filter Pills */}
-          <div className="flex items-center justify-between flex-wrap gap-3 pb-2 border-b border-slate-700">
+          <div className="flex items-center justify-between flex-wrap gap-3 pb-2 border-b border-slate-200">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-400">Filter Status:</span>
+              <span className="text-xs font-bold text-slate-600">Filter Status:</span>
               {[
                 { id: 'all', label: `All (${stemPurchases.length})` },
                 { id: 'pending', label: `Pending (${stemPurchases.filter(p => !p.fulfilled).length})` },
@@ -4899,8 +4899,8 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                   onClick={() => setStemFilter(tab.id)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[36px] ${
                     stemFilter === tab.id
-                      ? 'bg-emerald-500 text-slate-950 font-black shadow'
-                      : 'bg-slate-700 text-slate-300 hover:text-white'
+                      ? 'bg-emerald-500 text-slate-950 font-bold shadow'
+                      : 'bg-slate-100 text-slate-700 hover:text-slate-900'
                   }`}
                 >
                   {tab.label}
@@ -4910,52 +4910,52 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
 
             <button
               onClick={loadStemData}
-              className="p-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+              className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
               title="Refresh Purchases"
             >
-              <RefreshCw className="w-4 h-4 text-emerald-400" />
+              <RefreshCw className="w-4 h-4 text-emerald-800" />
             </button>
           </div>
 
           {/* Purchases List */}
           {loadingPurchases ? (
-            <p className="text-slate-500 text-center py-6 text-xs">Loading purchase log...</p>
+            <p className="text-slate-600 text-center py-6 text-xs">Loading purchase log...</p>
           ) : filteredStemPurchases.length === 0 ? (
-            <div className="p-8 text-center bg-slate-900/40 rounded-2xl border border-slate-700">
-              <Package className="w-10 h-10 text-slate-600 mx-auto mb-2" />
-              <p className="text-sm font-bold text-slate-300">No STEM supply orders match this filter</p>
-              <p className="text-xs text-slate-500 mt-1">Student supply purchases made with their coins will appear here instantly.</p>
+            <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200">
+              <Package className="w-10 h-10 text-slate-500 mx-auto mb-2" />
+              <p className="text-sm font-bold text-slate-700">No STEM supply orders match this filter</p>
+              <p className="text-xs text-slate-600 mt-1">Student supply purchases made with their coins will appear here instantly.</p>
             </div>
           ) : (
             <div className="space-y-2">
               {filteredStemPurchases.map(p => (
                 <div
                   key={p.id}
-                  className="p-4 bg-slate-900/80 rounded-2xl border border-slate-700 flex items-center justify-between gap-4 flex-wrap"
+                  className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between gap-4 flex-wrap"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-3xl p-2 bg-slate-800 rounded-xl border border-slate-700">{p.icon || '⚙️'}</span>
+                    <span className="text-3xl p-2 bg-white rounded-xl border border-slate-200">{p.icon || '⚙️'}</span>
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-black text-white text-sm">{p.itemName}</span>
-                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                        <span className="font-bold text-slate-900 text-sm">{p.itemName}</span>
+                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-500/30">
                           Tier {p.tier || 1}
                         </span>
-                        <span className="text-xs font-bold text-yellow-400">🪙 {p.costCoins}</span>
+                        <span className="text-xs font-bold text-yellow-800">🪙 {p.costCoins}</span>
                       </div>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        Purchased by <strong className="text-white">{p.studentName}</strong> for <strong className="text-yellow-300">{p.guildEmoji} {p.guildName}</strong>
+                      <p className="text-xs text-slate-600 mt-0.5">
+                        Purchased by <strong className="text-slate-900">{p.studentName}</strong> for <strong className="text-yellow-800">{p.guildEmoji} {p.guildName}</strong>
                       </p>
-                      <p className="text-[11px] text-slate-500">{new Date(p.timestamp).toLocaleString()}</p>
+                      <p className="text-[11px] text-slate-600">{new Date(p.timestamp).toLocaleString()}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => handleToggleFulfill(p.id, p.fulfilled)}
-                      className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow min-h-[44px] ${
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow min-h-[44px] ${
                         p.fulfilled
-                          ? 'bg-slate-800 hover:bg-amber-500/20 text-emerald-400 hover:text-amber-400 border border-emerald-500/40'
+                          ? 'bg-white hover:bg-amber-100 text-emerald-800 hover:text-amber-800 border border-emerald-500/40'
                           : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 active:scale-95'
                       }`}
                     >
@@ -4971,11 +4971,11 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                     </button>
                     <button
                       onClick={() => handleDeleteStemPurchase(p.id, p.itemName, p.studentName)}
-                      className="p-2.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl border border-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      className="p-2.5 text-slate-600 hover:text-red-700 hover:bg-red-100 rounded-xl border border-slate-200 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                       title="Delete / Cancel order (Exploit Removal)"
                       aria-label={`Delete order ${p.itemName}`}
                     >
-                      <Trash2 className="w-4 h-4 text-red-400" />
+                      <Trash2 className="w-4 h-4 text-red-700" />
                     </button>
                   </div>
                 </div>
@@ -4987,35 +4987,35 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
 
       {/* SUB-TAB 4: CLASS WEEKLY BOSS BATTLE */}
       {subTab === 'boss' && (
-        <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-6">
+        <div className="bg-white p-6 rounded-xl border border-slate-200 space-y-6">
           <div>
-            <h3 className="text-xl font-black text-white flex items-center gap-2">
-              <Swords className="w-6 h-6 text-red-400" /> Class Weekly Boss Challenge
+            <h3 className="text-xl font-display font-bold text-slate-900 flex items-center gap-2">
+              <Swords className="w-6 h-6 text-red-700" /> Class Weekly Boss Challenge
             </h3>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-600 mt-1">
               Configure a custom weekly boss for this class, or inherit the district/school-wide boss challenge.
             </p>
           </div>
 
           {/* Active Boss Status Card */}
-          <div className="p-4 bg-slate-900 rounded-2xl border border-slate-700 flex flex-wrap items-center justify-between gap-4">
+          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <span className="text-4xl p-2 bg-slate-800 rounded-xl border border-slate-700">{activeBossInfo?.icon || '👹'}</span>
+              <span className="text-4xl p-2 bg-white rounded-xl border border-slate-200">{activeBossInfo?.icon || '👹'}</span>
               <div>
                 <div className="flex items-center gap-2">
-                  <h4 className="font-black text-white text-base">{activeBossInfo?.name || 'Weekly Boss'}</h4>
-                  <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                  <h4 className="font-bold text-slate-900 text-base">{activeBossInfo?.name || 'Weekly Boss'}</h4>
+                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
                     activeBossInfo?.source === 'class'
-                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                      ? 'bg-purple-100 text-purple-700 border border-purple-500/30'
                       : activeBossInfo?.source === 'org'
-                      ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                      : 'bg-slate-800 text-slate-400 border border-slate-700'
+                      ? 'bg-blue-100 text-blue-700 border border-blue-500/30'
+                      : 'bg-white text-slate-600 border border-slate-200'
                   }`}>
                     {activeBossInfo?.source === 'class' ? 'Class Custom' : activeBossInfo?.source === 'org' ? 'District / Org' : 'Default Rotation'}
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 mt-0.5">{activeBossInfo?.desc}</p>
-                <p className="text-[11px] text-yellow-400 mt-1 font-bold">Reward: +{activeBossInfo?.reward || 500} XP • +{activeBossInfo?.coinReward || 100} Coins</p>
+                <p className="text-xs text-slate-600 mt-0.5">{activeBossInfo?.desc}</p>
+                <p className="text-[11px] text-yellow-800 mt-1 font-bold">Reward: +{activeBossInfo?.reward || 500} XP • +{activeBossInfo?.coinReward || 100} Coins</p>
               </div>
             </div>
 
@@ -5023,7 +5023,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
               <button
                 type="button"
                 onClick={handleClearClassBoss}
-                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-red-400 hover:text-red-300 rounded-xl text-xs font-bold border border-red-500/30 transition-colors min-h-[44px]"
+                className="px-3.5 py-2 bg-white hover:bg-slate-100 text-red-700 hover:text-red-700 rounded-xl text-xs font-bold border border-red-500/30 transition-colors min-h-[44px]"
               >
                 Reset to Org / Default Boss
               </button>
@@ -5031,63 +5031,63 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
           </div>
 
           {/* Custom Boss Form */}
-          <form onSubmit={handleSaveClassBoss} className="bg-slate-900/60 p-5 rounded-2xl border border-slate-700 space-y-4">
-            <h4 className="text-sm font-black text-white uppercase tracking-wider text-red-400">
+          <form onSubmit={handleSaveClassBoss} className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
+            <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider text-red-700">
               {selectedClass?.customBoss ? 'Edit Class Custom Boss' : 'Create Class Custom Boss'}
             </h4>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Boss Name</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Boss Name</label>
                 <input
                   type="text"
                   required
                   value={bossForm.name}
                   onChange={e => setBossForm({ ...bossForm, name: e.target.value })}
                   placeholder="e.g. The Quantum Drake"
-                  className="w-full px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs outline-none focus:border-red-500 min-h-[44px]"
+                  className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-900 text-xs outline-none focus:border-red-500 min-h-[44px]"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Title / Subtitle</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Title / Subtitle</label>
                 <input
                   type="text"
                   value={bossForm.title}
                   onChange={e => setBossForm({ ...bossForm, title: e.target.value })}
                   placeholder="e.g. Master of Algorithmic Mazes"
-                  className="w-full px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs outline-none focus:border-red-500 min-h-[44px]"
+                  className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-900 text-xs outline-none focus:border-red-500 min-h-[44px]"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Boss Icon / Emoji</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Boss Icon / Emoji</label>
                 <input
                   type="text"
                   value={bossForm.icon}
                   onChange={e => setBossForm({ ...bossForm, icon: e.target.value })}
                   placeholder="🤖, 🐉, 👾"
-                  className="w-full px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs outline-none focus:border-red-500 min-h-[44px]"
+                  className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-900 text-xs outline-none focus:border-red-500 min-h-[44px]"
                   maxLength={4}
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1">Lore / Battle Description</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Lore / Battle Description</label>
               <textarea
                 rows={2}
                 value={bossForm.desc}
                 onChange={e => setBossForm({ ...bossForm, desc: e.target.value })}
                 placeholder="Describe this week's mission challenge..."
-                className="w-full px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs outline-none focus:border-red-500"
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-900 text-xs outline-none focus:border-red-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1">Battle Plan Steps</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Battle Plan Steps</label>
               <div className="space-y-2">
                 {bossForm.steps.map((step, sIdx) => (
                   <div key={sIdx} className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-red-950 text-red-400 font-bold text-xs flex items-center justify-center flex-shrink-0">
+                    <span className="w-6 h-6 rounded-full bg-red-50 text-red-700 font-bold text-xs flex items-center justify-center flex-shrink-0">
                       {sIdx + 1}
                     </span>
                     <input
@@ -5099,7 +5099,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                         setBossForm({ ...bossForm, steps: newSteps });
                       }}
                       placeholder={`Step ${sIdx + 1} requirement`}
-                      className="flex-1 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs outline-none focus:border-red-500 min-h-[36px]"
+                      className="flex-1 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-slate-900 text-xs outline-none focus:border-red-500 min-h-[36px]"
                     />
                   </div>
                 ))}
@@ -5108,23 +5108,23 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">XP Reward</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">XP Reward</label>
                 <input
                   type="number"
                   min="50"
                   value={bossForm.reward}
                   onChange={e => setBossForm({ ...bossForm, reward: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-yellow-400 font-bold text-xs outline-none focus:border-red-500 min-h-[44px]"
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-yellow-800 font-bold text-xs outline-none focus:border-red-500 min-h-[44px]"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Coin Reward</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Coin Reward</label>
                 <input
                   type="number"
                   min="10"
                   value={bossForm.coinReward}
                   onChange={e => setBossForm({ ...bossForm, coinReward: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-yellow-400 font-bold text-xs outline-none focus:border-red-500 min-h-[44px]"
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-yellow-800 font-bold text-xs outline-none focus:border-red-500 min-h-[44px]"
                 />
               </div>
             </div>
@@ -5132,7 +5132,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
             <button
               type="submit"
               disabled={savingBoss}
-              className="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl text-xs uppercase tracking-wider transition-colors shadow min-h-[44px]"
+              className="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-colors shadow min-h-[44px]"
             >
               {savingBoss ? 'Saving Boss Challenge...' : 'Publish Class Boss Challenge'}
             </button>
@@ -5142,32 +5142,32 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
 
       {/* Guild Reward Modal */}
       {rewardGuild && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" role="dialog" aria-modal="true" onClick={() => { setRewardGuild(null); setRewardMode('grant'); }}>
-          <div className="bg-slate-800 border-2 border-yellow-500 rounded-2xl max-w-md w-full p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" role="dialog" aria-modal="true" onClick={() => { setRewardGuild(null); setRewardMode('grant'); }}>
+          <div className="bg-white border-2 border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+              <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                 {rewardMode === 'deduct' ? (
                   <>
-                    <AlertTriangle className="w-6 h-6 text-red-400" aria-hidden="true" /> Guild Exploit Deduction
+                    <AlertTriangle className="w-6 h-6 text-red-700" aria-hidden="true" /> Guild Exploit Deduction
                   </>
                 ) : (
                   <>
-                    <Gift className="w-6 h-6 text-yellow-400" aria-hidden="true" /> Guild Reward Drop
+                    <Gift className="w-6 h-6 text-yellow-800" aria-hidden="true" /> Guild Reward Drop
                   </>
                 )}
               </h3>
-              <button onClick={() => { setRewardGuild(null); setRewardMode('grant'); }} className="text-slate-400 hover:text-white" aria-label="Close">
+              <button onClick={() => { setRewardGuild(null); setRewardMode('grant'); }} className="text-slate-600 hover:text-slate-900" aria-label="Close">
                 <X className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
 
             {/* Award vs Deduct Mode Toggle */}
-            <div className="flex gap-2 mb-4 bg-slate-900/60 p-1 rounded-xl border border-slate-700">
+            <div className="flex gap-2 mb-4 bg-slate-50 p-1 rounded-xl border border-slate-200">
               <button
                 type="button"
                 onClick={() => setRewardMode('grant')}
-                className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all ${
-                  rewardMode === 'grant' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  rewardMode === 'grant' ? 'bg-emerald-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 + Award Reward
@@ -5177,8 +5177,8 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                 onClick={() => {
                   setRewardMode('deduct');
                 }}
-                className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all ${
-                  rewardMode === 'deduct' ? 'bg-red-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  rewardMode === 'deduct' ? 'bg-red-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 - Deduct / Exploit Penalty
@@ -5192,8 +5192,8 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                 <div className={`p-3 rounded-xl ${guild?.color || 'bg-slate-700'} bg-opacity-30 mb-4 flex items-center gap-3`}>
                   <span className="text-3xl" aria-hidden="true">{guild?.emoji || '🛡️'}</span>
                   <div>
-                    <p className="font-bold text-white">{guild?.name}</p>
-                    <p className="text-xs text-slate-300">
+                    <p className="font-bold text-slate-900">{guild?.name}</p>
+                    <p className="text-xs text-slate-700">
                       {stats?.memberCount || 0} members will be affected
                     </p>
                   </div>
@@ -5202,8 +5202,8 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
             })()}
 
             {rewardMode === 'deduct' && (
-              <div className="p-3 mb-4 rounded-xl bg-red-950/40 border border-red-700/50 flex items-start gap-2.5 text-xs text-red-300">
-                <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              <div className="p-3 mb-4 rounded-xl bg-red-50 border border-red-300 flex items-start gap-2.5 text-xs text-red-700">
+                <AlertTriangle className="w-4 h-4 text-red-700 shrink-0 mt-0.5" />
                 <span>
                   <strong>Exploit Penalty Mode:</strong> This will subtract the specified amount from each member's total XP and contributed Guild XP (minimum 0), or remove the selected trophy/achievement.
                 </span>
@@ -5211,20 +5211,20 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
             )}
 
             <div className="flex gap-2 mb-4" role="group" aria-label="Reward type">
-              <button onClick={() => setRewardType('xp')} className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 min-h-[44px] ${rewardType === 'xp' ? (rewardMode === 'deduct' ? 'bg-red-600 text-white' : 'bg-green-600 text-white') : 'bg-slate-700 text-slate-300'}`}>
+              <button onClick={() => setRewardType('xp')} className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 min-h-[44px] ${rewardType === 'xp' ? (rewardMode === 'deduct' ? 'bg-red-600 text-white' : 'bg-green-600 text-white') : 'bg-slate-100 text-slate-700'}`}>
                 <Zap className="w-4 h-4" aria-hidden="true" /> XP
               </button>
-              <button onClick={() => setRewardType('coins')} className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 min-h-[44px] ${rewardType === 'coins' ? (rewardMode === 'deduct' ? 'bg-red-600 text-white' : 'bg-yellow-600 text-white') : 'bg-slate-700 text-slate-300'}`}>
+              <button onClick={() => setRewardType('coins')} className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 min-h-[44px] ${rewardType === 'coins' ? (rewardMode === 'deduct' ? 'bg-red-600 text-white' : 'bg-yellow-600 text-white') : 'bg-slate-100 text-slate-700'}`}>
                 <Star className="w-4 h-4" aria-hidden="true" /> Coins
               </button>
-              <button onClick={() => setRewardType('achievement')} className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 min-h-[44px] ${rewardType === 'achievement' ? (rewardMode === 'deduct' ? 'bg-red-600 text-white' : 'bg-purple-600 text-white') : 'bg-slate-700 text-slate-300'}`}>
+              <button onClick={() => setRewardType('achievement')} className={`flex-1 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1 min-h-[44px] ${rewardType === 'achievement' ? (rewardMode === 'deduct' ? 'bg-red-600 text-white' : 'bg-purple-600 text-white') : 'bg-slate-100 text-slate-700'}`}>
                 <Trophy className="w-4 h-4" aria-hidden="true" /> Trophy
               </button>
             </div>
 
             {(rewardType === 'xp' || rewardType === 'coins') && (
               <div className="mb-4">
-                <label htmlFor="guild-reward-amount" className="block text-sm text-slate-400 mb-1">
+                <label htmlFor="guild-reward-amount" className="block text-sm text-slate-600 mb-1">
                   {rewardMode === 'deduct' ? 'Amount to DEDUCT per member' : `Amount of ${rewardType === 'xp' ? 'XP' : 'Coins'} per member`}
                 </label>
                 <input
@@ -5234,21 +5234,21 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                   value={rewardAmount}
                   onChange={e => setRewardAmount(e.target.value)}
                   placeholder={rewardType === 'xp' ? 'e.g. 500' : 'e.g. 50'}
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-yellow-500 outline-none min-h-[44px]"
+                  className="w-full px-4 py-3 bg-slate-100 border border-slate-300 rounded-lg text-slate-900 focus:border-yellow-500 outline-none min-h-[44px]"
                 />
               </div>
             )}
 
             {rewardType === 'achievement' && (
               <div className="mb-4">
-                <label htmlFor="guild-reward-achievement" className="block text-sm text-slate-400 mb-1">
+                <label htmlFor="guild-reward-achievement" className="block text-sm text-slate-600 mb-1">
                   {rewardMode === 'deduct' ? 'Select Achievement to remove from all members' : 'Select Achievement to unlock for all members'}
                 </label>
                 <select
                   id="guild-reward-achievement"
                   value={rewardAchievement}
                   onChange={e => setRewardAchievement(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-yellow-500 outline-none min-h-[44px] cursor-pointer"
+                  className="w-full px-4 py-3 bg-slate-100 border border-slate-300 rounded-lg text-slate-900 focus:border-yellow-500 outline-none min-h-[44px] cursor-pointer"
                 >
                   <option value="">-- Choose --</option>
                   {ACHIEVEMENTS.map(a => (
@@ -5279,13 +5279,13 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
 
       {/* Award Trophy to Guild Hall Modal */}
       {trophyGuild && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" role="dialog" aria-modal="true" onClick={() => setTrophyGuild(null)}>
-          <div className="bg-slate-800 border-2 border-purple-500 rounded-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" role="dialog" aria-modal="true" onClick={() => setTrophyGuild(null)}>
+          <div className="bg-white border-2 border-slate-200 rounded-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                <Trophy className="w-6 h-6 text-purple-400" aria-hidden="true" /> Award Guild Hall Trophy
+              <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                <Trophy className="w-6 h-6 text-purple-700" aria-hidden="true" /> Award Guild Hall Trophy
               </h3>
-              <button onClick={() => setTrophyGuild(null)} className="text-slate-400 hover:text-white" aria-label="Close">
+              <button onClick={() => setTrophyGuild(null)} className="text-slate-600 hover:text-slate-900" aria-label="Close">
                 <X className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
@@ -5296,32 +5296,32 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                 <div className={`p-3 rounded-xl ${guild?.color || 'bg-slate-700'} bg-opacity-30 mb-4 flex items-center gap-3`}>
                   <span className="text-3xl" aria-hidden="true">{guild?.emoji || '🛡️'}</span>
                   <div>
-                    <p className="font-bold text-white">{guild?.name} Guild Hall</p>
-                    <p className="text-xs text-slate-300">This trophy will be displayed in their Guild Hall</p>
+                    <p className="font-bold text-slate-900">{guild?.name} Guild Hall</p>
+                    <p className="text-xs text-slate-700">This trophy will be displayed in their Guild Hall</p>
                   </div>
                 </div>
               );
             })()}
 
             <div className="mb-4">
-              <label className="block text-sm text-slate-400 mb-2">Select Trophy</label>
+              <label className="block text-sm text-slate-600 mb-2">Select Trophy</label>
               <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
                 {GUILD_TROPHIES.map(t => (
                   <button
                     key={t.id}
                     onClick={() => setSelectedTrophy(t.id)}
-                    className={`p-3 rounded-lg text-left transition-colors min-h-[44px] ${selectedTrophy === t.id ? 'bg-purple-600/30 border-2 border-purple-500' : 'bg-slate-700 border-2 border-transparent hover:border-slate-500'}`}
+                    className={`p-3 rounded-lg text-left transition-colors min-h-[44px] ${selectedTrophy === t.id ? 'bg-purple-100 border-2 border-purple-500' : 'bg-slate-100 border-2 border-transparent hover:border-slate-400'}`}
                   >
                     <span className="text-2xl" aria-hidden="true">{t.icon}</span>
-                    <p className="font-bold text-white text-xs mt-1">{t.title}</p>
-                    <p className="text-xs text-slate-400">{t.desc}</p>
+                    <p className="font-bold text-slate-900 text-xs mt-1">{t.title}</p>
+                    <p className="text-xs text-slate-600">{t.desc}</p>
                   </button>
                 ))}
               </div>
             </div>
 
             <div className="mb-4">
-              <label htmlFor="trophy-message" className="block text-sm text-slate-400 mb-1">Trophy Message (optional)</label>
+              <label htmlFor="trophy-message" className="block text-sm text-slate-600 mb-1">Trophy Message (optional)</label>
               <input
                 id="trophy-message"
                 type="text"
@@ -5329,7 +5329,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                 onChange={e => setTrophyMessage(e.target.value)}
                 placeholder="e.g. Great teamwork this week!"
                 maxLength={100}
-                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-purple-500 outline-none min-h-[44px]"
+                className="w-full px-4 py-3 bg-slate-100 border border-slate-300 rounded-lg text-slate-900 focus:border-purple-500 outline-none min-h-[44px]"
               />
             </div>
 
@@ -5348,9 +5348,9 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
       <div role="status" aria-live="polite" aria-atomic="true">
         {rosterToast && (
           <div
-            className="fixed bottom-6 right-6 z-50 bg-slate-900 border-2 border-yellow-400 text-yellow-300 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 font-bold text-xs animate-in slide-in-from-bottom-3 backdrop-blur-md"
+            className="fixed bottom-6 right-6 z-50 bg-slate-50 border-2 border-yellow-400 text-yellow-800 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 font-bold text-xs animate-in slide-in-from-bottom-3 backdrop-blur-md"
           >
-            <Check className="w-4 h-4 text-green-400 shrink-0" aria-hidden="true" />
+            <Check className="w-4 h-4 text-green-800 shrink-0" aria-hidden="true" />
             <span>{rosterToast}</span>
           </div>
         )}
@@ -5445,28 +5445,28 @@ function RewardsManager({ classId }) {
   const pendingRedemptions = redemptions.filter(r => r.status === 'pending');
   const fulfilledRedemptions = redemptions.filter(r => r.status === 'fulfilled');
 
-  if (loading) return <p className="text-slate-500 text-center py-8">Loading rewards...</p>;
+  if (loading) return <p className="text-slate-600 text-center py-8">Loading rewards...</p>;
 
   return (
     <div className="space-y-6">
       {/* Pending Redemptions Alert */}
       {pendingRedemptions.length > 0 && (
-        <div className="bg-green-900/30 border-2 border-green-500/50 rounded-xl p-4">
-          <h3 className="text-lg font-bold text-green-400 mb-3 flex items-center gap-2">
+        <div className="bg-green-50 border-2 border-green-500/50 rounded-xl p-4">
+          <h3 className="text-lg font-bold text-green-800 mb-3 flex items-center gap-2">
             <Gift className="w-5 h-5" aria-hidden="true" /> Pending Redemptions ({pendingRedemptions.length})
           </h3>
-          <p className="text-sm text-slate-400 mb-4">Students have redeemed these rewards and are waiting for fulfillment.</p>
+          <p className="text-sm text-slate-600 mb-4">Students have redeemed these rewards and are waiting for fulfillment.</p>
           <div className="space-y-3">
             {pendingRedemptions.map(r => (
-              <div key={r.id} className="bg-slate-800 rounded-lg p-4 border border-slate-700 flex items-center gap-4">
-                <div className="flex-shrink-0 w-10 h-10 bg-green-500/20 border-2 border-green-500 rounded-lg flex items-center justify-center text-xl">
+              <div key={r.id} className="bg-white rounded-lg p-4 border border-slate-200 flex items-center gap-4">
+                <div className="flex-shrink-0 w-10 h-10 bg-green-100 border-2 border-green-500 rounded-lg flex items-center justify-center text-xl">
                   🎁
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-white">{r.studentName} redeemed <span className="text-green-400">{r.itemName}</span></p>
-                  <p className="text-xs text-slate-400">Cost: {r.cost} coins</p>
-                  {r.directions && <p className="text-xs text-yellow-400 mt-1">Directions: {r.directions}</p>}
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="font-bold text-slate-900">{r.studentName} redeemed <span className="text-green-800">{r.itemName}</span></p>
+                  <p className="text-xs text-slate-600">Cost: {r.cost} coins</p>
+                  {r.directions && <p className="text-xs text-yellow-800 mt-1">Directions: {r.directions}</p>}
+                  <p className="text-xs text-slate-600 mt-1">
                     {r.redeemedAt?.toDate ? new Date(r.redeemedAt.toDate()).toLocaleString() : r.redeemedAt ? new Date(r.redeemedAt).toLocaleString() : 'Just now'}
                   </p>
                 </div>
@@ -5483,10 +5483,10 @@ function RewardsManager({ classId }) {
       )}
 
       {/* Manage Reward Items */}
-      <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
+      <div className="bg-white p-6 rounded-xl border border-slate-200">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-white flex items-center gap-2">
-            <Gift className="w-5 h-5 text-green-400" aria-hidden="true" /> Custom Reward Items
+          <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <Gift className="w-5 h-5 text-green-800" aria-hidden="true" /> Custom Reward Items
           </h3>
           <button
             onClick={() => { setShowCreateForm(true); setEditingReward(null); setForm({ name: '', description: '', cost: '', directions: '' }); }}
@@ -5495,15 +5495,15 @@ function RewardsManager({ classId }) {
             <Plus className="w-4 h-4" aria-hidden="true" /> Add Reward
           </button>
         </div>
-        <p className="text-slate-400 text-sm mb-4">
+        <p className="text-slate-600 text-sm mb-4">
           Create real-world reward items that students can purchase with their coins. You'll be notified when a student redeems one.
         </p>
 
         {showCreateForm && (
-          <form onSubmit={handleCreate} className="bg-slate-700/50 rounded-xl p-4 border border-slate-600 mb-4 space-y-3">
-            <h4 className="font-bold text-white text-sm">{editingReward ? 'Edit Reward' : 'New Reward Item'}</h4>
+          <form onSubmit={handleCreate} className="bg-slate-100 rounded-xl p-4 border border-slate-300 mb-4 space-y-3">
+            <h4 className="font-bold text-slate-900 text-sm">{editingReward ? 'Edit Reward' : 'New Reward Item'}</h4>
             <div>
-              <label htmlFor="reward-name" className="block text-xs text-slate-400 mb-1">Reward Name *</label>
+              <label htmlFor="reward-name" className="block text-xs text-slate-600 mb-1">Reward Name *</label>
               <input
                 id="reward-name"
                 type="text"
@@ -5511,12 +5511,12 @@ function RewardsManager({ classId }) {
                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                 placeholder="e.g. Homework Pass, Extra Credit, Lunch with Teacher"
                 maxLength={60}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:border-green-500 outline-none"
+                className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-900 text-sm focus:border-green-500 outline-none"
                 required
               />
             </div>
             <div>
-              <label htmlFor="reward-desc" className="block text-xs text-slate-400 mb-1">Description</label>
+              <label htmlFor="reward-desc" className="block text-xs text-slate-600 mb-1">Description</label>
               <input
                 id="reward-desc"
                 type="text"
@@ -5524,11 +5524,11 @@ function RewardsManager({ classId }) {
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                 placeholder="Brief description students will see"
                 maxLength={120}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:border-green-500 outline-none"
+                className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-900 text-sm focus:border-green-500 outline-none"
               />
             </div>
             <div>
-              <label htmlFor="reward-cost" className="block text-xs text-slate-400 mb-1">Coin Cost *</label>
+              <label htmlFor="reward-cost" className="block text-xs text-slate-600 mb-1">Coin Cost *</label>
               <input
                 id="reward-cost"
                 type="number"
@@ -5536,12 +5536,12 @@ function RewardsManager({ classId }) {
                 value={form.cost}
                 onChange={e => setForm(f => ({ ...f, cost: e.target.value }))}
                 placeholder="e.g. 200"
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:border-green-500 outline-none"
+                className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-900 text-sm focus:border-green-500 outline-none"
                 required
               />
             </div>
             <div>
-              <label htmlFor="reward-directions" className="block text-xs text-slate-400 mb-1">Redemption Directions</label>
+              <label htmlFor="reward-directions" className="block text-xs text-slate-600 mb-1">Redemption Directions</label>
               <textarea
                 id="reward-directions"
                 value={form.directions}
@@ -5549,11 +5549,11 @@ function RewardsManager({ classId }) {
                 placeholder="Instructions for the student on how to redeem this reward (e.g. 'Show this to your teacher during class')"
                 maxLength={300}
                 rows={3}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:border-green-500 outline-none resize-none"
+                className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-900 text-sm focus:border-green-500 outline-none resize-none"
               />
             </div>
             <div className="flex gap-3">
-              <button type="button" onClick={() => { setShowCreateForm(false); setEditingReward(null); }} className="flex-1 py-2 bg-slate-600 text-white rounded-lg font-bold text-sm">
+              <button type="button" onClick={() => { setShowCreateForm(false); setEditingReward(null); }} className="flex-1 py-2 bg-slate-200 text-slate-900 rounded-lg font-bold text-sm">
                 Cancel
               </button>
               <button type="submit" className="flex-1 py-2 bg-green-500 text-slate-900 rounded-lg font-bold text-sm">
@@ -5564,24 +5564,24 @@ function RewardsManager({ classId }) {
         )}
 
         {rewards.length === 0 && !showCreateForm ? (
-          <div className="text-center py-8 text-slate-500 border-2 border-dashed border-slate-700 rounded-xl">
+          <div className="text-center py-8 text-slate-600 border-2 border-dashed border-slate-200 rounded-xl">
             <Gift className="w-12 h-12 mx-auto mb-2 opacity-20" aria-hidden="true" />
             No custom rewards yet. Add one to let students spend coins on real-world items!
           </div>
         ) : (
           <div className="space-y-3">
             {rewards.map(reward => (
-              <div key={reward.id} className={`rounded-xl p-4 border flex items-center gap-4 ${reward.active !== false ? 'bg-slate-700/50 border-slate-600' : 'bg-slate-800/50 border-slate-700 opacity-60'}`}>
-                <div className="flex-shrink-0 w-12 h-12 bg-green-500/20 border-2 border-green-500/50 rounded-lg flex items-center justify-center text-2xl">
+              <div key={reward.id} className={`rounded-xl p-4 border flex items-center gap-4 ${reward.active !== false ? 'bg-slate-100 border-slate-300' : 'bg-white border-slate-200 opacity-60'}`}>
+                <div className="flex-shrink-0 w-12 h-12 bg-green-100 border-2 border-green-500/50 rounded-lg flex items-center justify-center text-2xl">
                   🎁
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-white">{reward.name} {reward.active === false && <span className="text-xs text-red-400">(Inactive)</span>}</p>
-                  {reward.description && <p className="text-xs text-slate-400">{reward.description}</p>}
-                  {reward.directions && <p className="text-xs text-yellow-400/70 mt-0.5">Directions: {reward.directions}</p>}
+                  <p className="font-bold text-slate-900">{reward.name} {reward.active === false && <span className="text-xs text-red-700">(Inactive)</span>}</p>
+                  {reward.description && <p className="text-xs text-slate-600">{reward.description}</p>}
+                  {reward.directions && <p className="text-xs text-yellow-800 mt-0.5">Directions: {reward.directions}</p>}
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="text-yellow-400 font-bold">{reward.cost} coins</p>
+                  <p className="text-yellow-800 font-bold">{reward.cost} coins</p>
                 </div>
                 <div className="flex gap-1 flex-shrink-0">
                   <button
@@ -5590,21 +5590,21 @@ function RewardsManager({ classId }) {
                       setForm({ name: reward.name, description: reward.description || '', cost: String(reward.cost), directions: reward.directions || '' });
                       setShowCreateForm(true);
                     }}
-                    className="p-2 text-slate-400 hover:text-blue-400 transition-colors"
+                    className="p-2 text-slate-600 hover:text-blue-700 transition-colors"
                     aria-label={`Edit ${reward.name}`}
                   >
                     <Edit className="w-4 h-4" aria-hidden="true" />
                   </button>
                   <button
                     onClick={() => handleToggleActive(reward)}
-                    className={`p-2 transition-colors ${reward.active !== false ? 'text-green-400 hover:text-red-400' : 'text-slate-500 hover:text-green-400'}`}
+                    className={`p-2 transition-colors ${reward.active !== false ? 'text-green-800 hover:text-red-700' : 'text-slate-600 hover:text-green-800'}`}
                     aria-label={reward.active !== false ? `Deactivate ${reward.name}` : `Activate ${reward.name}`}
                   >
                     <Eye className="w-4 h-4" aria-hidden="true" />
                   </button>
                   <button
                     onClick={() => handleDelete(reward.id)}
-                    className="p-2 text-slate-400 hover:text-red-400 transition-colors"
+                    className="p-2 text-slate-600 hover:text-red-700 transition-colors"
                     aria-label={`Delete ${reward.name}`}
                   >
                     <Trash2 className="w-4 h-4" aria-hidden="true" />
@@ -5618,18 +5618,18 @@ function RewardsManager({ classId }) {
 
       {/* Fulfilled History */}
       {fulfilledRedemptions.length > 0 && (
-        <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
-          <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-green-400" aria-hidden="true" /> Fulfilled Redemptions ({fulfilledRedemptions.length})
+        <div className="bg-white p-6 rounded-xl border border-slate-200">
+          <h3 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-green-800" aria-hidden="true" /> Fulfilled Redemptions ({fulfilledRedemptions.length})
           </h3>
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {fulfilledRedemptions.map(r => (
-              <div key={r.id} className="flex items-center gap-3 p-3 bg-slate-700/30 rounded-lg text-sm">
-                <span className="text-green-400">✓</span>
-                <span className="text-white font-bold">{r.studentName}</span>
-                <span className="text-slate-400">redeemed</span>
-                <span className="text-green-400">{r.itemName}</span>
-                <span className="text-slate-500 ml-auto text-xs">
+              <div key={r.id} className="flex items-center gap-3 p-3 bg-slate-100 rounded-lg text-sm">
+                <span className="text-green-800">✓</span>
+                <span className="text-slate-900 font-bold">{r.studentName}</span>
+                <span className="text-slate-600">redeemed</span>
+                <span className="text-green-800">{r.itemName}</span>
+                <span className="text-slate-600 ml-auto text-xs">
                   {r.updatedAt?.toDate ? new Date(r.updatedAt.toDate()).toLocaleDateString() : ''}
                 </span>
               </div>
@@ -5669,7 +5669,7 @@ function SubmissionCard({
   };
 
   return (
-    <article className={`bg-slate-800 border-2 rounded-xl p-6 transition-colors ${isSelected ? 'border-green-500 bg-slate-800/90 ring-1 ring-green-500/40' : 'border-slate-700 hover:border-blue-500'}`} aria-label={`Submission from ${submission.playerName}: ${submission.activityTitle}`}>
+    <article className={`bg-white border-2 rounded-xl p-6 transition-colors ${isSelected ? 'border-green-500 bg-white ring-1 ring-green-500/40' : 'border-slate-200 hover:border-blue-500'}`} aria-label={`Submission from ${submission.playerName}: ${submission.activityTitle}`}>
       <div className="flex justify-between items-start mb-4 gap-3">
         <div className="flex items-start gap-3 flex-1 min-w-0">
           {onToggleSelect && (
@@ -5679,31 +5679,31 @@ function SubmissionCard({
                 checked={isSelected || false}
                 disabled={isBatchProcessing}
                 onChange={() => onToggleSelect(submission.id)}
-                className="w-5 h-5 rounded border-slate-600 text-green-600 focus:ring-green-400 focus:ring-2 cursor-pointer bg-slate-700"
+                className="w-5 h-5 rounded border-slate-300 text-green-600 focus:ring-green-400 focus:ring-2 cursor-pointer bg-slate-100"
                 aria-label={`Select submission from ${submission.playerName}: ${submission.activityTitle}`}
               />
             </div>
           )}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h4 className="font-bold text-lg text-white">{submission.activityTitle}</h4>
+              <h4 className="font-bold text-lg text-slate-900">{submission.activityTitle}</h4>
               {submission.isBoss && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-800 border border-amber-500/40">
                   Boss Challenge
                 </span>
               )}
               {submission.activityType && !submission.isBoss && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-slate-700 text-slate-300">
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-slate-100 text-slate-700">
                   {submission.activityType}
                 </span>
               )}
               {Array.isArray(submission.collaborators) && submission.collaborators.length > 0 && !submission.isCoOpCopy && (
-                <span className="text-[10px] px-2.5 py-0.5 rounded-full font-black bg-indigo-500/25 text-indigo-200 border border-indigo-400/50">
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-indigo-100 text-indigo-800 border border-indigo-400/50">
                   🤝 Co-Op Squad (+{submission.collaborators.length})
                 </span>
               )}
               {submission.isCoOpCopy && (
-                <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-indigo-900/50 text-indigo-300 border border-indigo-600/40">
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-indigo-50 text-indigo-700 border border-indigo-600/40">
                   🤝 Co-Op with {submission.coOpLeaderName || 'Teammate'}
                 </span>
               )}
@@ -5712,24 +5712,24 @@ function SubmissionCard({
               <button
                 type="button"
                 onClick={() => onInspectStudent(submission)}
-                className="text-blue-400 hover:text-blue-300 font-bold hover:underline flex items-center gap-1.5 text-left transition-colors mt-0.5"
+                className="text-blue-700 hover:text-blue-700 font-bold hover:underline flex items-center gap-1.5 text-left transition-colors mt-0.5"
                 title={`Click to view all submissions from ${submission.playerName}`}
               >
                 <span>{submission.playerName}</span>
                 <ExternalLink className="w-3.5 h-3.5 opacity-70" />
               </button>
             ) : (
-              <p className="text-blue-400 font-bold mt-0.5">{submission.playerName}</p>
+              <p className="text-blue-700 font-bold mt-0.5">{submission.playerName}</p>
             )}
             {Array.isArray(submission.collaborators) && submission.collaborators.length > 0 && !submission.isCoOpCopy && (
-              <p className="text-xs text-indigo-300 font-semibold mt-1">
+              <p className="text-xs text-indigo-700 font-semibold mt-1">
                 🤝 Tagged Squad: {submission.collaborators.map(c => c.name || c).join(', ')}{' '}
-                <span className="text-slate-400 font-normal">(Approving awards +{submission.xp} XP to all teammates)</span>
+                <span className="text-slate-600 font-normal">(Approving awards +{submission.xp} XP to all teammates)</span>
               </p>
             )}
           </div>
         </div>
-        <span className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded shrink-0">
+        <span className="text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded shrink-0">
           {new Date(submission.submittedAt).toLocaleDateString()}
         </span>
       </div>
@@ -5743,26 +5743,26 @@ function SubmissionCard({
         forceExpanded={forceExpanded}
       />
 
-      <div className="bg-slate-900/50 p-4 rounded-lg mb-4 border border-slate-800">
-        <p className="text-xs text-slate-400 uppercase font-bold mb-2 flex items-center gap-1.5">
-          {submission.submissionType === 'text' && <><MessageSquare className="w-3.5 h-3.5 text-purple-400" aria-hidden="true" /> Student Written Response:</>}
-          {submission.submissionType === 'link' && <><ExternalLink className="w-3.5 h-3.5 text-blue-400" aria-hidden="true" /> Student Submission Link:</>}
-          {submission.submissionType === 'file' && <><FileText className="w-3.5 h-3.5 text-green-400" aria-hidden="true" /> Attached File:</>}
-          {submission.submissionType === 'video' && <><Video className="w-3.5 h-3.5 text-red-400" aria-hidden="true" /> Recorded Video:</>}
+      <div className="bg-slate-50 p-4 rounded-lg mb-4 border border-slate-200">
+        <p className="text-xs text-slate-600 uppercase font-bold mb-2 flex items-center gap-1.5">
+          {submission.submissionType === 'text' && <><MessageSquare className="w-3.5 h-3.5 text-purple-700" aria-hidden="true" /> Student Written Response:</>}
+          {submission.submissionType === 'link' && <><ExternalLink className="w-3.5 h-3.5 text-blue-700" aria-hidden="true" /> Student Submission Link:</>}
+          {submission.submissionType === 'file' && <><FileText className="w-3.5 h-3.5 text-green-800" aria-hidden="true" /> Attached File:</>}
+          {submission.submissionType === 'video' && <><Video className="w-3.5 h-3.5 text-red-700" aria-hidden="true" /> Recorded Video:</>}
           {!['text', 'link', 'file', 'video'].includes(submission.submissionType) && <>Student Submitted Work:</>}
         </p>
         {submission.submissionType === 'link' ? (
-          <a href={submission.submissionContent} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline break-all block p-2 bg-slate-800 rounded">
+          <a href={submission.submissionContent} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline break-all block p-2 bg-white rounded">
             {submission.submissionContent}
           </a>
         ) : submission.submissionType === 'text' ? (
-          <div className="p-3 bg-slate-800 rounded-lg text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">
+          <div className="p-3 bg-white rounded-lg text-slate-800 text-sm leading-relaxed whitespace-pre-wrap">
             {submission.submissionContent}
           </div>
         ) : (
-          <div className="p-2 bg-slate-800 rounded">
+          <div className="p-2 bg-white rounded">
             {submission.submissionContent ? (
-               <div className="text-blue-400">
+               <div className="text-blue-700">
                  <FileViewer
                    content={submission.submissionContent}
                    fileName={submission.fileName}
@@ -5772,34 +5772,34 @@ function SubmissionCard({
                  />
                </div>
             ) : (
-              <span className="text-slate-500 italic">No content?</span>
+              <span className="text-slate-600 italic">No content?</span>
             )}
           </div>
         )}
 
         {submission.submissionNote && (
-          <div className="mt-3 pt-3 border-t border-slate-800">
-            <p className="text-xs text-slate-500 uppercase font-bold mb-1">Student Note:</p>
-            <p className="text-slate-300 text-sm italic">"{submission.submissionNote}"</p>
+          <div className="mt-3 pt-3 border-t border-slate-200">
+            <p className="text-xs text-slate-600 uppercase font-bold mb-1">Student Note:</p>
+            <p className="text-slate-700 text-sm italic">"{submission.submissionNote}"</p>
           </div>
         )}
       </div>
 
       <div className="flex gap-4 items-end">
         <div className="flex-1">
-          <label htmlFor={feedbackId} className="text-xs text-slate-400 font-bold uppercase mb-1 block">Feedback</label>
+          <label htmlFor={feedbackId} className="text-xs text-slate-600 font-bold uppercase mb-1 block">Feedback</label>
           <input
             id={feedbackId}
             type="text"
             value={feedback}
             onChange={e => setFeedback(e.target.value)}
             placeholder="Nice work!"
-            className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+            className="w-full bg-slate-100 border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500"
           />
         </div>
         <button
           onClick={handleRejectClick}
-          className="bg-red-900/50 hover:bg-red-900 text-red-200 border border-red-800 px-4 py-2 rounded-lg font-bold text-sm transition-colors"
+          className="bg-red-50 hover:bg-red-50 text-red-800 border border-red-200 px-4 py-2 rounded-lg font-bold text-sm transition-colors"
         >
           Reject
         </button>
@@ -5814,22 +5814,22 @@ function SubmissionCard({
       {/* Revision Guidance Guardrail Modal (FE-4) */}
       {showRevisionModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby={`revision-title-${submission.id}`}
         >
-          <div className="bg-slate-800 border-2 border-rose-500 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-700">
+          <div className="bg-white border-2 border-slate-200 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-rose-500/20 text-rose-300 rounded-lg">
+                <div className="p-2 bg-rose-100 text-rose-700 rounded-lg">
                   <RotateCcw className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 id={`revision-title-${submission.id}`} className="font-bold text-lg text-white">
+                  <h4 id={`revision-title-${submission.id}`} className="font-bold text-lg text-slate-900">
                     Request Revision
                   </h4>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-600">
                     {submission.playerName} &bull; {submission.activityTitle}
                   </p>
                 </div>
@@ -5837,7 +5837,7 @@ function SubmissionCard({
               <button
                 type="button"
                 onClick={() => setShowRevisionModal(false)}
-                className="text-slate-400 hover:text-white p-1"
+                className="text-slate-600 hover:text-slate-900 p-1"
                 aria-label="Close revision dialog"
               >
                 <X className="w-5 h-5" />
@@ -5845,7 +5845,7 @@ function SubmissionCard({
             </div>
 
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
                 Quick Revision Guidance (Click chip to add):
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -5856,7 +5856,7 @@ function SubmissionCard({
                     onClick={() => {
                       setRevisionFeedback(prev => prev ? `${prev}. ${chip}` : chip);
                     }}
-                    className="text-xs px-2.5 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-200 transition-colors text-left"
+                    className="text-xs px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 transition-colors text-left"
                   >
                     + {chip}
                   </button>
@@ -5865,7 +5865,7 @@ function SubmissionCard({
             </div>
 
             <div>
-              <label htmlFor={`custom-revision-${submission.id}`} className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+              <label htmlFor={`custom-revision-${submission.id}`} className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
                 Teacher Feedback for Student *
               </label>
               <textarea
@@ -5874,15 +5874,15 @@ function SubmissionCard({
                 value={revisionFeedback}
                 onChange={e => setRevisionFeedback(e.target.value)}
                 placeholder="Explain what the student needs to adjust before their submission can be approved..."
-                className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-xl text-white text-sm focus:border-rose-500 focus:outline-none resize-none"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:border-rose-500 focus:outline-none resize-none"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-700">
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-200">
               <button
                 type="button"
                 onClick={() => setShowRevisionModal(false)}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold text-sm rounded-xl transition-colors"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-colors"
               >
                 Cancel
               </button>
@@ -5932,8 +5932,8 @@ function ReviewedSubmissions({ reviewed, onReview, onInspectStudent, classActivi
 
   return (
     <>
-      <div className="flex items-center justify-between border-t border-slate-700 pt-8 mb-4">
-        <h3 className="font-bold text-slate-400 uppercase text-xs tracking-widest flex items-center gap-2">
+      <div className="flex items-center justify-between border-t border-slate-200 pt-8 mb-4">
+        <h3 className="font-bold text-slate-600 uppercase text-xs tracking-widest flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Reviewed History ({filtered.length})
         </h3>
         <div className="flex gap-2" role="group" aria-label="Filter reviewed submissions">
@@ -5947,8 +5947,8 @@ function ReviewedSubmissions({ reviewed, onReview, onInspectStudent, classActivi
               onClick={() => setFilter(f.key)}
               className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
                 filter === f.key
-                  ? 'bg-slate-600 text-white'
-                  : 'bg-slate-800 text-slate-400 hover:text-white'
+                  ? 'bg-slate-200 text-slate-900'
+                  : 'bg-white text-slate-600 hover:text-slate-900'
               }`}
             >
               {f.label}
@@ -5958,10 +5958,10 @@ function ReviewedSubmissions({ reviewed, onReview, onInspectStudent, classActivi
       </div>
       <div className="space-y-3">
         {displayed.map(sub => (
-          <div key={sub.id} className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+          <div key={sub.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
             <button
               onClick={() => { setExpandedId(expandedId === sub.id ? null : sub.id); setNewFeedback(''); }}
-              className="w-full p-4 flex justify-between items-center text-left hover:bg-slate-750 transition-colors"
+              className="w-full p-4 flex justify-between items-center text-left hover:bg-slate-100 transition-colors"
               aria-expanded={expandedId === sub.id}
             >
               <div className="flex items-center gap-3 min-w-0">
@@ -5973,24 +5973,24 @@ function ReviewedSubmissions({ reviewed, onReview, onInspectStudent, classActivi
                         e.stopPropagation();
                         onInspectStudent(sub);
                       }}
-                      className="font-bold text-white hover:text-green-400 hover:underline inline-flex items-center gap-1 truncate text-left transition-colors cursor-pointer"
+                      className="font-bold text-slate-900 hover:text-green-800 hover:underline inline-flex items-center gap-1 truncate text-left transition-colors cursor-pointer"
                       title={`Click to view all submissions from ${sub.playerName}`}
                     >
                       <span className="truncate">{sub.playerName}</span>
                       <ExternalLink className="w-3 h-3 opacity-60 flex-shrink-0" />
                     </span>
                   ) : (
-                    <p className="font-bold text-white truncate">{sub.playerName}</p>
+                    <p className="font-bold text-slate-900 truncate">{sub.playerName}</p>
                   )}
-                  <p className="text-sm text-slate-400 truncate flex items-center gap-1.5">
+                  <p className="text-sm text-slate-600 truncate flex items-center gap-1.5">
                     <span>{sub.activityTitle}</span>
                     {sub.isCoOpCopy && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-900/60 text-indigo-300 border border-indigo-600/40 font-semibold">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-600/40 font-semibold">
                         🤝 Co-Op w/ {sub.coOpLeaderName}
                       </span>
                     )}
                     {!sub.isCoOpCopy && Array.isArray(sub.collaborators) && sub.collaborators.length > 0 && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-400/40 font-semibold">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 border border-indigo-400/40 font-semibold">
                         🤝 +{sub.collaborators.length} Squad
                       </span>
                     )}
@@ -5999,18 +5999,18 @@ function ReviewedSubmissions({ reviewed, onReview, onInspectStudent, classActivi
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">
                 {sub.teacherFeedback && (
-                  <span className="text-xs text-slate-500 hidden sm:inline max-w-[200px] truncate italic">"{sub.teacherFeedback}"</span>
+                  <span className="text-xs text-slate-600 hidden sm:inline max-w-[200px] truncate italic">"{sub.teacherFeedback}"</span>
                 )}
-                <span className="text-xs text-slate-500">{new Date(sub.reviewedAt || sub.submittedAt).toLocaleDateString()}</span>
-                <div className={`px-3 py-1 rounded-full text-xs font-bold ${sub.status === 'approved' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`}>
+                <span className="text-xs text-slate-600">{new Date(sub.reviewedAt || sub.submittedAt).toLocaleDateString()}</span>
+                <div className={`px-3 py-1 rounded-full text-xs font-bold ${sub.status === 'approved' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-700'}`}>
                   {sub.status.toUpperCase()}
                 </div>
-                {expandedId === sub.id ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                {expandedId === sub.id ? <ChevronUp className="w-4 h-4 text-slate-600" /> : <ChevronDown className="w-4 h-4 text-slate-600" />}
               </div>
             </button>
 
             {expandedId === sub.id && (
-              <div className="px-4 pb-4 border-t border-slate-700">
+              <div className="px-4 pb-4 border-t border-slate-200">
                 {/* Activity Directions for Teacher Reference */}
                 <div className="mt-3">
                   <ActivityDirectionsCard
@@ -6021,26 +6021,26 @@ function ReviewedSubmissions({ reviewed, onReview, onInspectStudent, classActivi
                   />
                 </div>
 
-                <div className="bg-slate-900/50 p-4 rounded-lg mt-3 border border-slate-800">
-                  <p className="text-xs text-slate-400 uppercase font-bold mb-2 flex items-center gap-1.5">
-                    {sub.submissionType === 'text' && <><MessageSquare className="w-3.5 h-3.5 text-purple-400" aria-hidden="true" /> Student Written Response:</>}
-                    {sub.submissionType === 'link' && <><ExternalLink className="w-3.5 h-3.5 text-blue-400" aria-hidden="true" /> Student Submission Link:</>}
-                    {sub.submissionType === 'file' && <><FileText className="w-3.5 h-3.5 text-green-400" aria-hidden="true" /> Attached File:</>}
-                    {sub.submissionType === 'video' && <><Video className="w-3.5 h-3.5 text-red-400" aria-hidden="true" /> Recorded Video:</>}
+                <div className="bg-slate-50 p-4 rounded-lg mt-3 border border-slate-200">
+                  <p className="text-xs text-slate-600 uppercase font-bold mb-2 flex items-center gap-1.5">
+                    {sub.submissionType === 'text' && <><MessageSquare className="w-3.5 h-3.5 text-purple-700" aria-hidden="true" /> Student Written Response:</>}
+                    {sub.submissionType === 'link' && <><ExternalLink className="w-3.5 h-3.5 text-blue-700" aria-hidden="true" /> Student Submission Link:</>}
+                    {sub.submissionType === 'file' && <><FileText className="w-3.5 h-3.5 text-green-800" aria-hidden="true" /> Attached File:</>}
+                    {sub.submissionType === 'video' && <><Video className="w-3.5 h-3.5 text-red-700" aria-hidden="true" /> Recorded Video:</>}
                     {!['text', 'link', 'file', 'video'].includes(sub.submissionType) && <>Student Submitted Work:</>}
                   </p>
                   {sub.submissionType === 'link' ? (
-                    <a href={sub.submissionContent} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline break-all block p-2 bg-slate-800 rounded">
+                    <a href={sub.submissionContent} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline break-all block p-2 bg-white rounded">
                       {sub.submissionContent}
                     </a>
                   ) : sub.submissionType === 'text' ? (
-                    <div className="p-3 bg-slate-800 rounded-lg text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">
+                    <div className="p-3 bg-white rounded-lg text-slate-800 text-sm leading-relaxed whitespace-pre-wrap">
                       {sub.submissionContent}
                     </div>
                   ) : (
-                    <div className="p-2 bg-slate-800 rounded">
+                    <div className="p-2 bg-white rounded">
                       {sub.submissionContent ? (
-                        <div className="text-blue-400">
+                        <div className="text-blue-700">
                           <FileViewer
                             content={sub.submissionContent}
                             fileName={sub.fileName}
@@ -6050,28 +6050,28 @@ function ReviewedSubmissions({ reviewed, onReview, onInspectStudent, classActivi
                           />
                         </div>
                       ) : (
-                        <span className="text-slate-500 italic">No content</span>
+                        <span className="text-slate-600 italic">No content</span>
                       )}
                     </div>
                   )}
 
                   {sub.submissionNote && (
-                    <div className="mt-3 pt-3 border-t border-slate-800">
-                      <p className="text-xs text-slate-500 uppercase font-bold mb-1">Student Note:</p>
-                      <p className="text-slate-300 text-sm italic">"{sub.submissionNote}"</p>
+                    <div className="mt-3 pt-3 border-t border-slate-200">
+                      <p className="text-xs text-slate-600 uppercase font-bold mb-1">Student Note:</p>
+                      <p className="text-slate-700 text-sm italic">"{sub.submissionNote}"</p>
                     </div>
                   )}
                 </div>
 
                 {sub.teacherFeedback && (
-                  <div className="mt-3 p-3 bg-slate-700/50 rounded-lg">
-                    <p className="text-xs text-slate-500 uppercase font-bold mb-1">Your Feedback:</p>
-                    <p className="text-slate-300 text-sm">"{sub.teacherFeedback}"</p>
+                  <div className="mt-3 p-3 bg-slate-100 rounded-lg">
+                    <p className="text-xs text-slate-600 uppercase font-bold mb-1">Your Feedback:</p>
+                    <p className="text-slate-700 text-sm">"{sub.teacherFeedback}"</p>
                   </div>
                 )}
 
-                <div className="mt-3 p-3 bg-slate-700/30 rounded-lg border border-slate-600">
-                  <p className="text-xs text-slate-400 font-bold uppercase mb-2">Change Decision</p>
+                <div className="mt-3 p-3 bg-slate-100 rounded-lg border border-slate-300">
+                  <p className="text-xs text-slate-600 font-bold uppercase mb-2">Change Decision</p>
                   <div className="flex gap-3 items-end">
                     <div className="flex-1">
                       <label htmlFor={`revised-feedback-${sub.id}`} className="sr-only">Updated feedback</label>
@@ -6081,14 +6081,14 @@ function ReviewedSubmissions({ reviewed, onReview, onInspectStudent, classActivi
                         value={feedbackMap[sub.id] !== undefined ? feedbackMap[sub.id] : ''}
                         onChange={e => handleFeedbackChange(sub.id, e.target.value)}
                         placeholder={sub.teacherFeedback || 'Update feedback (optional)'}
-                        className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+                        className="w-full bg-slate-100 border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-blue-500"
                       />
                     </div>
                     {sub.status === 'approved' ? (
                       <button
                         onClick={() => handleChangeStatus(sub, 'rejected')}
                         disabled={changingStatus === sub.id}
-                        className="bg-red-900/50 hover:bg-red-900 text-red-200 border border-red-800 px-4 py-2 rounded-lg font-bold text-sm transition-colors disabled:opacity-50"
+                        className="bg-red-50 hover:bg-red-50 text-red-800 border border-red-200 px-4 py-2 rounded-lg font-bold text-sm transition-colors disabled:opacity-50"
                       >
                         {changingStatus === sub.id ? 'Updating...' : 'Change to Rejected'}
                       </button>
@@ -6104,18 +6104,18 @@ function ReviewedSubmissions({ reviewed, onReview, onInspectStudent, classActivi
                   </div>
                 </div>
 
-                <div className="mt-3 pt-3 border-t border-slate-700/60 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+                <div className="mt-3 pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600">
                   <div className="flex gap-4 flex-wrap">
                     <span>Submitted: {new Date(sub.submittedAt).toLocaleString()}</span>
                     {sub.reviewedAt && <span>Reviewed: {new Date(sub.reviewedAt).toLocaleString()}</span>}
                     <span>XP: {sub.xp}</span>
-                    {sub.isBoss && <span className="text-orange-400 font-bold">Boss Challenge</span>}
+                    {sub.isBoss && <span className="text-orange-800 font-bold">Boss Challenge</span>}
                   </div>
                   {onInspectStudent && (
                     <button
                       type="button"
                       onClick={() => onInspectStudent(sub)}
-                      className="text-green-400 hover:text-green-300 font-bold hover:underline flex items-center gap-1.5"
+                      className="text-green-800 hover:text-green-800 font-bold hover:underline flex items-center gap-1.5"
                     >
                       <FileText className="w-3.5 h-3.5" />
                       <span>View All {sub.playerName}'s Work</span>
@@ -6130,7 +6130,7 @@ function ReviewedSubmissions({ reviewed, onReview, onInspectStudent, classActivi
       {sorted.length > 10 && !showAll && (
         <button
           onClick={() => setShowAll(true)}
-          className="mt-4 w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-xl text-sm font-bold transition-colors"
+          className="mt-4 w-full py-3 bg-white hover:bg-slate-100 text-slate-600 rounded-xl text-sm font-bold transition-colors"
         >
           Show All ({sorted.length - 10} more)
         </button>
@@ -6138,7 +6138,7 @@ function ReviewedSubmissions({ reviewed, onReview, onInspectStudent, classActivi
       {showAll && sorted.length > 10 && (
         <button
           onClick={() => setShowAll(false)}
-          className="mt-4 w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-xl text-sm font-bold transition-colors"
+          className="mt-4 w-full py-3 bg-white hover:bg-slate-100 text-slate-600 rounded-xl text-sm font-bold transition-colors"
         >
           Show Less
         </button>
@@ -6155,28 +6155,28 @@ function FreeTierStorageModal({ isOpen, onClose, storageStats, onPrune, isPrunin
   const barColor = usagePercent > 90 ? 'bg-red-500' : usagePercent > 70 ? 'bg-amber-500' : 'bg-emerald-500';
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="storage-modal-title">
-      <div className="bg-slate-900 border border-slate-700 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="storage-modal-title">
+      <div className="bg-slate-50 border border-slate-200 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="p-5 bg-slate-800/90 border-b border-slate-700/80 flex items-center justify-between">
+        <div className="p-5 bg-white border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+            <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-500/30">
               <HardDrive className="w-6 h-6" aria-hidden="true" />
             </div>
             <div>
-              <h2 id="storage-modal-title" className="text-lg font-black uppercase italic text-white flex items-center gap-2">
+              <h2 id="storage-modal-title" className="text-lg font-display font-bold text-slate-900 flex items-center gap-2">
                 <span>Free Tier Storage Monitor</span>
-                <span className="text-xs not-italic font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                <span className="text-xs not-italic font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-500/40">
                   $0 / Month Guaranteed
                 </span>
               </h2>
-              <p className="text-xs text-slate-400">Firebase Cloud Storage quota management & automatic media lifecycle</p>
+              <p className="text-xs text-slate-600">Firebase Cloud Storage quota management & automatic media lifecycle</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-700/50 transition-colors cursor-pointer"
+            className="p-2 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
             aria-label="Close storage modal"
           >
             <X className="w-5 h-5" />
@@ -6186,81 +6186,81 @@ function FreeTierStorageModal({ isOpen, onClose, storageStats, onPrune, isPrunin
         {/* Content */}
         <div className="p-6 space-y-6 overflow-y-auto">
           {/* Storage Quota Progress */}
-          <div className="bg-slate-950 p-5 rounded-xl border border-slate-800 space-y-3">
+          <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-3">
             <div className="flex items-center justify-between text-sm font-bold">
-              <span className="text-slate-300">Firebase Cloud Storage Usage</span>
-              <span className="text-emerald-400">{storageStats?.estimatedMb || '0.0'} MB / 5,120 MB ({usagePercent}%)</span>
+              <span className="text-slate-700">Firebase Cloud Storage Usage</span>
+              <span className="text-emerald-800">{storageStats?.estimatedMb || '0.0'} MB / 5,120 MB ({usagePercent}%)</span>
             </div>
-            <div className="w-full bg-slate-800 rounded-full h-3.5 overflow-hidden">
+            <div className="w-full bg-white rounded-full h-3.5 overflow-hidden">
               <div
                 className={`h-full ${barColor} transition-all duration-500 rounded-full`}
                 style={{ width: `${Math.max(2, Math.min(100, usagePercent))}%` }}
               />
             </div>
-            <div className="flex items-center justify-between text-xs text-slate-400">
-              <span>Remaining Free Space: <strong className="text-white">{storageStats?.freeTierRemainingMb || '5120'} MB</strong></span>
-              <span>Daily Bandwidth Allowance: <strong className="text-white">1,024 MB / day</strong></span>
+            <div className="flex items-center justify-between text-xs text-slate-600">
+              <span>Remaining Free Space: <strong className="text-slate-900">{storageStats?.freeTierRemainingMb || '5120'} MB</strong></span>
+              <span>Daily Bandwidth Allowance: <strong className="text-slate-900">1,024 MB / day</strong></span>
             </div>
           </div>
 
           {/* Media Breakdown Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-slate-800/60 p-3.5 rounded-xl border border-slate-700/60 text-center">
-              <span className="text-xs text-slate-400 block font-semibold mb-1">🎥 Videos</span>
-              <span className="text-xl font-black text-white">{storageStats?.videoCount || 0}</span>
-              <span className="text-[10px] text-slate-500 block mt-0.5">~600 kbps (480p)</span>
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 text-center">
+              <span className="text-xs text-slate-600 block font-semibold mb-1">🎥 Videos</span>
+              <span className="text-xl font-display font-bold text-slate-900">{storageStats?.videoCount || 0}</span>
+              <span className="text-[10px] text-slate-600 block mt-0.5">~600 kbps (480p)</span>
             </div>
-            <div className="bg-slate-800/60 p-3.5 rounded-xl border border-slate-700/60 text-center">
-              <span className="text-xs text-slate-400 block font-semibold mb-1">📷 Photos</span>
-              <span className="text-xl font-black text-white">{storageStats?.photoCount || 0}</span>
-              <span className="text-[10px] text-slate-500 block mt-0.5">Auto-compressed</span>
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 text-center">
+              <span className="text-xs text-slate-600 block font-semibold mb-1">📷 Photos</span>
+              <span className="text-xl font-display font-bold text-slate-900">{storageStats?.photoCount || 0}</span>
+              <span className="text-[10px] text-slate-600 block mt-0.5">Auto-compressed</span>
             </div>
-            <div className="bg-slate-800/60 p-3.5 rounded-xl border border-slate-700/60 text-center">
-              <span className="text-xs text-slate-400 block font-semibold mb-1">☁️ In Cloud</span>
-              <span className="text-xl font-black text-cyan-400">{storageStats?.cloudStoredCount || 0}</span>
-              <span className="text-[10px] text-slate-500 block mt-0.5">Offloaded files</span>
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 text-center">
+              <span className="text-xs text-slate-600 block font-semibold mb-1">☁️ In Cloud</span>
+              <span className="text-xl font-display font-bold text-cyan-800">{storageStats?.cloudStoredCount || 0}</span>
+              <span className="text-[10px] text-slate-600 block mt-0.5">Offloaded files</span>
             </div>
-            <div className="bg-slate-800/60 p-3.5 rounded-xl border border-slate-700/60 text-center">
-              <span className="text-xs text-slate-400 block font-semibold mb-1">🗄️ Pruned/Archived</span>
-              <span className="text-xl font-black text-amber-400">{storageStats?.prunedCount || 0}</span>
-              <span className="text-[10px] text-slate-500 block mt-0.5">Grades preserved</span>
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 text-center">
+              <span className="text-xs text-slate-600 block font-semibold mb-1">🗄️ Pruned/Archived</span>
+              <span className="text-xl font-display font-bold text-amber-800">{storageStats?.prunedCount || 0}</span>
+              <span className="text-[10px] text-slate-600 block mt-0.5">Grades preserved</span>
             </div>
           </div>
 
           {/* How It Keeps Costs At $0 */}
-          <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-xl p-4 text-xs space-y-2 text-emerald-200">
-            <h4 className="font-bold text-sm text-emerald-300 flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" /> How Level Up Mission Keeps Your Costs at $0:
+          <div className="bg-emerald-50 border border-emerald-500/30 rounded-xl p-4 text-xs space-y-2 text-emerald-800">
+            <h4 className="font-bold text-sm text-emerald-800 flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-800" /> How Level Up Mission Keeps Your Costs at $0:
             </h4>
-            <ul className="list-disc list-inside space-y-1 text-slate-300 pl-1">
-              <li><strong className="text-emerald-300">Targeted Bitrate Capping:</strong> Student Chromebook video recordings are capped at 600 kbps (480p) and 45 seconds, producing high-clarity STEM demonstrations at only ~2 MB per video.</li>
-              <li><strong className="text-emerald-300">Direct Cloud Offload:</strong> Large media files are stored in Firebase Storage instead of Firestore documents, keeping database documents under 1 KB and bypassing Firestore document size limits.</li>
-              <li><strong className="text-emerald-300">Grade & Progress Protection:</strong> Pruning removes heavy media files from Cloud Storage, but never touches student XP, coins, levels, badges, completed activity records, or teacher feedback.</li>
+            <ul className="list-disc list-inside space-y-1 text-slate-700 pl-1">
+              <li><strong className="text-emerald-800">Targeted Bitrate Capping:</strong> Student Chromebook video recordings are capped at 600 kbps (480p) and 45 seconds, producing high-clarity STEM demonstrations at only ~2 MB per video.</li>
+              <li><strong className="text-emerald-800">Direct Cloud Offload:</strong> Large media files are stored in Firebase Storage instead of Firestore documents, keeping database documents under 1 KB and bypassing Firestore document size limits.</li>
+              <li><strong className="text-emerald-800">Grade & Progress Protection:</strong> Pruning removes heavy media files from Cloud Storage, but never touches student XP, coins, levels, badges, completed activity records, or teacher feedback.</li>
             </ul>
           </div>
 
           {/* Prune Action Card */}
-          <div className="bg-slate-800/90 border border-slate-700 rounded-xl p-4 space-y-3">
+          <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h4 className="font-bold text-white text-sm flex items-center gap-2">
-                  <Archive className="w-4 h-4 text-amber-400" />
+                <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <Archive className="w-4 h-4 text-amber-800" />
                   Prune Media Older Than 60 Days
                 </h4>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-slate-600 mt-1">
                   Reclaim Cloud Storage space by removing heavy video and photo payloads from approved submissions older than 60 days. All student grades, badges, and records remain 100% intact.
                 </p>
               </div>
               <div className="text-right shrink-0">
-                <span className="text-xs text-slate-400 block">Eligible to Prune</span>
-                <span className="text-base font-black text-amber-300">{storageStats?.eligibleForPruningCount || 0} submissions</span>
-                <span className="text-[10px] text-slate-400 block">Reclaims ~{storageStats?.reclaimableMb || '0.0'} MB</span>
+                <span className="text-xs text-slate-600 block">Eligible to Prune</span>
+                <span className="text-base font-bold text-amber-800">{storageStats?.eligibleForPruningCount || 0} submissions</span>
+                <span className="text-[10px] text-slate-600 block">Reclaims ~{storageStats?.reclaimableMb || '0.0'} MB</span>
               </div>
             </div>
 
             {pruneResult && (
-              <div className="p-3 bg-emerald-900/30 border border-emerald-500/40 rounded-lg text-xs text-emerald-300 flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div className="p-3 bg-emerald-50 border border-emerald-500/40 rounded-lg text-xs text-emerald-800 flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-800 shrink-0" />
                 <span>Successfully pruned {pruneResult.prunedCount} submissions and reclaimed {pruneResult.freedMb} MB of Cloud Storage!</span>
               </div>
             )}
@@ -6269,7 +6269,7 @@ function FreeTierStorageModal({ isOpen, onClose, storageStats, onPrune, isPrunin
               type="button"
               onClick={() => onPrune(60)}
               disabled={isPruning || !storageStats?.eligibleForPruningCount}
-              className="w-full py-2.5 px-4 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 font-black uppercase text-xs rounded-lg transition-colors flex items-center justify-center gap-2 shadow cursor-pointer"
+              className="w-full py-2.5 px-4 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 font-bold uppercase text-xs rounded-lg transition-colors flex items-center justify-center gap-2 shadow cursor-pointer"
             >
               {isPruning ? (
                 <><RefreshCw className="w-4 h-4 animate-spin" /> Pruning Media...</>
@@ -6281,11 +6281,11 @@ function FreeTierStorageModal({ isOpen, onClose, storageStats, onPrune, isPrunin
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-slate-800/90 border-t border-slate-700/80 flex justify-end">
+        <div className="p-4 bg-white border-t border-slate-200 flex justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer"
+            className="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs rounded-xl transition-colors cursor-pointer"
           >
             Close
           </button>

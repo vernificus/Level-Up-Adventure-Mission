@@ -658,13 +658,14 @@ function SubmissionForm({
       };
       recorder.onstop = () => {
         setIsEncodingVideo(true);
-        const finalType = recorder.mimeType || mimeType || 'video/webm';
-        const blob = new Blob(videoChunksRef.current, { type: finalType });
+        const rawType = recorder.mimeType || mimeType || 'video/webm';
+        const cleanType = rawType.split(';')[0].trim() || 'video/webm';
+        const blob = new Blob(videoChunksRef.current, { type: cleanType });
         const reader = new FileReader();
         reader.onloadend = () => {
           setFileData(reader.result);
-          setFileName(`chromebook-video-${new Date().toISOString().slice(0, 10)}.webm`);
-          setFileType(finalType);
+          setFileName(`chromebook-video-${new Date().toISOString().slice(0, 10)}.${cleanType.includes('mp4') ? 'mp4' : 'webm'}`);
+          setFileType(cleanType);
           setIsEncodingVideo(false);
         };
         reader.onerror = (readErr) => {

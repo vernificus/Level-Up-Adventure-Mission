@@ -823,15 +823,35 @@ export const realBackend = {
       const path = generateStoragePath(classId, studentId, fileName);
       const fileRef = storageRef(storage, path);
 
-      const mime = fileType || (isDataUrl ? fileData.slice(5, fileData.indexOf(';')) : 'application/octet-stream');
+      const rawMime = fileType || (isDataUrl ? fileData.slice(5, fileData.indexOf(';')) : 'application/octet-stream');
+      const cleanMime = rawMime.split(';')[0].trim() || 'application/octet-stream';
 
       if (isDataUrl) {
-        await uploadString(fileRef, fileData, 'data_url', {
-          contentType: mime
+        // Robust base64 extraction that handles data URLs with parameter commas without corruption
+        const base64Marker = ';base64,';
+        const base64Index = fileData.indexOf(base64Marker);
+        let base64Content = '';
+        if (base64Index !== -1) {
+          base64Content = fileData.slice(base64Index + base64Marker.length);
+        } else {
+          const commaIdx = fileData.indexOf(',');
+          base64Content = fileData.slice(commaIdx + 1);
+        }
+
+        const binaryStr = atob(base64Content);
+        const len = binaryStr.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryStr.charCodeAt(i);
+        }
+        const binaryBlob = new Blob([bytes], { type: cleanMime });
+
+        await uploadBytes(fileRef, binaryBlob, {
+          contentType: cleanMime
         });
       } else {
         await uploadBytes(fileRef, fileData, {
-          contentType: mime
+          contentType: cleanMime
         });
       }
 

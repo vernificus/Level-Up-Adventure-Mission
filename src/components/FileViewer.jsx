@@ -103,17 +103,44 @@ export function FileViewer({ content, fileName, fileType, submissionId, isChunke
     );
   }
 
+  // Clean legacy codecs from data URLs (e.g., data:video/webm;codecs=vp8,opus;base64,... -> data:video/webm;base64,...)
+  const cleanContent = typeof activeContent === 'string' && activeContent.startsWith('data:video/')
+    ? activeContent.replace(/^data:video\/([^;]+);codecs=[^;]+;base64,/, 'data:video/$1;base64,')
+    : activeContent;
+
+  const [videoPlaybackError, setVideoPlaybackError] = useState(false);
+
   // Check if it's video
   const isVideo = fileType?.startsWith('video/') ||
-    (typeof activeContent === 'string' && (activeContent.startsWith('data:video/') || (activeContent.includes('firebasestorage') && !fileType?.startsWith('image/')))) ||
+    (typeof cleanContent === 'string' && (cleanContent.startsWith('data:video/') || (cleanContent.includes('firebasestorage') && !fileType?.startsWith('image/')))) ||
     (fileName && /\.(webm|mp4|mov|mkv)$/i.test(fileName));
 
   if (isVideo) {
     return (
-      <div className="mt-2">
-        <video controls src={activeContent} className="max-w-full max-h-64 rounded-lg bg-black" aria-label={`Video file: ${fileName}`}>
+      <div className="mt-2 space-y-2">
+        <video
+          controls
+          src={cleanContent}
+          onError={() => setVideoPlaybackError(true)}
+          className="max-w-full max-h-64 rounded-lg bg-black"
+          aria-label={`Video file: ${fileName}`}
+        >
           Your browser does not support video playback.
         </video>
+        {videoPlaybackError && (
+          <div className="p-2.5 bg-amber-950/70 border border-amber-600/50 rounded-lg text-xs text-amber-200 flex flex-wrap items-center justify-between gap-2">
+            <span>Video codec or stream requires direct download.</span>
+            <a
+              href={cleanContent}
+              download={fileName || 'video.webm'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded font-bold shrink-0 inline-flex items-center gap-1.5"
+            >
+              <FileText className="w-3.5 h-3.5" /> Download / Open Video
+            </a>
+          </div>
+        )}
       </div>
     );
   }

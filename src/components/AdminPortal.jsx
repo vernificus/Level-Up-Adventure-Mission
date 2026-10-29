@@ -1703,7 +1703,7 @@ export default function AdminPortal({ onSwitchToTeacher, onSwitchToStudent }) {
                     >
                       <div>
                         <div className="flex items-start justify-between gap-2 mb-3">
-                          <span className="font-mono bg-black/40 text-green-800 px-2.5 py-1 rounded text-xs font-bold border border-green-500/20 flex items-center gap-1.5">
+                          <span className="font-mono bg-slate-100 text-green-800 px-2.5 py-1 rounded text-xs font-bold border border-green-500/20 flex items-center gap-1.5">
                             Code: {cls.code}
                             <button
                               onClick={(e) => {

@@ -786,7 +786,7 @@ export default function GuildPanel({
                       </div>
                     </div>
 
-                    <div className="p-3 bg-black/30 rounded-xl border border-yellow-500/20 flex items-center gap-2.5 text-xs text-yellow-800">
+                    <div className="p-3 bg-slate-100 rounded-xl border border-yellow-500/20 flex items-center gap-2.5 text-xs text-yellow-800">
                       <Sparkles className="w-4 h-4 text-yellow-800 flex-shrink-0" />
                       <div>
                         <span className="font-bold text-yellow-800">Active Perk: </span>

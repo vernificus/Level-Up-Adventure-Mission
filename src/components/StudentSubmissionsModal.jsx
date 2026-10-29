@@ -659,6 +659,8 @@ export default function StudentSubmissionsModal({
                               content={sub.submissionContent}
                               fileName={sub.fileName}
                               fileType={sub.fileType}
+                              submissionId={sub.id}
+                              isChunked={sub.isChunked}
                             />
                           ) : (
                             <span className="text-slate-500 italic text-xs">No file content attached</span>

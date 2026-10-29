@@ -82,6 +82,12 @@ service cloud.firestore {
       allow read: if true;
       // Teachers, co-teachers, and admins can review submissions
       allow update: if isAuthenticated() && isTeacherOfClass(resource.data.classId);
+
+      // Chunks for large media/video submissions when Firebase Storage is offline/unconfigured
+      match /chunks/{chunkId} {
+        allow create, read: if true;
+        allow delete: if isAuthenticated();
+      }
     }
 
     // CUSTOM REWARDS (subcollection of classes)

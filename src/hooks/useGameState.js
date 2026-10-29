@@ -405,28 +405,34 @@ export function useGameState(overrideClassId) {
       return existingPending;
     }
 
-    const newSubmission = await backend.createSubmission(user.id, user.classId, {
-      activityId: activity.id,
-      activityTitle: activity.title,
-      activityType: activity.type,
-      pathId,
-      xp: activity.xp,
-      playerName: gameState.playerName,
-      submissionType: submissionData.type,
-      submissionContent: submissionData.content,
-      submissionNote: submissionData.note,
-      fileName: submissionData.fileName,
-      fileType: submissionData.fileType,
-      isBoss: false,
-      activityDesc: activity.desc || '',
-      activitySteps: activity.steps || [],
-      activityProTip: activity.proTip || '',
-      collaborators: Array.isArray(submissionData.collaborators) ? submissionData.collaborators : [],
-    });
+    try {
+      const newSubmission = await backend.createSubmission(user.id, user.classId, {
+        activityId: activity.id,
+        activityTitle: activity.title,
+        activityType: activity.type,
+        pathId,
+        xp: activity.xp,
+        playerName: gameState.playerName,
+        submissionType: submissionData.type,
+        submissionContent: submissionData.content,
+        submissionNote: submissionData.note,
+        fileName: submissionData.fileName,
+        fileType: submissionData.fileType,
+        fileData: submissionData.fileData,
+        isBoss: false,
+        activityDesc: activity.desc || '',
+        activitySteps: activity.steps || [],
+        activityProTip: activity.proTip || '',
+        collaborators: Array.isArray(submissionData.collaborators) ? submissionData.collaborators : [],
+      });
 
-    setSubmissions(prev => [...prev, newSubmission]);
-    setClassSubmissions(prev => [...prev, newSubmission]);
-    return newSubmission;
+      setSubmissions(prev => [...prev, newSubmission]);
+      setClassSubmissions(prev => [...prev, newSubmission]);
+      return newSubmission;
+    } catch (err) {
+      console.error('submitActivity error in useGameState:', err);
+      throw err;
+    }
   }, [user, gameState.playerName, submissions]);
 
   // Submit boss challenge
@@ -441,28 +447,34 @@ export function useGameState(overrideClassId) {
       return existingPending;
     }
 
-    const newSubmission = await backend.createSubmission(user.id, user.classId, {
-      activityId: boss.id,
-      activityTitle: boss.name,
-      activityType: 'Boss Challenge',
-      pathId: 'boss',
-      xp: boss.reward,
-      playerName: gameState.playerName,
-      submissionType: submissionData.type,
-      submissionContent: submissionData.content,
-      submissionNote: submissionData.note,
-      fileName: submissionData.fileName,
-      fileType: submissionData.fileType,
-      isBoss: true,
-      activityDesc: boss.desc || '',
-      activityRequirements: boss.requirements || '',
-      activitySteps: boss.steps || [],
-      collaborators: Array.isArray(submissionData.collaborators) ? submissionData.collaborators : [],
-    });
+    try {
+      const newSubmission = await backend.createSubmission(user.id, user.classId, {
+        activityId: boss.id,
+        activityTitle: boss.name,
+        activityType: 'Boss Challenge',
+        pathId: 'boss',
+        xp: boss.reward,
+        playerName: gameState.playerName,
+        submissionType: submissionData.type,
+        submissionContent: submissionData.content,
+        submissionNote: submissionData.note,
+        fileName: submissionData.fileName,
+        fileType: submissionData.fileType,
+        fileData: submissionData.fileData,
+        isBoss: true,
+        activityDesc: boss.desc || '',
+        activityRequirements: boss.requirements || '',
+        activitySteps: boss.steps || [],
+        collaborators: Array.isArray(submissionData.collaborators) ? submissionData.collaborators : [],
+      });
 
-    setSubmissions(prev => [...prev, newSubmission]);
-    setClassSubmissions(prev => [...prev, newSubmission]);
-    return newSubmission;
+      setSubmissions(prev => [...prev, newSubmission]);
+      setClassSubmissions(prev => [...prev, newSubmission]);
+      return newSubmission;
+    } catch (err) {
+      console.error('submitBossChallenge error in useGameState:', err);
+      throw err;
+    }
   }, [user, gameState.playerName, submissions]);
 
   // Since approval happens in TeacherPortal now, the student just needs to poll or listen for updates.

@@ -5763,7 +5763,13 @@ function SubmissionCard({
           <div className="p-2 bg-slate-800 rounded">
             {submission.submissionContent ? (
                <div className="text-blue-400">
-                 <FileViewer content={submission.submissionContent} fileName={submission.fileName} fileType={submission.fileType} />
+                 <FileViewer
+                   content={submission.submissionContent}
+                   fileName={submission.fileName}
+                   fileType={submission.fileType}
+                   submissionId={submission.id}
+                   isChunked={submission.isChunked}
+                 />
                </div>
             ) : (
               <span className="text-slate-500 italic">No content?</span>
@@ -6035,7 +6041,13 @@ function ReviewedSubmissions({ reviewed, onReview, onInspectStudent, classActivi
                     <div className="p-2 bg-slate-800 rounded">
                       {sub.submissionContent ? (
                         <div className="text-blue-400">
-                          <FileViewer content={sub.submissionContent} fileName={sub.fileName} fileType={sub.fileType} />
+                          <FileViewer
+                            content={sub.submissionContent}
+                            fileName={sub.fileName}
+                            fileType={sub.fileType}
+                            submissionId={sub.id}
+                            isChunked={sub.isChunked}
+                          />
                         </div>
                       ) : (
                         <span className="text-slate-500 italic">No content</span>

@@ -246,8 +246,8 @@ function BossChallenge({
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3);
 
-  const handleSubmit = (submissionData) => {
-    onSubmit(currentBoss, submissionData);
+  const handleSubmit = async (submissionData) => {
+    await onSubmit(currentBoss, submissionData);
     setShowSubmitForm(false);
     setShowBoss(false);
   };
@@ -497,6 +497,7 @@ function SubmissionForm({
   const [videoRecording, setVideoRecording] = useState(false);
   const [videoDuration, setVideoDuration] = useState(0);
   const [videoPreviewUrl, setVideoPreviewUrl] = useState(null);
+  const [isEncodingVideo, setIsEncodingVideo] = useState(false);
   const liveVideoRef = useRef(null);
   const videoStreamRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -641,8 +642,8 @@ function SubmissionForm({
     try {
       const options = {
         ...(mimeType ? { mimeType } : {}),
-        videoBitsPerSecond: 600000, // 600 kbps: high quality 480p STEM demos while keeping sizes ~2MB
-        audioBitsPerSecond: 64000   // 64 kbps: clean student voice audio
+        videoBitsPerSecond: 350000, // 350 kbps: crisp 480p STEM demos while keeping video payload ultra-compact (~700KB for 15s)
+        audioBitsPerSecond: 32000   // 32 kbps: clear student voice audio
       };
       let recorder;
       try {
@@ -656,6 +657,7 @@ function SubmissionForm({
         }
       };
       recorder.onstop = () => {
+        setIsEncodingVideo(true);
         const finalType = recorder.mimeType || mimeType || 'video/webm';
         const blob = new Blob(videoChunksRef.current, { type: finalType });
         const reader = new FileReader();
@@ -663,6 +665,11 @@ function SubmissionForm({
           setFileData(reader.result);
           setFileName(`chromebook-video-${new Date().toISOString().slice(0, 10)}.webm`);
           setFileType(finalType);
+          setIsEncodingVideo(false);
+        };
+        reader.onerror = (readErr) => {
+          console.error("Error encoding recorded video blob:", readErr);
+          setIsEncodingVideo(false);
         };
         reader.readAsDataURL(blob);
         const previewUrl = URL.createObjectURL(blob);
@@ -804,6 +811,10 @@ function SubmissionForm({
   };
 
   const handleSubmit = async () => {
+    if (isEncodingVideo) {
+      alert('Your video recording is still preparing. Please wait a moment!');
+      return;
+    }
     if (submissionType === 'link' && !linkValue.trim()) {
       alert('Please enter a link to your work');
       return;
@@ -835,6 +846,7 @@ function SubmissionForm({
       await onSubmit({
         type: submissionType === 'video' ? 'video' : (isFileMedia ? 'file' : submissionType),
         content,
+        fileData: isFileMedia ? fileData : null,
         fileName: isFileMedia ? (fileName || (submissionType === 'video' ? 'chromebook-video.webm' : 'photo.jpg')) : null,
         fileType: isFileMedia ? (fileType || (submissionType === 'video' ? 'video/webm' : 'image/jpeg')) : null,
         note: note.trim(),
@@ -1322,10 +1334,12 @@ function SubmissionForm({
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={isProcessing}
+          disabled={isProcessing || isEncodingVideo}
           className="flex-1 py-3 bg-yellow-500 text-slate-900 font-black uppercase rounded-xl hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
         >
-          {isProcessing ? (
+          {isEncodingVideo ? (
+            <><RefreshCw className="w-5 h-5 animate-spin" aria-hidden="true" /> Preparing Video...</>
+          ) : isProcessing ? (
             <><RefreshCw className="w-5 h-5 animate-spin" aria-hidden="true" /> Saving & Uploading...</>
           ) : (
             <><Rocket className="w-5 h-5" aria-hidden="true" /> Submit</>
@@ -1595,7 +1609,13 @@ function MySubmissions({ submissions = [], onClose, onReviseActivity }) {
                     ) : (
                       <div className="p-1 bg-slate-900 rounded border border-slate-800">
                         {sub.submissionContent ? (
-                          <FileViewer content={sub.submissionContent} fileName={sub.fileName} fileType={sub.fileType} />
+                          <FileViewer
+                            content={sub.submissionContent}
+                            fileName={sub.fileName}
+                            fileType={sub.fileType}
+                            submissionId={sub.id}
+                            isChunked={sub.isChunked}
+                          />
                         ) : (
                           <span className="text-slate-400 italic">Attached file</span>
                         )}
@@ -2242,8 +2262,8 @@ function InstructionModal({
     (dailyQuest.targetPath && path.id === dailyQuest.targetPath)
   );
 
-  const handleSubmit = (submissionData) => {
-    onSubmit(activity, path.id, submissionData);
+  const handleSubmit = async (submissionData) => {
+    await onSubmit(activity, path.id, submissionData);
     onClose();
   };
 
@@ -2503,11 +2523,11 @@ function GameContent({ emulatedClassId } = {}) {
   };
 
   const handleSubmitActivity = (activity, pathId, submissionData) => {
-    submitActivity(activity, pathId, submissionData);
+    return submitActivity(activity, pathId, submissionData);
   };
 
   const handleSubmitBoss = (boss, submissionData) => {
-    submitBossChallenge(boss, submissionData);
+    return submitBossChallenge(boss, submissionData);
   };
 
   // Check for current boss pending status

@@ -209,4 +209,42 @@ const cloudStorageSubmission = {
 const cloudJsonSize = JSON.stringify(cloudStorageSubmission).length;
 assert.ok(cloudJsonSize < 1000, `Cloud Storage reference doc size (${cloudJsonSize} bytes) must be under 1 KB`);
 
+// ==========================================
+// Test 8: Firestore Resilient Subcollection Chunking & Reassembly
+// ==========================================
+console.log('✔ Test 8: Firestore Subcollection Chunking & Reassembly Logic');
+const CHUNK_SIZE = 350 * 1024;
+const samplePayload = 'data:video/webm;base64,' + 'B'.repeat(1024 * 1024); // ~1 MB video data url
+const simulatedChunks = [];
+for (let i = 0; i < samplePayload.length; i += CHUNK_SIZE) {
+  simulatedChunks.push({
+    index: simulatedChunks.length,
+    data: samplePayload.slice(i, i + CHUNK_SIZE)
+  });
+}
+assert.ok(simulatedChunks.length >= 3, '1MB payload should be split into 3 or 4 chunks');
+simulatedChunks.forEach((c) => {
+  assert.ok(c.data.length <= CHUNK_SIZE, 'Each chunk must not exceed 350KB');
+});
+// Verify out-of-order reassembly produces bit-exact match
+const shuffledChunks = [...simulatedChunks].reverse();
+shuffledChunks.sort((a, b) => a.index - b.index);
+const reassembled = shuffledChunks.map(c => c.data).join('');
+assert.strictEqual(reassembled, samplePayload, 'Reassembled chunked media must strictly equal original payload');
+
+// ==========================================
+// Test 9: 350kbps Compact Video Sizing Validation
+// ==========================================
+console.log('✔ Test 9: 350kbps Compact Video Bounds (15s & 45s)');
+const compact15sBytes = calculateMaxVideoBytes(15, 350000, 32000);
+// (350,000 + 32,000) / 8 = 47,750 B/s * 15s = 716,250 bytes (~700 KB)
+assert.strictEqual(compact15sBytes, 716250, '15-second compact video is ~716 KB');
+assert.ok(compact15sBytes < 750 * 1024, '15-second video fits in a single unchunked Firestore document (< 750 KB)');
+
+const compact45sBytes = calculateMaxVideoBytes(45, 350000, 32000);
+// 47,750 B/s * 45s = 2,148,750 bytes (~2.05 MB)
+assert.strictEqual(compact45sBytes, 2148750, '45-second compact video is ~2.15 MB');
+assert.ok(compact45sBytes < 2.5 * 1024 * 1024, '45-second compact video stays well under 2.5 MB');
+
 console.log('\n✔ All Cost-Zero Free Tier Storage tests passed successfully!\n');
+

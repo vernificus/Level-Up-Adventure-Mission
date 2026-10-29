@@ -815,8 +815,8 @@ export const realBackend = {
       }
 
       if (!storage) {
-        console.warn("Firebase storage is not initialized; using inline fallback");
-        return { downloadUrl: fileData, storagePath: null };
+        console.warn("Firebase storage is not initialized; using Firestore fallback");
+        return { downloadUrl: null, storagePath: null, error: "No storage instance" };
       }
 
       // 3. Generate clean storage path in Firebase Cloud Storage
@@ -838,13 +838,24 @@ export const realBackend = {
       const downloadUrl = await getDownloadURL(fileRef);
       return { downloadUrl, storagePath: path };
     } catch (error) {
-      console.warn("Storage upload failed or offline, falling back:", error);
-      const sizeEstimate = typeof fileData === 'string' ? fileData.length : (fileData?.size || 0);
-      // Fallback: If under 750KB, keep inline so student work is not lost
-      if (sizeEstimate < 750 * 1024) {
-        return { downloadUrl: fileData, storagePath: null };
-      }
-      throw new Error(`Media upload failed (${error.message || 'Storage error'}). Please try again or submit a link.`);
+      console.warn("Cloud Storage upload failed or unconfigured, using Firestore fallback:", error?.message || error);
+      return { downloadUrl: null, storagePath: null, error: error?.message || "Storage error" };
+    }
+  },
+
+  async loadChunkedMedia(submissionId) {
+    if (!submissionId) return null;
+    try {
+      const q = query(collection(db, "submissions", submissionId, "chunks"));
+      const snap = await getDocs(q);
+      if (snap.empty) return null;
+      const chunks = [];
+      snap.forEach(d => chunks.push(d.data()));
+      chunks.sort((a, b) => a.index - b.index);
+      return chunks.map(c => c.data).join('');
+    } catch (e) {
+      console.warn("Error loading chunked media:", e);
+      return null;
     }
   },
 
@@ -853,6 +864,9 @@ export const realBackend = {
       let finalContent = submissionData.submissionContent || submissionData.content || '';
       let storagePath = submissionData.storagePath || null;
       let mediaUploaded = false;
+      let isChunked = false;
+      let chunkCount = 0;
+      let pendingChunks = null;
 
       // Extract raw media payload if present (video, photo, or heavy file)
       const rawPayload = submissionData.fileData || finalContent;
@@ -870,10 +884,27 @@ export const realBackend = {
             storagePath = uploadResult.storagePath;
             mediaUploaded = true;
           }
-        } catch (uploadErr) {
-          console.warn("Could not offload media to Firebase Storage:", uploadErr);
-          if (typeof rawPayload === 'string' && rawPayload.length > 800 * 1024) {
-            throw uploadErr;
+        } catch (storageErr) {
+          console.warn("Could not offload media to Firebase Storage:", storageErr);
+        }
+
+        // If Cloud Storage is not available / provisioned, fall back to resilient Firestore storage
+        if (!mediaUploaded) {
+          // Firestore document limit is 1,048,576 bytes.
+          // If under 700KB, store directly in Firestore document
+          if (rawPayload.length <= 700 * 1024) {
+            finalContent = rawPayload;
+          } else {
+            // If >= 700KB, chunk payload into 350KB pieces stored in subcollection
+            const CHUNK_SIZE = 350 * 1024;
+            const chunks = [];
+            for (let i = 0; i < rawPayload.length; i += CHUNK_SIZE) {
+              chunks.push(rawPayload.slice(i, i + CHUNK_SIZE));
+            }
+            isChunked = true;
+            chunkCount = chunks.length;
+            pendingChunks = chunks;
+            finalContent = '[CHUNKED_MEDIA]';
           }
         }
       }
@@ -885,18 +916,38 @@ export const realBackend = {
         submissionContent: finalContent,
         ...(storagePath ? { storagePath } : {}),
         mediaStoredInCloud: mediaUploaded,
+        isChunked,
+        chunkCount,
         submittedAt: new Date().toISOString(),
         status: 'pending',
         teacherFeedback: ''
       };
 
-      // Strip bulky base64 fileData from the Firestore doc to keep document under 1 KB
-      if (mediaUploaded && newSubmission.fileData) {
+      // Strip bulky base64 fileData from the Firestore doc
+      if (newSubmission.fileData) {
         delete newSubmission.fileData;
       }
 
+      // 1. Add main submission document to Firestore
       const docRef = await addDoc(collection(db, "submissions"), newSubmission);
-      return { id: docRef.id, ...newSubmission };
+
+      // 2. If chunked, write chunks to subcollection
+      if (isChunked && Array.isArray(pendingChunks)) {
+        const chunksColl = collection(db, "submissions", docRef.id, "chunks");
+        for (let i = 0; i < pendingChunks.length; i++) {
+          await setDoc(doc(chunksColl, String(i)), {
+            index: i,
+            data: pendingChunks[i]
+          });
+        }
+      }
+
+      // Return with rawPayload as submissionContent for immediate local preview/rendering
+      return {
+        id: docRef.id,
+        ...newSubmission,
+        submissionContent: rawPayload || finalContent
+      };
     } catch (error) {
       console.error("Error creating submission:", error);
       throw error;
@@ -914,6 +965,17 @@ export const realBackend = {
             await deleteObject(storageRef(storage, subData.storagePath));
           } catch (storageErr) {
             console.warn("Could not delete file from Cloud Storage:", storageErr);
+          }
+        }
+        if (subData.isChunked) {
+          try {
+            const chunksColl = collection(db, "submissions", submissionId, "chunks");
+            const snap = await getDocs(chunksColl);
+            for (const d of snap.docs) {
+              await deleteDoc(d.ref).catch(() => {});
+            }
+          } catch (chunkErr) {
+            console.warn("Could not delete chunk documents:", chunkErr);
           }
         }
         await deleteDoc(docRef);
@@ -948,6 +1010,17 @@ export const realBackend = {
           } catch (storageErr) {
             console.warn(`Could not delete storage file ${sub.storagePath}:`, storageErr);
           }
+        } else if (sub.isChunked) {
+          try {
+            const chunksColl = collection(db, "submissions", docSnap.id, "chunks");
+            const snap = await getDocs(chunksColl);
+            for (const d of snap.docs) {
+              await deleteDoc(d.ref).catch(() => {});
+            }
+            freedBytesEstimated += (sub.chunkCount || 2) * 350 * 1024;
+          } catch (chunkErr) {
+            console.warn("Could not delete chunk documents for pruned submission:", chunkErr);
+          }
         } else if (typeof sub.submissionContent === 'string' && sub.submissionContent.startsWith('data:')) {
           freedBytesEstimated += sub.submissionContent.length;
         }
@@ -956,7 +1029,9 @@ export const realBackend = {
           submissionContent: '[Archived: Media pruned to maintain free tier quota. Student XP, coins, and grades remain intact.]',
           mediaPruned: true,
           prunedAt: new Date().toISOString(),
-          storagePath: null
+          storagePath: null,
+          isChunked: false,
+          chunkCount: 0
         });
         prunedCount++;
       }

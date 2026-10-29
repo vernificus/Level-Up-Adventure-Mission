@@ -34,8 +34,8 @@ export function FileViewer({ content, fileName, fileType, submissionId, isChunke
 
   if (isLoading) {
     return (
-      <div className="mt-2 p-3 rounded-xl bg-slate-900/90 border border-indigo-500/30 text-xs text-indigo-300 flex items-center gap-2.5 shadow-inner">
-        <Loader2 className="w-4 h-4 animate-spin text-indigo-400 shrink-0" aria-hidden="true" />
+      <div className="mt-2 p-3 rounded-xl bg-slate-50 border border-indigo-500/30 text-xs text-indigo-700 flex items-center gap-2.5 shadow-inner">
+        <Loader2 className="w-4 h-4 animate-spin text-indigo-700 shrink-0" aria-hidden="true" />
         <span>Loading full video ({fileName || 'video'})...</span>
       </div>
     );
@@ -43,7 +43,7 @@ export function FileViewer({ content, fileName, fileType, submissionId, isChunke
 
   if (loadError) {
     return (
-      <div className="mt-2 p-3 rounded-xl bg-slate-900/90 border border-red-500/30 text-xs text-red-300">
+      <div className="mt-2 p-3 rounded-xl bg-slate-50 border border-red-500/30 text-xs text-red-700">
         <p>{loadError}</p>
       </div>
     );
@@ -56,11 +56,11 @@ export function FileViewer({ content, fileName, fileType, submissionId, isChunke
   // Check if media was pruned to preserve free tier quota
   if (typeof activeContent === 'string' && activeContent.startsWith('[Archived')) {
     return (
-      <div className="mt-2 p-3 rounded-xl bg-slate-900/90 border border-amber-500/30 text-xs text-slate-300 flex items-start gap-2.5 shadow-inner">
-        <Archive className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" aria-hidden="true" />
+      <div className="mt-2 p-3 rounded-xl bg-slate-50 border border-amber-500/30 text-xs text-slate-700 flex items-start gap-2.5 shadow-inner">
+        <Archive className="w-4 h-4 text-amber-800 shrink-0 mt-0.5" aria-hidden="true" />
         <div>
-          <span className="font-bold text-amber-300 block mb-0.5">Media Archived (Free Tier Saver)</span>
-          <p className="text-slate-400">{activeContent}</p>
+          <span className="font-bold text-amber-800 block mb-0.5">Media Archived (Free Tier Saver)</span>
+          <p className="text-slate-600">{activeContent}</p>
         </div>
       </div>
     );
@@ -70,7 +70,7 @@ export function FileViewer({ content, fileName, fileType, submissionId, isChunke
   if (fileType?.startsWith('image/') || (typeof activeContent === 'string' && (activeContent.startsWith('data:image/') || /\.(jpg|jpeg|png|webp|gif)$/i.test(fileName || '')))) {
     return (
       <div className="mt-2">
-        <img src={activeContent} alt={`Submitted file: ${fileName}`} className="max-w-full max-h-64 rounded-lg border border-slate-600" />
+        <img src={activeContent} alt={`Submitted file: ${fileName}`} className="max-w-full max-h-64 rounded-lg border border-slate-300" />
       </div>
     );
   }
@@ -128,7 +128,7 @@ export function FileViewer({ content, fileName, fileType, submissionId, isChunke
           Your browser does not support video playback.
         </video>
         {videoPlaybackError && (
-          <div className="p-2.5 bg-amber-950/70 border border-amber-600/50 rounded-lg text-xs text-amber-200 flex flex-wrap items-center justify-between gap-2">
+          <div className="p-2.5 bg-amber-50 border border-amber-600/50 rounded-lg text-xs text-amber-800 flex flex-wrap items-center justify-between gap-2">
             <span>Video codec or stream requires direct download.</span>
             <a
               href={cleanContent}
@@ -153,7 +153,7 @@ export function FileViewer({ content, fileName, fileType, submissionId, isChunke
         download={fileName}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 px-4 py-2 bg-slate-600 hover:bg-slate-500 rounded-lg text-white font-bold"
+        className="inline-flex items-center gap-2 px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-slate-900 font-bold"
       >
         <FileText className="w-5 h-5" aria-hidden="true" /> Download: {fileName}
       </a>

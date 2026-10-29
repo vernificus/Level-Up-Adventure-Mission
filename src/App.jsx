@@ -54,23 +54,23 @@ function PlayerStats({
   const { logout } = useAuth();
 
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 mb-6">
+    <div className="bg-white border border-slate-200 rounded-xl p-4 mb-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <button onClick={onOpenProfile} className="flex items-center gap-3 hover:opacity-80 transition-opacity" aria-label={`Open profile for ${gameState.playerName || 'Player'}, Level ${currentLevel.level} ${currentLevel.title}`}>
           <Avatar3D avatar={gameState.avatar} level={currentLevel.level} size="sm" />
           <div className="text-left">
-            <p className="font-bold text-white">{gameState.playerName || 'Player'}</p>
+            <p className="font-bold text-slate-900">{gameState.playerName || 'Player'}</p>
             <p className={`text-sm font-bold ${currentLevel.color}`}>Lv.{currentLevel.level} {currentLevel.title}</p>
           </div>
         </button>
 
         <div className="flex-1 min-w-[200px] max-w-md">
           <div className="flex justify-between text-xs mb-1">
-            <span className="text-slate-400" id="xp-label">XP</span>
-            <span className="text-yellow-500 font-bold">{gameState.xp} / {nextLevelXp}</span>
+            <span className="text-slate-600" id="xp-label">XP</span>
+            <span className="text-yellow-800 font-bold">{gameState.xp} / {nextLevelXp}</span>
           </div>
           <div
-            className="h-3 bg-slate-700 rounded-full overflow-hidden"
+            className="h-3 bg-slate-100 rounded-full overflow-hidden"
             role="progressbar"
             aria-labelledby="xp-label"
             aria-valuenow={gameState.xp}
@@ -86,11 +86,11 @@ function PlayerStats({
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1 text-yellow-400" role="status" aria-label={`${gameState.coins} coins`}>
+          <div className="flex items-center gap-1 text-yellow-800" role="status" aria-label={`${gameState.coins} coins`}>
             <Star className="w-5 h-5 fill-yellow-400" aria-hidden="true" />
             <span className="font-bold">{gameState.coins}</span>
           </div>
-          <div className="flex items-center gap-1 text-orange-400" role="status" aria-label={`${gameState.currentStreak} day streak`}>
+          <div className="flex items-center gap-1 text-orange-800" role="status" aria-label={`${gameState.currentStreak} day streak`}>
             <Zap className="w-5 h-5" aria-hidden="true" />
             <span className="font-bold">{gameState.currentStreak}</span>
           </div>
@@ -103,8 +103,8 @@ function PlayerStats({
                 : pendingSubmissions > 0
                 ? 'bg-blue-600 hover:bg-blue-500 text-white border-blue-400'
                 : totalSubmissions > 0
-                ? 'bg-slate-700 hover:bg-slate-600 text-slate-200 border-slate-600'
-                : 'bg-slate-800 hover:bg-slate-700 text-slate-400 border-slate-700'
+                ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300'
+                : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
             }`}
             title={
               rejectedSubmissions > 0
@@ -137,7 +137,7 @@ function PlayerStats({
           {gameState.pendingMysteryBoxes > 0 && (
             <button
               onClick={onOpenMysteryBox}
-              className="flex items-center gap-1 bg-purple-600 hover:bg-purple-500 px-3 py-1 rounded-lg animate-pulse"
+              className="text-white flex items-center gap-1 bg-purple-600 hover:bg-purple-500 px-3 py-1 rounded-lg animate-pulse"
               aria-label={`Open ${gameState.pendingMysteryBoxes} mystery box${gameState.pendingMysteryBoxes !== 1 ? 'es' : ''}`}
             >
               <Gift className="w-5 h-5" aria-hidden="true" />
@@ -146,7 +146,7 @@ function PlayerStats({
           )}
           <button
              onClick={logout}
-             className="ml-2 text-slate-500 hover:text-white"
+             className="ml-2 text-slate-600 hover:text-slate-900"
              aria-label="Logout"
            >
              <LogOut className="w-5 h-5" aria-hidden="true" />
@@ -155,14 +155,14 @@ function PlayerStats({
       </div>
 
       {(gameState.doubleXpActive || gameState.streakShieldActive) && (
-        <div className="flex gap-2 mt-3 pt-3 border-t border-slate-700" role="status" aria-label="Active power-ups">
+        <div className="flex gap-2 mt-3 pt-3 border-t border-slate-200" role="status" aria-label="Active power-ups">
           {gameState.doubleXpActive && (
-            <span className="text-xs bg-pink-600/30 text-pink-300 px-2 py-1 rounded-full flex items-center gap-1">
+            <span className="text-xs bg-pink-100 text-pink-700 px-2 py-1 rounded-full flex items-center gap-1">
               <Sparkles className="w-3 h-3" aria-hidden="true" /> 2x XP Active
             </span>
           )}
           {gameState.streakShieldActive && (
-            <span className="text-xs bg-orange-600/30 text-orange-300 px-2 py-1 rounded-full flex items-center gap-1">
+            <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full flex items-center gap-1">
               <Shield className="w-3 h-3" aria-hidden="true" /> Streak Protected
             </span>
           )}
@@ -175,25 +175,25 @@ function PlayerStats({
 // ============== DAILY QUEST BANNER ==============
 function DailyQuestBanner({ quest, completed }) {
   return (
-    <section className={`mb-6 p-4 rounded-xl border-2 ${completed ? 'bg-green-900/30 border-green-600' : 'bg-gradient-to-r from-purple-900/50 to-blue-900/50 border-purple-500'}`} aria-label="Daily Quest">
+    <section className={`mb-6 p-4 rounded-xl border-2 ${completed ? 'bg-green-50 border-green-600' : 'bg-gradient-to-r from-purple-50 to-blue-50 border-purple-500'}`} aria-label="Daily Quest">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-lg ${completed ? 'bg-green-600' : 'bg-purple-600'}`} aria-hidden="true">
+          <div className={`text-white p-2 rounded-lg ${completed ? 'bg-green-600' : 'bg-purple-600'}`} aria-hidden="true">
             <Target className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-purple-300">Daily Quest</p>
-            <p className="font-bold text-white">{quest.title}</p>
-            <p className="text-sm text-slate-400">{quest.desc}</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-purple-700">Daily Quest</p>
+            <p className="font-bold text-slate-900">{quest.title}</p>
+            <p className="text-sm text-slate-600">{quest.desc}</p>
           </div>
         </div>
         <div className="text-right">
           {completed ? (
-            <span className="text-green-400 font-bold flex items-center gap-1" role="status">
+            <span className="text-green-800 font-bold flex items-center gap-1" role="status">
               <CheckCircle2 className="w-5 h-5" aria-hidden="true" /> Complete!
             </span>
           ) : (
-            <span className="text-yellow-400 font-bold">{quest.multiplier}x XP</span>
+            <span className="text-yellow-800 font-bold">{quest.multiplier}x XP</span>
           )}
         </div>
       </div>
@@ -258,70 +258,70 @@ function BossChallenge({
         onClick={() => setShowBoss(true)}
         className={`mb-6 w-full p-4 rounded-xl border-2 text-left transition-all ${
           isCompleted || isClubBossDefeated
-            ? 'bg-gradient-to-r from-emerald-950/60 to-slate-800 border-emerald-500/70'
+            ? 'bg-gradient-to-r from-emerald-50 to-white border-emerald-500/70'
             : hasPendingSubmission
-            ? 'bg-blue-900/30 border-blue-500'
-            : 'bg-gradient-to-r from-red-900/50 to-orange-900/50 border-red-500 hover:border-red-400'
+            ? 'bg-blue-50 border-blue-500'
+            : 'bg-gradient-to-r from-red-50 to-orange-50 border-red-500 hover:border-red-400'
         }`}
         aria-label={`Weekly Boss: ${currentBoss.name}${isCompleted ? ' - Defeated' : hasPendingSubmission ? ' - Pending approval' : ` - ${currentBoss.reward} XP reward`}`}
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${isCompleted || isClubBossDefeated ? 'bg-emerald-600' : hasPendingSubmission ? 'bg-blue-600' : 'bg-red-600'}`} aria-hidden="true">
+            <div className={`text-white p-2 rounded-lg ${isCompleted || isClubBossDefeated ? 'bg-emerald-600' : hasPendingSubmission ? 'bg-blue-600' : 'bg-red-600'}`} aria-hidden="true">
               <Swords className="w-6 h-6 text-white" />
             </div>
             <div className="text-left">
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-xs font-bold uppercase tracking-widest text-red-400">Club Weekly Boss Raid</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-red-700">Club Weekly Boss Raid</p>
                 {currentBoss.source === 'class' && (
-                  <span className="text-[10px] font-black uppercase bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-bold uppercase bg-purple-100 text-purple-700 border border-purple-500/30 px-2 py-0.5 rounded-full">
                     Class Custom
                   </span>
                 )}
                 {currentBoss.source === 'org' && (
-                  <span className="text-[10px] font-black uppercase bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-bold uppercase bg-blue-100 text-blue-700 border border-blue-500/30 px-2 py-0.5 rounded-full">
                     District / Org
                   </span>
                 )}
                 {isClubBossDefeated && (
-                  <span className="text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-500/40 px-2 py-0.5 rounded-full">
                     🎉 Club Raid Victory!
                   </span>
                 )}
               </div>
-              <p className="font-black text-white text-lg">{currentBoss.name}</p>
+              <p className="font-display font-bold text-slate-900 text-lg">{currentBoss.name}</p>
             </div>
           </div>
 
           {isCompleted ? (
-            <span className="text-green-400 font-bold flex items-center gap-1">
+            <span className="text-green-800 font-bold flex items-center gap-1">
               <Crown className="w-5 h-5" aria-hidden="true" /> You Defeated!
             </span>
           ) : hasPendingSubmission ? (
-            <span className="text-blue-400 font-bold flex items-center gap-1">
+            <span className="text-blue-700 font-bold flex items-center gap-1">
               <Clock className="w-5 h-5" aria-hidden="true" /> Pending
             </span>
           ) : (
-            <span className="text-yellow-400 font-bold">+{currentBoss.reward} XP</span>
+            <span className="text-yellow-800 font-bold">+{currentBoss.reward} XP</span>
           )}
         </div>
 
         {/* Shared Club Boss HP Bar */}
         <div className="mt-3 pt-3 border-t border-white/10">
           <div className="flex items-center justify-between text-xs mb-1.5">
-            <span className="font-bold text-slate-300 flex items-center gap-1.5">
+            <span className="font-bold text-slate-700 flex items-center gap-1.5">
               <span>❤️ Boss HP:</span>
-              <span className={isClubBossDefeated ? 'text-emerald-400 font-black' : 'text-red-300 font-black'}>
+              <span className={isClubBossDefeated ? 'text-emerald-800 font-bold' : 'text-red-700 font-bold'}>
                 {remainingHp.toLocaleString()} / {bossTotalHp.toLocaleString()} HP
               </span>
             </span>
-            <span className="text-[11px] text-slate-400">
-              Club dealt <strong className="text-orange-400">{totalDamageDealt.toLocaleString()} DMG</strong> this week
+            <span className="text-[11px] text-slate-600">
+              Club dealt <strong className="text-orange-800">{totalDamageDealt.toLocaleString()} DMG</strong> this week
             </span>
           </div>
-          <div className="h-3 bg-slate-900/90 rounded-full overflow-hidden border border-slate-700 p-0.5">
+          <div className="h-3 bg-slate-50 rounded-full overflow-hidden border border-slate-200 p-0.5">
             <div
-              className={`h-full rounded-full transition-all duration-700 ${
+              className={`text-white h-full rounded-full transition-all duration-700 ${
                 hpPercent > 50
                   ? 'bg-gradient-to-r from-red-600 to-orange-500'
                   : hpPercent > 20
@@ -333,10 +333,10 @@ function BossChallenge({
           </div>
           {topDamagers.length > 0 && (
             <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Top Raiders:</span>
+              <span className="text-[10px] uppercase tracking-wider font-bold text-slate-600">Top Raiders:</span>
               {topDamagers.map(([name, dmg], i) => (
-                <span key={name} className="text-[11px] bg-slate-900/80 border border-slate-700 px-2 py-0.5 rounded-full text-slate-200 font-semibold">
-                  {i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'} {name} <span className="text-orange-400 font-bold">-{dmg} HP</span>
+                <span key={name} className="text-[11px] bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full text-slate-800 font-semibold">
+                  {i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'} {name} <span className="text-orange-800 font-bold">-{dmg} HP</span>
                 </span>
               ))}
             </div>
@@ -345,9 +345,9 @@ function BossChallenge({
       </button>
 
       {showBoss && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="boss-dialog-title" onKeyDown={(e) => e.key === 'Escape' && setShowBoss(false)}>
-          <div className="bg-slate-800 border-2 border-red-500 rounded-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto relative">
-            <button onClick={() => setShowBoss(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white" aria-label="Close boss challenge">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="boss-dialog-title" onKeyDown={(e) => e.key === 'Escape' && setShowBoss(false)}>
+          <div className="bg-white border-2 border-slate-200 rounded-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto relative">
+            <button onClick={() => setShowBoss(false)} className="absolute top-4 right-4 text-slate-600 hover:text-slate-900" aria-label="Close boss challenge">
               <X className="w-6 h-6" aria-hidden="true" />
             </button>
 
@@ -355,34 +355,34 @@ function BossChallenge({
               <>
                 <div className="text-center mb-5">
                   <div className="text-6xl mb-3" aria-hidden="true">{currentBoss.icon || '👹'}</div>
-                  <h3 id="boss-dialog-title" className="text-2xl font-black uppercase italic text-red-400">{currentBoss.name}</h3>
-                  {currentBoss.title && <p className="text-xs text-yellow-400 font-bold uppercase tracking-wider mt-0.5">{currentBoss.title}</p>}
-                  <p className="text-slate-400 mt-2">{currentBoss.desc}</p>
+                  <h3 id="boss-dialog-title" className="text-2xl font-display font-bold text-red-700">{currentBoss.name}</h3>
+                  {currentBoss.title && <p className="text-xs text-yellow-800 font-bold uppercase tracking-wider mt-0.5">{currentBoss.title}</p>}
+                  <p className="text-slate-600 mt-2">{currentBoss.desc}</p>
                 </div>
 
                 {/* Live Club Raid HP Box inside Modal */}
-                <div className="bg-slate-900/80 border border-red-500/40 rounded-xl p-3.5 mb-5">
+                <div className="bg-slate-50 border border-red-500/40 rounded-xl p-3.5 mb-5">
                   <div className="flex justify-between items-center text-xs mb-1.5">
-                    <span className="font-black uppercase tracking-wider text-red-400">👹 Shared Club Boss HP</span>
-                    <span className="font-black text-white">{remainingHp.toLocaleString()} / {bossTotalHp.toLocaleString()} HP</span>
+                    <span className="font-bold uppercase tracking-wider text-red-700">👹 Shared Club Boss HP</span>
+                    <span className="font-bold text-slate-900">{remainingHp.toLocaleString()} / {bossTotalHp.toLocaleString()} HP</span>
                   </div>
-                  <div className="h-3.5 bg-slate-950 rounded-full overflow-hidden border border-slate-700 p-0.5 mb-2">
+                  <div className="h-3.5 bg-slate-50 rounded-full overflow-hidden border border-slate-200 p-0.5 mb-2">
                     <div
-                      className="h-full bg-gradient-to-r from-red-600 via-orange-500 to-yellow-400 rounded-full transition-all duration-500"
+                      className="text-white h-full bg-gradient-to-r from-red-600 via-orange-500 to-yellow-400 rounded-full transition-all duration-500"
                       style={{ width: `${hpPercent}%` }}
                     />
                   </div>
-                  <p className="text-[11px] text-slate-400 leading-relaxed">
-                    Every approved activity deals <strong className="text-orange-300">50 DMG</strong> and every Boss Challenge deals <strong className="text-red-300">250 DMG</strong> to the club boss!
+                  <p className="text-[11px] text-slate-600 leading-relaxed">
+                    Every approved activity deals <strong className="text-orange-800">50 DMG</strong> and every Boss Challenge deals <strong className="text-red-700">250 DMG</strong> to the club boss!
                   </p>
                 </div>
 
                 <div className="space-y-4 mb-6">
-                  <h4 className="font-bold text-slate-300 uppercase text-xs tracking-widest">Battle Plan:</h4>
+                  <h4 className="font-bold text-slate-700 uppercase text-xs tracking-widest">Battle Plan:</h4>
                   <ol className="space-y-3">
                     {(currentBoss.steps || []).map((step, idx) => (
-                      <li key={idx} className="flex gap-3 text-slate-300">
-                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-red-900 text-red-400 flex items-center justify-center text-xs font-bold">
+                      <li key={idx} className="flex gap-3 text-slate-700">
+                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-red-50 text-red-700 flex items-center justify-center text-xs font-bold">
                           {idx + 1}
                         </span>
                         <span className="text-sm">{step}</span>
@@ -391,8 +391,8 @@ function BossChallenge({
                   </ol>
                 </div>
 
-                <div className="bg-yellow-500/20 border border-yellow-500/30 p-4 rounded-xl mb-6">
-                  <p className="text-sm text-yellow-200">
+                <div className="bg-yellow-100 border border-yellow-500/30 p-4 rounded-xl mb-6">
+                  <p className="text-sm text-yellow-800">
                     <strong>Reward:</strong> {currentBoss.reward} XP + Mystery Box + Achievement + 250 Boss Damage!
                   </p>
                 </div>
@@ -400,19 +400,19 @@ function BossChallenge({
                 {!isCompleted && !hasPendingSubmission && (
                   <button
                     onClick={() => setShowSubmitForm(true)}
-                    className="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-black uppercase italic rounded-xl transition-colors"
+                    className="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-colors"
                   >
                     Submit My Work
                   </button>
                 )}
                 {hasPendingSubmission && (
-                  <div className="text-center text-blue-400 font-bold py-3" role="status">
+                  <div className="text-center text-blue-700 font-bold py-3" role="status">
                     <Clock className="w-6 h-6 inline mr-2" aria-hidden="true" />
                     Waiting for teacher approval...
                   </div>
                 )}
                 {isCompleted && (
-                  <div className="text-center text-green-400 font-bold py-3" role="status">
+                  <div className="text-center text-green-800 font-bold py-3" role="status">
                     <CheckCircle2 className="w-6 h-6 inline mr-2" aria-hidden="true" />
                     Boss Defeated! Come back next week.
                   </div>
@@ -442,8 +442,8 @@ function renderStep(step, idx) {
   const stepObj = typeof step === 'string' ? { text: step } : step;
 
   return (
-    <li key={idx} className="flex gap-3 text-slate-300">
-      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-slate-700 text-yellow-500 flex items-center justify-center text-xs font-bold border border-slate-600">{idx + 1}</span>
+    <li key={idx} className="flex gap-3 text-slate-700">
+      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-slate-100 text-yellow-800 flex items-center justify-center text-xs font-bold border border-slate-300">{idx + 1}</span>
       <div className="text-sm leading-relaxed">
         <span>{renderFormattedText(stepObj.text)}</span>
         {stepObj.link && (
@@ -451,7 +451,7 @@ function renderStep(step, idx) {
             href={stepObj.link}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 ml-1 text-blue-400 hover:text-blue-300 underline transition-colors"
+            className="inline-flex items-center gap-1 ml-1 text-blue-700 hover:text-blue-700 underline transition-colors"
           >
             <Link2 className="w-3 h-3" aria-hidden="true" />
             {stepObj.linkText || stepObj.link}
@@ -872,36 +872,36 @@ function SubmissionForm({
   return (
     <div>
       <div className="text-center mb-4">
-        <h3 className="text-xl font-black uppercase italic text-white">Submit Your Work</h3>
-        <p className="text-slate-400 text-sm">
-          for: <span className="text-yellow-400 font-bold">{activityTitle}</span>
+        <h3 className="text-xl font-display font-bold text-slate-900">Submit Your Work</h3>
+        <p className="text-slate-600 text-sm">
+          for: <span className="text-yellow-800 font-bold">{activityTitle}</span>
         </p>
       </div>
 
       {hasDirections && (
-        <div className="mb-5 bg-slate-900/60 border border-slate-700 rounded-xl overflow-hidden shadow-inner">
+        <div className="mb-5 bg-slate-50 border border-slate-200 rounded-xl overflow-hidden shadow-inner">
           <button
             type="button"
             onClick={() => setShowDirections(prev => !prev)}
-            className="w-full px-4 py-2.5 bg-slate-800/90 hover:bg-slate-700/80 flex items-center justify-between text-left transition-colors border-b border-slate-700/60 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+            className="w-full px-4 py-2.5 bg-white hover:bg-slate-100 flex items-center justify-between text-left transition-colors border-b border-slate-200 focus:outline-none focus:ring-2 focus:ring-yellow-500"
             aria-expanded={showDirections}
             aria-controls="submission-task-directions"
           >
             <div className="flex items-center gap-2 flex-wrap">
-              <BookOpen className="w-4 h-4 text-yellow-400" aria-hidden="true" />
-              <span className="font-bold text-sm text-white">Task Directions</span>
+              <BookOpen className="w-4 h-4 text-yellow-800" aria-hidden="true" />
+              <span className="font-bold text-sm text-slate-900">Task Directions</span>
               {validSteps.length > 0 && (
-                <span className="text-[11px] font-semibold bg-slate-700 text-yellow-400 px-2 py-0.5 rounded-full border border-slate-600">
+                <span className="text-[11px] font-semibold bg-slate-100 text-yellow-800 px-2 py-0.5 rounded-full border border-slate-300">
                   {validSteps.length} {validSteps.length === 1 ? 'step' : 'steps'}
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
               <span>{showDirections ? 'Hide Directions' : 'View Directions'}</span>
               {showDirections ? (
-                <ChevronUp className="w-4 h-4 text-slate-400" aria-hidden="true" />
+                <ChevronUp className="w-4 h-4 text-slate-600" aria-hidden="true" />
               ) : (
-                <ChevronDown className="w-4 h-4 text-slate-400" aria-hidden="true" />
+                <ChevronDown className="w-4 h-4 text-slate-600" aria-hidden="true" />
               )}
             </div>
           </button>
@@ -909,21 +909,21 @@ function SubmissionForm({
           {showDirections && (
             <div id="submission-task-directions" className="p-4 space-y-3 max-h-56 overflow-y-auto">
               {task.desc && (
-                <p className="text-sm text-slate-200 bg-slate-800/70 p-2.5 rounded-lg border border-slate-700 leading-relaxed">
+                <p className="text-sm text-slate-800 bg-white p-2.5 rounded-lg border border-slate-200 leading-relaxed">
                   {renderFormattedText(task.desc)}
                 </p>
               )}
 
               {task.requirements && (
-                <div className="text-xs text-yellow-200 bg-yellow-950/40 border border-yellow-800/50 p-2.5 rounded-lg">
-                  <strong className="text-yellow-400">Requirements: </strong>
+                <div className="text-xs text-yellow-800 bg-yellow-50 border border-yellow-200 p-2.5 rounded-lg">
+                  <strong className="text-yellow-800">Requirements: </strong>
                   {renderFormattedText(task.requirements)}
                 </div>
               )}
 
               {validSteps.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Steps to follow:</h4>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Steps to follow:</h4>
                   <ol className="space-y-2">
                     {validSteps.map((step, idx) => renderStep(step, idx))}
                   </ol>
@@ -931,10 +931,10 @@ function SubmissionForm({
               )}
 
               {task.proTip && (
-                <div className="bg-blue-900/30 border border-blue-500/40 p-2.5 rounded-lg flex items-start gap-2">
-                  <Trophy className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" aria-hidden="true" />
-                  <div className="text-xs text-blue-100">
-                    <span className="font-bold uppercase tracking-wide text-blue-400 mr-1">Pro Tip:</span>
+                <div className="bg-blue-50 border border-blue-500/40 p-2.5 rounded-lg flex items-start gap-2">
+                  <Trophy className="w-4 h-4 text-blue-700 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                  <div className="text-xs text-blue-800">
+                    <span className="font-bold uppercase tracking-wide text-blue-700 mr-1">Pro Tip:</span>
                     {renderFormattedText(task.proTip)}
                   </div>
                 </div>
@@ -955,7 +955,7 @@ function SubmissionForm({
               setSubmissionType(type);
             }}
             className={`py-2.5 px-2 rounded-lg font-bold flex items-center justify-center gap-1.5 text-xs sm:text-sm transition-colors ${
-              submissionType === type ? 'bg-yellow-500 text-slate-900 shadow' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+              submissionType === type ? 'bg-yellow-500 text-slate-900 shadow' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
             aria-pressed={submissionType === type}
           >
@@ -965,7 +965,7 @@ function SubmissionForm({
       </div>
 
       {submissionType === 'camera' && (
-        <div className="mb-4 bg-slate-900/70 border border-slate-700 rounded-xl p-4 text-center">
+        <div className="mb-4 bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
           <input
             type="file"
             ref={cameraFileInputRef}
@@ -980,7 +980,7 @@ function SubmissionForm({
               <img
                 src={fileData}
                 alt="Captured STEM build"
-                className="max-h-60 mx-auto rounded-lg border-2 border-emerald-500 object-contain bg-slate-950"
+                className="max-h-60 mx-auto rounded-lg border-2 border-emerald-500 object-contain bg-slate-50"
               />
               <div className="flex items-center justify-center gap-2">
                 <button
@@ -990,7 +990,7 @@ function SubmissionForm({
                     setFileName('');
                     startCamera();
                   }}
-                  className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs font-bold flex items-center gap-1.5"
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-lg text-xs font-bold flex items-center gap-1.5"
                 >
                   <RotateCcw className="w-3.5 h-3.5" /> Retake Photo
                 </button>
@@ -1009,14 +1009,14 @@ function SubmissionForm({
                 <button
                   type="button"
                   onClick={snapPhotoFromVideo}
-                  className="px-5 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-black uppercase rounded-xl flex items-center gap-2 text-sm shadow-lg"
+                  className="px-5 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold uppercase rounded-xl flex items-center gap-2 text-sm shadow-lg"
                 >
                   <Camera className="w-4 h-4" /> Snap Photo!
                 </button>
                 <button
                   type="button"
                   onClick={stopCamera}
-                  className="px-3 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold rounded-xl text-xs"
+                  className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs"
                 >
                   Cancel
                 </button>
@@ -1024,24 +1024,24 @@ function SubmissionForm({
             </div>
           ) : (
             <div className="space-y-3 py-2">
-              <Camera className="w-10 h-10 text-yellow-400 mx-auto" aria-hidden="true" />
-              <p className="text-sm font-bold text-white">Snap a photo of your Robot, 3D Print, or STEM Build!</p>
-              <p className="text-xs text-slate-400">Photos are automatically compressed to fit fast on Chromebooks & iPads.</p>
+              <Camera className="w-10 h-10 text-yellow-800 mx-auto" aria-hidden="true" />
+              <p className="text-sm font-bold text-slate-900">Snap a photo of your Robot, 3D Print, or STEM Build!</p>
+              <p className="text-xs text-slate-600">Photos are automatically compressed to fit fast on Chromebooks & iPads.</p>
               {cameraError && (
-                <p className="text-xs text-amber-300 bg-amber-950/60 border border-amber-700/50 p-2 rounded-lg">{cameraError}</p>
+                <p className="text-xs text-amber-800 bg-amber-50 border border-amber-300 p-2 rounded-lg">{cameraError}</p>
               )}
               <div className="flex flex-wrap justify-center gap-2 pt-1">
                 <button
                   type="button"
                   onClick={startCamera}
-                  className="px-4 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-black rounded-xl text-xs uppercase flex items-center gap-1.5"
+                  className="px-4 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold rounded-xl text-xs uppercase flex items-center gap-1.5"
                 >
                   <Camera className="w-4 h-4" /> Start Webcam
                 </button>
                 <button
                   type="button"
                   onClick={() => cameraFileInputRef.current?.click()}
-                  className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 border border-slate-600"
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold rounded-xl text-xs flex items-center gap-1.5 border border-slate-300"
                 >
                   <Upload className="w-4 h-4" /> Open Device Camera / Choose Photo
                 </button>
@@ -1052,7 +1052,7 @@ function SubmissionForm({
       )}
 
       {submissionType === 'video' && (
-        <div className="mb-4 bg-slate-900/70 border border-slate-700 rounded-xl p-4 text-center">
+        <div className="mb-4 bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
           <input
             type="file"
             ref={videoFileInputRef}
@@ -1068,7 +1068,7 @@ function SubmissionForm({
                 controls
                 className="max-h-60 mx-auto rounded-lg border-2 border-emerald-500 bg-black"
               />
-              <p className="text-xs text-emerald-400 font-bold">
+              <p className="text-xs text-emerald-800 font-bold">
                 ✓ Video ready to submit ({fileName || 'video.webm'})
               </p>
               <div className="flex items-center justify-center gap-2">
@@ -1081,7 +1081,7 @@ function SubmissionForm({
                     setVideoPreviewUrl(null);
                     startVideoCamera();
                   }}
-                  className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs font-bold flex items-center gap-1.5"
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-lg text-xs font-bold flex items-center gap-1.5"
                 >
                   <RotateCcw className="w-3.5 h-3.5" /> Retake Video
                 </button>
@@ -1098,7 +1098,7 @@ function SubmissionForm({
                   className="w-full max-h-64 rounded-lg border-2 border-red-500 bg-black mx-auto object-cover"
                 />
                 {videoRecording && (
-                  <div className="absolute top-3 left-3 flex items-center gap-2 bg-red-600 text-white text-xs font-black px-2.5 py-1 rounded-full shadow animate-pulse">
+                  <div className="absolute top-3 left-3 flex items-center gap-2 bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow animate-pulse">
                     <span className="w-2 h-2 rounded-full bg-white animate-ping" />
                     REC {Math.floor(videoDuration / 60)}:{(videoDuration % 60).toString().padStart(2, '0')} / 0:45
                   </div>
@@ -1109,7 +1109,7 @@ function SubmissionForm({
                   <button
                     type="button"
                     onClick={startVideoRecording}
-                    className="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-black uppercase rounded-xl flex items-center gap-2 text-sm shadow-lg"
+                    className="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold uppercase rounded-xl flex items-center gap-2 text-sm shadow-lg"
                   >
                     <span className="w-3 h-3 rounded-full bg-white" /> Start Recording
                   </button>
@@ -1117,7 +1117,7 @@ function SubmissionForm({
                   <button
                     type="button"
                     onClick={stopVideoRecording}
-                    className="px-5 py-2.5 bg-red-700 hover:bg-red-600 text-white font-black uppercase rounded-xl flex items-center gap-2 text-sm shadow-lg animate-bounce"
+                    className="px-5 py-2.5 bg-red-700 hover:bg-red-600 text-white font-bold uppercase rounded-xl flex items-center gap-2 text-sm shadow-lg animate-bounce"
                   >
                     <span className="w-3 h-3 rounded-sm bg-white" /> Stop Recording ({videoDuration}s)
                   </button>
@@ -1125,7 +1125,7 @@ function SubmissionForm({
                 <button
                   type="button"
                   onClick={stopVideoStream}
-                  className="px-3 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold rounded-xl text-xs"
+                  className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs"
                 >
                   Cancel
                 </button>
@@ -1133,24 +1133,24 @@ function SubmissionForm({
             </div>
           ) : (
             <div className="space-y-3 py-2">
-              <Video className="w-10 h-10 text-red-400 mx-auto" aria-hidden="true" />
-              <p className="text-sm font-bold text-white">Record a Short Video Demo with Your Chromebook Camera!</p>
-              <p className="text-xs text-slate-400">Record up to 45 seconds demonstrating your STEM build or robotics project.</p>
+              <Video className="w-10 h-10 text-red-700 mx-auto" aria-hidden="true" />
+              <p className="text-sm font-bold text-slate-900">Record a Short Video Demo with Your Chromebook Camera!</p>
+              <p className="text-xs text-slate-600">Record up to 45 seconds demonstrating your STEM build or robotics project.</p>
               {cameraError && (
-                <p className="text-xs text-amber-300 bg-amber-950/60 border border-amber-700/50 p-2 rounded-lg">{cameraError}</p>
+                <p className="text-xs text-amber-800 bg-amber-50 border border-amber-300 p-2 rounded-lg">{cameraError}</p>
               )}
               <div className="flex flex-wrap justify-center gap-2 pt-1">
                 <button
                   type="button"
                   onClick={startVideoCamera}
-                  className="px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl text-xs uppercase flex items-center gap-1.5"
+                  className="px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs uppercase flex items-center gap-1.5"
                 >
                   <Video className="w-4 h-4" /> Start Camera & Mic
                 </button>
                 <button
                   type="button"
                   onClick={() => videoFileInputRef.current?.click()}
-                  className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 border border-slate-600"
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold rounded-xl text-xs flex items-center gap-1.5 border border-slate-300"
                 >
                   <Upload className="w-4 h-4" /> Upload Recorded Video
                 </button>
@@ -1162,23 +1162,23 @@ function SubmissionForm({
 
       {submissionType === 'link' && (
         <div className="mb-4">
-          <label htmlFor="submission-link" className="block text-sm font-bold text-slate-300 mb-2">Link to your work</label>
+          <label htmlFor="submission-link" className="block text-sm font-bold text-slate-700 mb-2">Link to your work</label>
           <input
             id="submission-link"
             type="url"
             value={linkValue}
             onChange={(e) => setLinkValue(e.target.value)}
             placeholder="https://docs.google.com/..."
-            className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-yellow-500 focus:outline-none"
+            className="w-full px-4 py-3 bg-slate-100 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:border-yellow-500 focus:outline-none"
             aria-describedby="link-hint"
           />
-          <p id="link-hint" className="text-xs text-slate-500 mt-2">Paste a link to Tinkercad, Scratch, VEXcode, Google Docs, or YouTube</p>
+          <p id="link-hint" className="text-xs text-slate-600 mt-2">Paste a link to Tinkercad, Scratch, VEXcode, Google Docs, or YouTube</p>
         </div>
       )}
 
       {submissionType === 'file' && (
         <div className="mb-4">
-          <label htmlFor="submission-file" className="block text-sm font-bold text-slate-300 mb-2">Upload your file or photo</label>
+          <label htmlFor="submission-file" className="block text-sm font-bold text-slate-700 mb-2">Upload your file or photo</label>
           <input
             id="submission-file"
             type="file"
@@ -1191,11 +1191,11 @@ function SubmissionForm({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="w-full px-4 py-5 bg-slate-700 border-2 border-dashed border-slate-600 rounded-lg text-slate-400 hover:border-slate-500 hover:text-slate-300 transition-colors"
+            className="w-full px-4 py-5 bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg text-slate-600 hover:border-slate-400 hover:text-slate-700 transition-colors"
             aria-label={fileName ? `Selected file: ${fileName}. Click to change` : 'Click to select a file'}
           >
             {fileName ? (
-              <span className="flex items-center justify-center gap-2 text-emerald-300 font-bold">
+              <span className="flex items-center justify-center gap-2 text-emerald-800 font-bold">
                 <FileText className="w-5 h-5" aria-hidden="true" /> {fileName}
               </span>
             ) : (
@@ -1206,55 +1206,55 @@ function SubmissionForm({
           </button>
           {fileData && fileType?.startsWith('image/') && (
             <div className="mt-2 text-center">
-              <img src={fileData} alt="Preview" className="max-h-40 mx-auto rounded-lg border border-slate-600 object-contain" />
+              <img src={fileData} alt="Preview" className="max-h-40 mx-auto rounded-lg border border-slate-300 object-contain" />
             </div>
           )}
-          <p id="file-hint" className="text-xs text-slate-500 mt-2">Photos are auto-compressed! Supports Images, PDFs, Docs, Audio, or Video</p>
+          <p id="file-hint" className="text-xs text-slate-600 mt-2">Photos are auto-compressed! Supports Images, PDFs, Docs, Audio, or Video</p>
         </div>
       )}
 
       {submissionType === 'text' && (
         <div className="mb-4">
-          <label htmlFor="submission-text" className="block text-sm font-bold text-slate-300 mb-2">Your response</label>
+          <label htmlFor="submission-text" className="block text-sm font-bold text-slate-700 mb-2">Your response</label>
           <textarea
             id="submission-text"
             value={textValue}
             onChange={(e) => setTextValue(e.target.value)}
             placeholder="Type your answer or describe what you built and tested..."
             rows={5}
-            className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-yellow-500 focus:outline-none resize-y min-h-[120px]"
+            className="w-full px-4 py-3 bg-slate-100 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:border-yellow-500 focus:outline-none resize-y min-h-[120px]"
             aria-describedby="text-hint"
           />
-          <p id="text-hint" className="text-xs text-slate-500 mt-2">Write your answer, explain your engineering design, or describe what you created</p>
+          <p id="text-hint" className="text-xs text-slate-600 mt-2">Write your answer, explain your engineering design, or describe what you created</p>
         </div>
       )}
 
       {/* Note field - shown for link, file, and camera types */}
       {submissionType !== 'text' && (
         <div className="mb-4">
-          <label htmlFor="submission-note" className="block text-sm font-bold text-slate-300 mb-2">Note to teacher (optional)</label>
+          <label htmlFor="submission-note" className="block text-sm font-bold text-slate-700 mb-2">Note to teacher (optional)</label>
           <textarea
             id="submission-note"
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Anything you want your teacher to know..."
             rows={2}
-            className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-yellow-500 focus:outline-none resize-none"
+            className="w-full px-4 py-3 bg-slate-100 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:border-yellow-500 focus:outline-none resize-none"
           />
         </div>
       )}
 
       {/* 🤝 Co-Op / Squad Teammates Selector */}
       {eligibleClassmates.length > 0 && (
-        <div className="mb-5 bg-indigo-950/40 border border-indigo-500/40 rounded-xl p-3">
+        <div className="mb-5 bg-indigo-50 border border-indigo-500/40 rounded-xl p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-indigo-400" aria-hidden="true" />
-              <span className="text-xs font-bold text-indigo-200">
+              <Users className="w-4 h-4 text-indigo-700" aria-hidden="true" />
+              <span className="text-xs font-bold text-indigo-800">
                 🤝 Built this with a partner or squad?
               </span>
               {selectedCollaborators.length > 0 && (
-                <span className="text-[11px] bg-indigo-600 text-white font-black px-2 py-0.5 rounded-full">
+                <span className="text-[11px] bg-indigo-600 text-white font-bold px-2 py-0.5 rounded-full">
                   +{selectedCollaborators.length} tagged
                 </span>
               )}
@@ -1262,7 +1262,7 @@ function SubmissionForm({
             <button
               type="button"
               onClick={() => setShowCoOpPicker(prev => !prev)}
-              className="text-xs font-bold text-indigo-300 hover:text-white underline"
+              className="text-xs font-bold text-indigo-700 hover:text-slate-900 underline"
             >
               {showCoOpPicker ? 'Done' : selectedCollaborators.length > 0 ? 'Edit Squad' : 'Tag Teammates'}
             </button>
@@ -1271,12 +1271,12 @@ function SubmissionForm({
           {selectedCollaborators.length > 0 && !showCoOpPicker && (
             <div className="flex flex-wrap gap-1.5 mt-2">
               {selectedCollaborators.map(c => (
-                <span key={c.id} className="inline-flex items-center gap-1 text-xs bg-indigo-600/40 border border-indigo-400/50 text-indigo-100 px-2.5 py-0.5 rounded-full font-semibold">
+                <span key={c.id} className="inline-flex items-center gap-1 text-xs bg-indigo-100 border border-indigo-400/50 text-indigo-800 px-2.5 py-0.5 rounded-full font-semibold">
                   🤝 {c.name}
                   <button
                     type="button"
                     onClick={() => toggleCollaborator(c)}
-                    className="hover:text-rose-300 ml-1"
+                    className="hover:text-rose-700 ml-1"
                     aria-label={`Remove ${c.name}`}
                   >
                     ×
@@ -1288,7 +1288,7 @@ function SubmissionForm({
 
           {showCoOpPicker && (
             <div className="mt-2.5 pt-2.5 border-t border-indigo-500/30">
-              <p className="text-[11px] text-indigo-300 mb-2">
+              <p className="text-[11px] text-indigo-700 mb-2">
                 Select up to 4 teammates who worked on this build with you. When your teacher approves, everyone tagged earns the XP!
               </p>
               <div className="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto pr-1">
@@ -1303,12 +1303,12 @@ function SubmissionForm({
                       className={`text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors border ${
                         isSelected
                           ? 'bg-indigo-600 text-white border-indigo-400'
-                          : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-indigo-500/60'
+                          : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-500/60'
                       }`}
                     >
                       <span className="truncate">{student.name}</span>
                       {isGuildmate && (
-                        <span className="text-[9px] uppercase font-black px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-300 ml-1 flex-shrink-0">
+                        <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-800 ml-1 flex-shrink-0">
                           Guild
                         </span>
                       )}
@@ -1328,7 +1328,7 @@ function SubmissionForm({
             stopCamera();
             onCancel();
           }}
-          className="flex-1 py-3 bg-slate-700 text-slate-300 font-bold rounded-xl hover:bg-slate-600 transition-colors"
+          className="flex-1 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors"
         >
           Cancel
         </button>
@@ -1336,7 +1336,7 @@ function SubmissionForm({
           type="button"
           onClick={handleSubmit}
           disabled={isProcessing || isEncodingVideo}
-          className="flex-1 py-3 bg-yellow-500 text-slate-900 font-black uppercase rounded-xl hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+          className="flex-1 py-3 bg-yellow-500 text-slate-900 font-bold uppercase rounded-xl hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
         >
           {isEncodingVideo ? (
             <><RefreshCw className="w-5 h-5 animate-spin" aria-hidden="true" /> Preparing Video...</>
@@ -1381,27 +1381,27 @@ function MySubmissions({ submissions = [], onClose, onReviseActivity }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="submissions-dialog-title"
       onKeyDown={(e) => e.key === 'Escape' && onClose()}
     >
-      <div className="bg-slate-800 border-2 border-blue-500/60 rounded-2xl max-w-2xl w-full p-5 sm:p-6 max-h-[90vh] flex flex-col shadow-2xl text-slate-100 overflow-hidden">
+      <div className="bg-white border-2 border-slate-200 rounded-2xl max-w-2xl w-full p-5 sm:p-6 max-h-[90vh] flex flex-col shadow-2xl text-slate-900 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-700/80 flex-shrink-0">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-200 flex-shrink-0">
           <div>
-            <h3 id="submissions-dialog-title" className="text-xl sm:text-2xl font-black uppercase italic flex items-center gap-2">
-              <ClipboardList className="w-7 h-7 text-blue-400" aria-hidden="true" />
+            <h3 id="submissions-dialog-title" className="text-xl sm:text-2xl font-display font-bold flex items-center gap-2">
+              <ClipboardList className="w-7 h-7 text-blue-700" aria-hidden="true" />
               <span>My Submitted Work</span>
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-600 mt-0.5">
               Review all activities you've submitted, check teacher feedback, and revise work.
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1 text-slate-400 hover:text-white rounded-lg bg-slate-700/60 hover:bg-slate-700 transition-colors"
+            className="p-1 text-slate-600 hover:text-slate-900 rounded-lg bg-slate-100 hover:bg-slate-100 transition-colors"
             aria-label="Close submissions"
           >
             <X className="w-6 h-6" aria-hidden="true" />
@@ -1409,15 +1409,15 @@ function MySubmissions({ submissions = [], onClose, onReviseActivity }) {
         </div>
 
         {/* Filter Tabs & Search */}
-        <div className="py-3 flex flex-wrap items-center justify-between gap-2.5 border-b border-slate-700/60 flex-shrink-0">
-          <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold overflow-x-auto">
+        <div className="py-3 flex flex-wrap items-center justify-between gap-2.5 border-b border-slate-200 flex-shrink-0">
+          <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200 text-xs font-bold overflow-x-auto">
             <button
               type="button"
               onClick={() => setFilter('all')}
               className={`px-3 py-1.5 rounded-lg transition-all ${
                 filter === 'all'
-                  ? 'bg-slate-800 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               All ({submissions.length})
@@ -1427,10 +1427,10 @@ function MySubmissions({ submissions = [], onClose, onReviseActivity }) {
               onClick={() => setFilter('rejected')}
               className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
                 filter === 'rejected'
-                  ? 'bg-rose-600 text-white font-black shadow-sm'
+                  ? 'bg-rose-600 text-white font-bold shadow-sm'
                   : rejectedSubs.length > 0
-                  ? 'text-rose-400 font-bold hover:text-rose-300'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'text-rose-700 font-bold hover:text-rose-700'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -1441,8 +1441,8 @@ function MySubmissions({ submissions = [], onClose, onReviseActivity }) {
               onClick={() => setFilter('pending')}
               className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
                 filter === 'pending'
-                  ? 'bg-blue-600 text-white font-black shadow-sm'
-                  : 'text-blue-400 hover:text-blue-300'
+                  ? 'bg-blue-600 text-white font-bold shadow-sm'
+                  : 'text-blue-700 hover:text-blue-700'
               }`}
             >
               <Clock className="w-3.5 h-3.5" />
@@ -1453,8 +1453,8 @@ function MySubmissions({ submissions = [], onClose, onReviseActivity }) {
               onClick={() => setFilter('approved')}
               className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
                 filter === 'approved'
-                  ? 'bg-emerald-600 text-white font-black shadow-sm'
-                  : 'text-emerald-400 hover:text-emerald-300'
+                  ? 'bg-emerald-600 text-white font-bold shadow-sm'
+                  : 'text-emerald-800 hover:text-emerald-800'
               }`}
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
@@ -1468,7 +1468,7 @@ function MySubmissions({ submissions = [], onClose, onReviseActivity }) {
               placeholder="Search my work..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs placeholder:text-slate-500 focus:border-blue-400 focus:outline-none"
+              className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs placeholder:text-slate-600 focus:border-blue-400 focus:outline-none"
             />
           )}
         </div>
@@ -1476,14 +1476,14 @@ function MySubmissions({ submissions = [], onClose, onReviseActivity }) {
         {/* Submissions List */}
         <div className="flex-1 overflow-y-auto pt-4 space-y-4 pr-1">
           {filtered.length === 0 ? (
-            <div className="text-center py-12 px-4 border border-dashed border-slate-700/80 rounded-2xl bg-slate-900/40">
-              <ClipboardList className="w-12 h-12 text-slate-600 mx-auto mb-2 opacity-50" />
-              <p className="text-base font-bold text-white mb-1">
+            <div className="text-center py-12 px-4 border border-dashed border-slate-200 rounded-2xl bg-slate-50">
+              <ClipboardList className="w-12 h-12 text-slate-500 mx-auto mb-2 opacity-50" />
+              <p className="text-base font-bold text-slate-900 mb-1">
                 {submissions.length === 0
                   ? "No submissions yet!"
                   : "No submissions match this filter."}
               </p>
-              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+              <p className="text-xs text-slate-600 max-w-sm mx-auto">
                 {submissions.length === 0
                   ? "Pick an activity on the board, complete the challenge, and click 'Submit My Work' to send it to your teacher!"
                   : "Try switching to another tab or clearing your search."}
@@ -1500,26 +1500,26 @@ function MySubmissions({ submissions = [], onClose, onReviseActivity }) {
                   key={sub.id}
                   className={`p-4 rounded-xl border-2 transition-all ${
                     isRejected
-                      ? 'bg-rose-950/20 border-rose-500/60 shadow-lg shadow-rose-950/30'
+                      ? 'bg-rose-50 border-rose-500/60 shadow-lg shadow-rose-950/30'
                       : isApproved
-                      ? 'bg-slate-900/90 border-emerald-500/40'
-                      : 'bg-blue-950/20 border-blue-500/40'
+                      ? 'bg-slate-50 border-emerald-500/40'
+                      : 'bg-blue-50 border-blue-500/40'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
                     <div>
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         {sub.isBoss && (
-                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-red-950 text-red-300 border border-red-700">
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-red-50 text-red-700 border border-red-300">
                             Boss Challenge
                           </span>
                         )}
-                        <span className="text-xs font-bold text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/30">
+                        <span className="text-xs font-bold text-yellow-800 bg-yellow-100 px-2 py-0.5 rounded border border-yellow-500/30">
                           +{sub.xp || 100} XP
                         </span>
                       </div>
-                      <h4 className="font-bold text-base text-white">{sub.activityTitle || 'Untitled Activity'}</h4>
-                      <p className="text-xs text-slate-400 mt-0.5">
+                      <h4 className="font-bold text-base text-slate-900">{sub.activityTitle || 'Untitled Activity'}</h4>
+                      <p className="text-xs text-slate-600 mt-0.5">
                         Submitted: {new Date(sub.submittedAt || Date.now()).toLocaleDateString(undefined, {
                           month: 'short',
                           day: 'numeric',
@@ -1532,18 +1532,18 @@ function MySubmissions({ submissions = [], onClose, onReviseActivity }) {
 
                     <div className="flex items-center gap-1.5">
                       {isApproved && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-300 border border-emerald-600/60">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Approved
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-600/60">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-800" /> Approved
                         </span>
                       )}
                       {isPending && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-950 text-blue-300 border border-blue-600/60">
-                          <Clock className="w-3.5 h-3.5 text-blue-400" /> Pending Review
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-600/60">
+                          <Clock className="w-3.5 h-3.5 text-blue-700" /> Pending Review
                         </span>
                       )}
                       {isRejected && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-950 text-rose-200 border border-rose-500 animate-pulse">
-                          <RotateCcw className="w-3.5 h-3.5 text-rose-400" /> Needs Revision
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-800 border border-rose-500 animate-pulse">
+                          <RotateCcw className="w-3.5 h-3.5 text-rose-700" /> Needs Revision
                         </span>
                       )}
                     </div>
@@ -1553,21 +1553,21 @@ function MySubmissions({ submissions = [], onClose, onReviseActivity }) {
                   {sub.teacherFeedback ? (
                     <div className={`mt-3 p-3 rounded-xl border text-xs space-y-1 ${
                       isRejected
-                        ? 'bg-rose-900/30 border-rose-500/50 text-rose-100'
+                        ? 'bg-rose-50 border-rose-500/50 text-rose-800'
                         : isApproved
-                        ? 'bg-blue-950/40 border-blue-800/60 text-blue-100'
-                        : 'bg-slate-800 border-slate-700 text-slate-200'
+                        ? 'bg-blue-50 border-blue-200 text-blue-800'
+                        : 'bg-white border-slate-200 text-slate-800'
                     }`}>
                       <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-[11px] mb-1">
                         {isRejected ? (
                           <>
-                            <RotateCcw className="w-3.5 h-3.5 text-rose-400" />
-                            <span className="text-rose-300">Teacher's Instructions for Revision:</span>
+                            <RotateCcw className="w-3.5 h-3.5 text-rose-700" />
+                            <span className="text-rose-700">Teacher's Instructions for Revision:</span>
                           </>
                         ) : (
                           <>
-                            <MessageSquare className="w-3.5 h-3.5 text-blue-400" />
-                            <span className="text-blue-300">Teacher Feedback:</span>
+                            <MessageSquare className="w-3.5 h-3.5 text-blue-700" />
+                            <span className="text-blue-700">Teacher Feedback:</span>
                           </>
                         )}
                       </div>
@@ -1575,25 +1575,25 @@ function MySubmissions({ submissions = [], onClose, onReviseActivity }) {
                         "{sub.teacherFeedback}"
                       </p>
                       {sub.reviewedAt && (
-                        <p className="text-[10px] text-slate-400 pt-1">
+                        <p className="text-[10px] text-slate-600 pt-1">
                           Reviewed: {new Date(sub.reviewedAt).toLocaleString()}
                         </p>
                       )}
                     </div>
                   ) : isRejected ? (
-                    <div className="mt-3 p-3 bg-rose-950/40 border border-rose-700/60 rounded-xl text-xs text-rose-200">
+                    <div className="mt-3 p-3 bg-rose-50 border border-rose-300 rounded-xl text-xs text-rose-800">
                       <p className="font-semibold">Your teacher requested changes on this activity. Please review and resubmit!</p>
                     </div>
                   ) : null}
 
                   {/* Student Work Preview */}
-                  <div className="mt-3 p-2.5 bg-slate-950/60 rounded-lg border border-slate-800/80 text-xs">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
+                  <div className="mt-3 p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-xs">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 block mb-1">
                       My Submission:
                     </span>
                     {sub.submissionType === 'link' ? (
-                      <div className="flex items-center justify-between gap-2 bg-slate-900 p-2 rounded border border-slate-800">
-                        <span className="text-blue-400 truncate font-mono text-xs">{sub.submissionContent}</span>
+                      <div className="flex items-center justify-between gap-2 bg-slate-50 p-2 rounded border border-slate-200">
+                        <span className="text-blue-700 truncate font-mono text-xs">{sub.submissionContent}</span>
                         <a
                           href={sub.submissionContent}
                           target="_blank"
@@ -1604,11 +1604,11 @@ function MySubmissions({ submissions = [], onClose, onReviseActivity }) {
                         </a>
                       </div>
                     ) : sub.submissionType === 'text' ? (
-                      <div className="p-2 bg-slate-900 rounded text-slate-200 text-xs whitespace-pre-wrap max-h-28 overflow-y-auto border border-slate-800">
+                      <div className="p-2 bg-slate-50 rounded text-slate-800 text-xs whitespace-pre-wrap max-h-28 overflow-y-auto border border-slate-200">
                         {sub.submissionContent || 'No text provided'}
                       </div>
                     ) : (
-                      <div className="p-1 bg-slate-900 rounded border border-slate-800">
+                      <div className="p-1 bg-slate-50 rounded border border-slate-200">
                         {sub.submissionContent ? (
                           <FileViewer
                             content={sub.submissionContent}
@@ -1618,13 +1618,13 @@ function MySubmissions({ submissions = [], onClose, onReviseActivity }) {
                             isChunked={sub.isChunked}
                           />
                         ) : (
-                          <span className="text-slate-400 italic">Attached file</span>
+                          <span className="text-slate-600 italic">Attached file</span>
                         )}
                       </div>
                     )}
 
                     {sub.submissionNote && (
-                      <p className="text-slate-400 italic mt-1.5 text-[11px]">
+                      <p className="text-slate-600 italic mt-1.5 text-[11px]">
                         <strong>My note:</strong> "{sub.submissionNote}"
                       </p>
                     )}
@@ -1632,11 +1632,11 @@ function MySubmissions({ submissions = [], onClose, onReviseActivity }) {
 
                   {/* Revise & Resubmit Action */}
                   {isRejected && onReviseActivity && (
-                    <div className="mt-3 pt-3 border-t border-slate-800 flex justify-end">
+                    <div className="mt-3 pt-3 border-t border-slate-200 flex justify-end">
                       <button
                         type="button"
                         onClick={() => onReviseActivity(sub.activityId, sub.pathId)}
-                        className="w-full sm:w-auto px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow transition-all"
+                        className="w-full sm:w-auto px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 shadow transition-all"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
                         <span>Revise & Resubmit This Activity</span>
@@ -1650,11 +1650,11 @@ function MySubmissions({ submissions = [], onClose, onReviseActivity }) {
         </div>
 
         {/* Modal Footer */}
-        <div className="pt-3 border-t border-slate-700/80 flex items-center justify-between text-xs text-slate-500 flex-shrink-0">
+        <div className="pt-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 flex-shrink-0">
           <span>{submissions.length} total activity submission{submissions.length !== 1 ? 's' : ''} on record</span>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-colors"
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold rounded-xl transition-colors"
           >
             Close
           </button>
@@ -1668,13 +1668,13 @@ function MySubmissions({ submissions = [], onClose, onReviseActivity }) {
 function TrophyCase({ achievements, learningPaths = [], onClose }) {
   const resolvedAchievements = getResolvedAchievements(learningPaths);
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="trophy-dialog-title" onKeyDown={(e) => e.key === 'Escape' && onClose()}>
-      <div className="bg-slate-800 border-2 border-yellow-500 rounded-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="trophy-dialog-title" onKeyDown={(e) => e.key === 'Escape' && onClose()}>
+      <div className="bg-white border-2 border-slate-200 rounded-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h3 id="trophy-dialog-title" className="text-2xl font-black uppercase italic flex items-center gap-2">
-            <Trophy className="w-8 h-8 text-yellow-500" aria-hidden="true" /> Trophy Case
+          <h3 id="trophy-dialog-title" className="text-2xl font-display font-bold flex items-center gap-2">
+            <Trophy className="w-8 h-8 text-yellow-800" aria-hidden="true" /> Trophy Case
           </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white" aria-label="Close trophy case">
+          <button onClick={onClose} className="text-slate-600 hover:text-slate-900" aria-label="Close trophy case">
             <X className="w-6 h-6" aria-hidden="true" />
           </button>
         </div>
@@ -1683,11 +1683,11 @@ function TrophyCase({ achievements, learningPaths = [], onClose }) {
           {resolvedAchievements.map(achievement => {
             const unlocked = achievements.includes(achievement.id);
             return (
-              <div key={achievement.id} className={`p-4 rounded-xl border-2 text-center ${unlocked ? 'bg-slate-700 border-yellow-500' : 'bg-slate-800/50 border-slate-700 opacity-50'}`} aria-label={`${achievement.title}: ${achievement.desc}${unlocked ? ' - Unlocked' : ' - Locked'}`}>
+              <div key={achievement.id} className={`p-4 rounded-xl border-2 text-center ${unlocked ? 'bg-slate-100 border-yellow-500' : 'bg-slate-50 border-dashed border-slate-300 grayscale'}`} aria-label={`${achievement.title}: ${achievement.desc}${unlocked ? ' - Unlocked' : ' - Locked'}`}>
                 <div className={`text-4xl mb-2 ${unlocked ? '' : 'grayscale'}`} aria-hidden="true">{achievement.icon}</div>
                 <p className="font-bold text-sm">{achievement.title}</p>
-                <p className="text-xs text-slate-400 mt-1">{achievement.desc}</p>
-                {unlocked && <p className="text-xs text-yellow-500 mt-2">+{achievement.xpReward} XP</p>}
+                <p className="text-xs text-slate-600 mt-1">{achievement.desc}</p>
+                {unlocked && <p className="text-xs text-yellow-800 mt-2">+{achievement.xpReward} XP</p>}
               </div>
             );
           })}
@@ -1792,13 +1792,13 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="avatar-dialog-title" onKeyDown={(e) => e.key === 'Escape' && onClose()}>
-      <div className="bg-slate-800 border-2 border-yellow-500 rounded-2xl max-w-3xl w-full p-6 max-h-[95vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="avatar-dialog-title" onKeyDown={(e) => e.key === 'Escape' && onClose()}>
+      <div className="bg-white border-2 border-slate-200 rounded-2xl max-w-3xl w-full p-6 max-h-[95vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h3 id="avatar-dialog-title" className="text-2xl font-black uppercase italic flex items-center gap-2">
-            <User className="w-8 h-8 text-yellow-500" aria-hidden="true" /> My Avatar
+          <h3 id="avatar-dialog-title" className="text-2xl font-display font-bold flex items-center gap-2">
+            <User className="w-8 h-8 text-yellow-800" aria-hidden="true" /> My Avatar
           </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white" aria-label="Close avatar builder">
+          <button onClick={onClose} className="text-slate-600 hover:text-slate-900" aria-label="Close avatar builder">
             <X className="w-6 h-6" aria-hidden="true" />
           </button>
         </div>
@@ -1806,7 +1806,7 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
         {/* Avatar preview + info side by side */}
         <div className="flex flex-col sm:flex-row items-center gap-6 mb-6">
           {/* Large avatar preview with hover preview */}
-          <div className="flex-shrink-0 bg-slate-900/50 rounded-2xl p-4 border border-slate-700 relative">
+          <div className="flex-shrink-0 bg-slate-50 rounded-2xl p-4 border border-slate-200 relative">
             <Avatar3D avatar={previewAvatar} level={currentLevel.level} size="lg" animate={true} />
             {hoveredItem && (
               <div className="absolute bottom-1 left-1/2 -translate-x-1/2 bg-yellow-500 text-slate-900 text-[10px] font-bold px-2 py-0.5 rounded">
@@ -1825,7 +1825,7 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
                   type="text"
                   value={tempName}
                   onChange={(e) => setTempName(e.target.value)}
-                  className="px-3 py-1.5 bg-slate-700 rounded-lg text-white"
+                  className="px-3 py-1.5 bg-slate-100 rounded-lg text-slate-900"
                   placeholder="Your name"
                   maxLength={20}
                 />
@@ -1834,23 +1834,23 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
                 </button>
               </div>
             ) : (
-              <button onClick={() => setEditingName(true)} className="text-lg font-bold text-white hover:text-yellow-400 transition-colors mb-1 block" aria-label={`Edit name: ${gameState.playerName || 'not set'}`}>
-                {gameState.playerName || 'Click to set name'} <span className="text-sm text-slate-500">edit</span>
+              <button onClick={() => setEditingName(true)} className="text-lg font-bold text-slate-900 hover:text-yellow-800 transition-colors mb-1 block" aria-label={`Edit name: ${gameState.playerName || 'not set'}`}>
+                {gameState.playerName || 'Click to set name'} <span className="text-sm text-slate-600">edit</span>
               </button>
             )}
 
             <div className="flex items-center gap-3 justify-center sm:justify-start mb-3">
-              <div className="flex items-center gap-1 text-yellow-400">
+              <div className="flex items-center gap-1 text-yellow-800">
                 <Star className="w-4 h-4 fill-yellow-400" aria-hidden="true" />
                 <span className="font-bold">{gameState.coins} coins</span>
               </div>
-              <span className="text-slate-600">|</span>
-              <span className="text-xs text-slate-400">{gameState.ownedItems.length} items owned</span>
+              <span className="text-slate-500">|</span>
+              <span className="text-xs text-slate-600">{gameState.ownedItems.length} items owned</span>
             </div>
 
             {/* Currently equipped items summary */}
-            <div className="bg-slate-700/50 rounded-lg p-3 border border-slate-600 mb-3">
-              <p className="text-xs text-slate-400 uppercase tracking-widest font-bold mb-2">Currently Equipped</p>
+            <div className="bg-slate-100 rounded-lg p-3 border border-slate-300 mb-3">
+              <p className="text-xs text-slate-600 uppercase tracking-widest font-bold mb-2">Currently Equipped</p>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 {[
                   { label: 'Skin', value: AVATAR_ITEMS.colors.find(c => c.id === currentAvatarNormalized.color)?.name || 'Default' },
@@ -1859,16 +1859,16 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
                   { label: 'Face', value: AVATAR_ITEMS.faces.find(f => f.id === currentAvatarNormalized.face)?.name || 'Happy' },
                 ].map(slot => (
                   <div key={slot.label} className="flex items-center gap-1.5">
-                    <span className="text-slate-500">{slot.label}:</span>
-                    <span className="text-yellow-400 font-bold">{slot.value}</span>
+                    <span className="text-slate-600">{slot.label}:</span>
+                    <span className="text-yellow-800 font-bold">{slot.value}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Evolution info */}
-            <div className="bg-slate-700/50 rounded-lg p-3 border border-slate-600">
-              <p className="text-xs text-slate-400 uppercase tracking-widest font-bold mb-2">Avatar Evolution</p>
+            <div className="bg-slate-100 rounded-lg p-3 border border-slate-300">
+              <p className="text-xs text-slate-600 uppercase tracking-widest font-bold mb-2">Avatar Evolution</p>
               <div className="space-y-1.5 text-xs">
                 {[
                   { minLevel: 1, label: 'Basic Form', desc: 'Starting look' },
@@ -1878,12 +1878,12 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
                   { minLevel: 15, label: 'Ascended', desc: 'Particle trail' },
                   { minLevel: 20, label: 'Godly', desc: 'Crown halo' },
                 ].map((tier) => (
-                  <div key={tier.minLevel} className={`flex items-center gap-2 ${currentLevel.level >= tier.minLevel ? 'text-yellow-400' : 'text-slate-500'}`}>
-                    <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center text-[8px] font-bold ${currentLevel.level >= tier.minLevel ? 'border-yellow-400 bg-yellow-400/20' : 'border-slate-600'}`}>
+                  <div key={tier.minLevel} className={`flex items-center gap-2 ${currentLevel.level >= tier.minLevel ? 'text-yellow-800' : 'text-slate-600'}`}>
+                    <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center text-[8px] font-bold ${currentLevel.level >= tier.minLevel ? 'border-yellow-400 bg-yellow-100' : 'border-slate-300'}`}>
                       {currentLevel.level >= tier.minLevel ? '✓' : tier.minLevel}
                     </span>
                     <span className="font-bold">{tier.label}</span>
-                    <span className="text-slate-500">{tier.desc}</span>
+                    <span className="text-slate-600">{tier.desc}</span>
                   </div>
                 ))}
               </div>
@@ -1902,7 +1902,7 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
               className={`flex-1 py-2 px-3 rounded-lg font-bold text-sm transition-colors whitespace-nowrap ${
                 activeTab === tab.id
                   ? tab.id === 'rewards' ? 'bg-green-500 text-slate-900' : 'bg-yellow-500 text-slate-900'
-                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
               <span className="mr-1">{tab.icon}</span> {tab.label}
@@ -1913,7 +1913,7 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
         {/* Rewards tab content */}
         {activeTab === 'rewards' ? (
           <div className="space-y-3 max-h-72 overflow-y-auto" role="tabpanel" aria-label="Teacher rewards">
-            <div className="flex items-center justify-between gap-2 border-b border-slate-700 pb-2.5">
+            <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-2.5">
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -1921,7 +1921,7 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                     rewardSubTab === 'available'
                       ? 'bg-green-500 text-slate-900 shadow'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
                   aria-pressed={rewardSubTab === 'available'}
                 >
@@ -1936,39 +1936,39 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                     rewardSubTab === 'history'
                       ? 'bg-green-500 text-slate-900 shadow'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
                   aria-pressed={rewardSubTab === 'history'}
                 >
                   📜 My Redemptions ({redeemedHistory.length})
                 </button>
               </div>
-              <span className="text-xs text-yellow-400 font-bold hidden sm:inline">
+              <span className="text-xs text-yellow-800 font-bold hidden sm:inline">
                 🪙 {gameState.coins || 0} Coins
               </span>
             </div>
 
             {rewardSubTab === 'available' ? (
               <div className="space-y-3">
-                <p className="text-xs text-slate-400 mb-1">Spend coins on real-world rewards from your teacher!</p>
+                <p className="text-xs text-slate-600 mb-1">Spend coins on real-world rewards from your teacher!</p>
                 {rewardsShopItems.map(item => (
-                  <div key={item.id} className="bg-slate-700 rounded-xl p-4 border border-slate-600 flex items-center gap-4">
-                    <div className="flex-shrink-0 w-12 h-12 bg-green-500/20 border-2 border-green-500 rounded-lg flex items-center justify-center text-2xl">
+                  <div key={item.id} className="bg-slate-100 rounded-xl p-4 border border-slate-300 flex items-center gap-4">
+                    <div className="flex-shrink-0 w-12 h-12 bg-green-100 border-2 border-green-500 rounded-lg flex items-center justify-center text-2xl">
                       🎁
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-white">{item.name}</p>
-                      <p className="text-xs text-slate-400 line-clamp-2">{item.description}</p>
+                      <p className="font-bold text-slate-900">{item.name}</p>
+                      <p className="text-xs text-slate-600 line-clamp-2">{item.description}</p>
                     </div>
                     <div className="flex-shrink-0 text-right">
-                      <p className="text-yellow-400 font-bold text-sm">{item.cost} coins</p>
+                      <p className="text-yellow-800 font-bold text-sm">{item.cost} coins</p>
                       <button
                         onClick={() => handleRedeemReward(item)}
                         disabled={gameState.coins < item.cost}
                         className={`mt-1 px-3 py-1 rounded-lg text-xs font-bold ${
                           gameState.coins >= item.cost
                             ? 'bg-green-500 text-slate-900 hover:bg-green-400'
-                            : 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                            : 'bg-slate-200 text-slate-600 cursor-not-allowed'
                         }`}
                       >
                         {gameState.coins >= item.cost ? 'Redeem' : 'Not enough'}
@@ -1977,27 +1977,27 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
                   </div>
                 ))}
                 {rewardsShopItems.length === 0 && (
-                  <p className="text-slate-500 text-center py-4">No rewards available yet. Ask your teacher!</p>
+                  <p className="text-slate-600 text-center py-4">No rewards available yet. Ask your teacher!</p>
                 )}
               </div>
             ) : (
               /* FE-7: Redeemed History View */
               <div className="space-y-2.5">
-                <p className="text-xs text-slate-400 mb-1">Your past reward redemptions, fulfillment status, and claim instructions.</p>
+                <p className="text-xs text-slate-600 mb-1">Your past reward redemptions, fulfillment status, and claim instructions.</p>
                 {loadingHistory ? (
-                  <p className="text-slate-400 text-center py-4 text-xs">Loading redemption history...</p>
+                  <p className="text-slate-600 text-center py-4 text-xs">Loading redemption history...</p>
                 ) : redeemedHistory.length > 0 ? (
                   redeemedHistory.map(item => {
                     const dateStr = formatRedemptionDate(item);
                     const badge = getRedemptionStatusBadge(item.status);
                     return (
-                      <div key={item.id} className="bg-slate-700/80 rounded-xl p-3.5 border border-slate-600 flex flex-col gap-2">
+                      <div key={item.id} className="bg-slate-100 rounded-xl p-3.5 border border-slate-300 flex flex-col gap-2">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-2">
                             <span className="text-xl">🎁</span>
                             <div>
-                              <p className="font-bold text-white text-sm">{item.itemName}</p>
-                              <p className="text-xs text-slate-400">Redeemed: {dateStr} • {item.cost} coins</p>
+                              <p className="font-bold text-slate-900 text-sm">{item.itemName}</p>
+                              <p className="text-xs text-slate-600">Redeemed: {dateStr} • {item.cost} coins</p>
                             </div>
                           </div>
                           <span className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider ${badge.className}`}>
@@ -2005,19 +2005,19 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
                           </span>
                         </div>
                         {item.directions && (
-                          <div className="bg-slate-800/80 rounded-lg p-2 text-xs border border-slate-600/50">
-                            <span className="text-yellow-400 font-semibold">How to claim: </span>
-                            <span className="text-slate-300">{item.directions}</span>
+                          <div className="bg-white rounded-lg p-2 text-xs border border-slate-300">
+                            <span className="text-yellow-800 font-semibold">How to claim: </span>
+                            <span className="text-slate-700">{item.directions}</span>
                           </div>
                         )}
                       </div>
                     );
                   })
                 ) : (
-                  <div className="text-center py-6 text-slate-500">
+                  <div className="text-center py-6 text-slate-600">
                     <p className="text-2xl mb-1">📜</p>
                     <p className="text-sm font-semibold">No redeemed rewards yet</p>
-                    <p className="text-xs mt-1 text-slate-400">When you redeem rewards from your teacher, they'll show up here with instructions.</p>
+                    <p className="text-xs mt-1 text-slate-600">When you redeem rewards from your teacher, they'll show up here with instructions.</p>
                   </div>
                 )}
               </div>
@@ -2038,10 +2038,10 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
                   onMouseLeave={() => setHoveredItem(null)}
                   disabled={!owned && gameState.coins < item.cost}
                   className={`p-2.5 rounded-xl border-2 flex flex-col items-center gap-1 transition-all ${
-                    equipped ? 'border-yellow-500 bg-yellow-500/20 ring-2 ring-yellow-500/30' :
-                    owned ? 'border-green-500/60 bg-green-500/10' :
-                    gameState.coins >= item.cost ? 'border-slate-600 bg-slate-700 hover:border-slate-400 hover:scale-105' :
-                    'border-slate-700 bg-slate-800 opacity-40'
+                    equipped ? 'border-yellow-500 bg-yellow-100 ring-2 ring-yellow-500/30' :
+                    owned ? 'border-green-500/60 bg-green-100' :
+                    gameState.coins >= item.cost ? 'border-slate-300 bg-slate-100 hover:border-slate-400 hover:scale-105' :
+                    'border-dashed border-slate-300 bg-slate-50 grayscale'
                   }`}
                   aria-label={`${item.name}${equipped ? ' (equipped)' : owned ? ' (owned)' : item.cost > 0 ? ` - ${item.cost} coins` : ''}`}
                 >
@@ -2055,15 +2055,15 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
                   </div>
                   <p className="text-xs font-bold truncate w-full text-center">{item.name}</p>
                   {!owned && item.cost > 0 && (
-                    <p className="text-xs text-yellow-400 font-bold flex items-center gap-0.5">
+                    <p className="text-xs text-yellow-800 font-bold flex items-center gap-0.5">
                       <Star className="w-3 h-3 fill-yellow-400" aria-hidden="true" />{item.cost}
                     </p>
                   )}
                   {equipped && (
-                    <p className="text-[10px] text-yellow-400 font-bold uppercase bg-yellow-400/10 px-1.5 rounded">Equipped</p>
+                    <p className="text-[10px] text-yellow-800 font-bold uppercase bg-yellow-100 px-1.5 rounded">Equipped</p>
                   )}
                   {owned && !equipped && (
-                    <p className="text-[10px] text-green-400 font-bold uppercase">Owned</p>
+                    <p className="text-[10px] text-green-800 font-bold uppercase">Owned</p>
                   )}
                 </button>
               );
@@ -2074,20 +2074,20 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
 
       {/* Redeem confirmation modal */}
       {redeemConfirm && redeemingItem && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/80" onClick={() => setRedeemConfirm(false)}>
-          <div className="bg-slate-800 border-2 border-green-500 rounded-2xl max-w-sm w-full p-6" onClick={e => e.stopPropagation()}>
-            <h4 className="text-xl font-black text-green-400 mb-3">Redeem Reward?</h4>
-            <p className="font-bold text-white mb-1">{redeemingItem.name}</p>
-            <p className="text-sm text-slate-400 mb-3">{redeemingItem.description}</p>
-            <p className="text-yellow-400 font-bold mb-3">Cost: {redeemingItem.cost} coins</p>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60" onClick={() => setRedeemConfirm(false)}>
+          <div className="bg-white border-2 border-slate-200 rounded-2xl max-w-sm w-full p-6" onClick={e => e.stopPropagation()}>
+            <h4 className="text-xl font-display font-bold text-green-800 mb-3">Redeem Reward?</h4>
+            <p className="font-bold text-slate-900 mb-1">{redeemingItem.name}</p>
+            <p className="text-sm text-slate-600 mb-3">{redeemingItem.description}</p>
+            <p className="text-yellow-800 font-bold mb-3">Cost: {redeemingItem.cost} coins</p>
             {redeemingItem.directions && (
-              <div className="bg-slate-700 rounded-lg p-3 mb-4 border border-slate-600">
-                <p className="text-xs text-slate-400 uppercase font-bold mb-1">How to redeem:</p>
-                <p className="text-sm text-white">{redeemingItem.directions}</p>
+              <div className="bg-slate-100 rounded-lg p-3 mb-4 border border-slate-300">
+                <p className="text-xs text-slate-600 uppercase font-bold mb-1">How to redeem:</p>
+                <p className="text-sm text-slate-900">{redeemingItem.directions}</p>
               </div>
             )}
             <div className="flex gap-3">
-              <button onClick={() => setRedeemConfirm(false)} className="flex-1 py-2 bg-slate-700 text-white rounded-lg font-bold">Cancel</button>
+              <button onClick={() => setRedeemConfirm(false)} className="flex-1 py-2 bg-slate-100 text-slate-900 rounded-lg font-bold">Cancel</button>
               <button onClick={confirmRedeem} className="flex-1 py-2 bg-green-500 text-slate-900 rounded-lg font-bold">Confirm</button>
             </div>
           </div>
@@ -2102,13 +2102,13 @@ function MysteryBoxModal({ reward, onClose }) {
   const [revealed, setRevealed] = useState(false);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="mystery-dialog-title" onKeyDown={(e) => e.key === 'Escape' && onClose()}>
-      <div className="bg-slate-800 border-2 border-purple-500 rounded-2xl max-w-sm w-full p-6 text-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="mystery-dialog-title" onKeyDown={(e) => e.key === 'Escape' && onClose()}>
+      <div className="bg-white border-2 border-slate-200 rounded-2xl max-w-sm w-full p-6 text-center">
         {!revealed ? (
           <>
             <div className="text-8xl mb-4 animate-bounce" aria-hidden="true">🎁</div>
-            <h3 id="mystery-dialog-title" className="text-2xl font-black uppercase italic mb-4">Mystery Box!</h3>
-            <button onClick={() => setRevealed(true)} className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-black uppercase rounded-xl">
+            <h3 id="mystery-dialog-title" className="text-2xl font-display font-bold mb-4">Mystery Box!</h3>
+            <button onClick={() => setRevealed(true)} className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold uppercase rounded-xl">
               Open Box
             </button>
           </>
@@ -2116,9 +2116,9 @@ function MysteryBoxModal({ reward, onClose }) {
           <>
             <div className="text-6xl mb-4" aria-hidden="true">✨</div>
             <p className={`text-sm uppercase tracking-widest ${reward.color} mb-2`}>{reward.rarity}</p>
-            <h3 className="text-2xl font-black mb-2">{reward.name}</h3>
-            <p className="text-xl text-yellow-400 mb-6">{reward.desc}</p>
-            <button onClick={onClose} className="w-full py-3 bg-yellow-500 text-slate-900 font-black uppercase rounded-xl">
+            <h3 className="text-2xl font-display font-bold mb-2">{reward.name}</h3>
+            <p className="text-xl text-yellow-800 mb-6">{reward.desc}</p>
+            <button onClick={onClose} className="w-full py-3 bg-yellow-500 text-slate-900 font-bold uppercase rounded-xl">
               Awesome!
             </button>
           </>
@@ -2135,24 +2135,24 @@ function LevelUpModal({ level, avatar, onClose }) {
   const evoLabel = evoLabels[evo];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="levelup-dialog-title" onKeyDown={(e) => e.key === 'Escape' && onClose()}>
-      <div className="bg-gradient-to-b from-yellow-600 to-yellow-700 border-4 border-yellow-400 rounded-2xl max-w-sm w-full p-8 text-center" role="alert">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="levelup-dialog-title" onKeyDown={(e) => e.key === 'Escape' && onClose()}>
+      <div className="text-white bg-gradient-to-b from-yellow-600 to-yellow-700 border-4 border-yellow-400 rounded-2xl max-w-sm w-full p-8 text-center" role="alert">
         <div className="flex justify-center mb-4">
           <Avatar3D avatar={avatar} level={level.level} size="md" animate={true} />
         </div>
-        <h3 id="levelup-dialog-title" className="text-3xl font-black uppercase italic text-white mb-2">Level Up!</h3>
-        <p className={`text-4xl font-black ${level.color} mb-2`}>Level {level.level}</p>
+        <h3 id="levelup-dialog-title" className="text-3xl font-display font-bold text-white mb-2">Level Up!</h3>
+        <p className={`text-4xl font-display font-bold ${level.color} mb-2`}>Level {level.level}</p>
         <p className="text-2xl font-bold text-white mb-2">{level.title}</p>
         {level.coinsEarned > 0 && (
           <div className="flex items-center justify-center gap-2 mb-2">
-            <Star className="w-5 h-5 fill-yellow-300 text-yellow-300" aria-hidden="true" />
-            <span className="text-lg font-black text-yellow-200">+{level.coinsEarned} Coins</span>
+            <Star className="w-5 h-5 fill-yellow-300 text-white" aria-hidden="true" />
+            <span className="text-lg font-display font-bold text-white">+{level.coinsEarned} Coins</span>
           </div>
         )}
         {evoLabel && (
-          <p className="text-sm font-bold text-yellow-200 bg-yellow-800/50 rounded-lg py-1.5 px-3 mb-4 inline-block">{evoLabel}</p>
+          <p className="text-sm font-bold text-yellow-800 bg-yellow-100 rounded-lg py-1.5 px-3 mb-4 inline-block">{evoLabel}</p>
         )}
-        <button onClick={onClose} className="w-full py-3 bg-white text-yellow-700 font-black uppercase rounded-xl mt-2">Let's Go!</button>
+        <button onClick={onClose} className="w-full py-3 bg-white text-yellow-700 font-bold uppercase rounded-xl mt-2">Let's Go!</button>
       </div>
     </div>
   );
@@ -2160,14 +2160,14 @@ function LevelUpModal({ level, avatar, onClose }) {
 
 function AchievementModal({ achievement, onClose }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="achievement-dialog-title" onKeyDown={(e) => e.key === 'Escape' && onClose()}>
-      <div className="bg-slate-800 border-4 border-yellow-500 rounded-2xl max-w-sm w-full p-8 text-center" role="alert">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="achievement-dialog-title" onKeyDown={(e) => e.key === 'Escape' && onClose()}>
+      <div className="bg-white border-4 border-yellow-500 rounded-2xl max-w-sm w-full p-8 text-center" role="alert">
         <div className="text-8xl mb-4" aria-hidden="true">{achievement.icon}</div>
-        <p className="text-sm uppercase tracking-widest text-yellow-500 mb-2">Achievement Unlocked!</p>
-        <h3 id="achievement-dialog-title" className="text-2xl font-black uppercase italic text-white mb-2">{achievement.title}</h3>
-        <p className="text-slate-400 mb-4">{achievement.desc}</p>
-        <p className="text-xl text-yellow-400 font-bold mb-6">+{achievement.xpReward} XP</p>
-        <button onClick={onClose} className="w-full py-3 bg-yellow-500 text-slate-900 font-black uppercase rounded-xl">Awesome!</button>
+        <p className="text-sm uppercase tracking-widest text-yellow-800 mb-2">Achievement Unlocked!</p>
+        <h3 id="achievement-dialog-title" className="text-2xl font-display font-bold text-slate-900 mb-2">{achievement.title}</h3>
+        <p className="text-slate-600 mb-4">{achievement.desc}</p>
+        <p className="text-xl text-yellow-800 font-bold mb-6">+{achievement.xpReward} XP</p>
+        <button onClick={onClose} className="w-full py-3 bg-yellow-500 text-slate-900 font-bold uppercase rounded-xl">Awesome!</button>
       </div>
     </div>
   );
@@ -2189,15 +2189,15 @@ function ActivityCard({
 
   return (
     <section className="flex flex-col gap-4" aria-labelledby={`path-title-${path.id}`}>
-      <div className={`flex items-center gap-3 p-4 rounded-t-xl ${headerColor}`}>
+      <div className={`text-white flex items-center gap-3 p-4 rounded-t-xl ${headerColor}`}>
         <IconComponent className="w-6 h-6" aria-hidden="true" />
         <div>
-          <h2 id={`path-title-${path.id}`} className="font-black uppercase italic leading-none">{path.title}</h2>
-          <span className="text-xs opacity-80 font-bold">{path.subtitle}</span>
+          <h2 id={`path-title-${path.id}`} className="font-bold leading-none">{path.title}</h2>
+          <span className="text-xs font-bold">{path.subtitle}</span>
         </div>
       </div>
 
-      <div className="bg-slate-800 p-4 rounded-b-xl border-x border-b border-slate-700 flex-1 flex flex-col gap-4">
+      <div className="bg-white p-4 rounded-b-xl border-x border-b border-slate-200 flex-1 flex flex-col gap-4">
         {path.options.map((opt) => {
           const isCompleted = completedActivities.includes(opt.id) || approvedActivities.includes(opt.id);
           const isPending = pendingActivities.includes(opt.id);
@@ -2208,28 +2208,28 @@ function ActivityCard({
               key={opt.id}
               onClick={() => onSelect(path.id, opt)}
               className={`text-left p-4 rounded-lg border-2 transition-all group ${
-                isCompleted ? 'border-green-500/50 bg-green-900/20'
-                : isPending ? 'border-blue-500/50 bg-blue-900/20'
-                : isRejected ? 'border-rose-500/60 bg-rose-950/20 hover:border-rose-400'
-                : selectedOption === opt.id ? 'border-yellow-500 bg-slate-700'
-                : 'border-slate-700 bg-slate-800 hover:border-slate-500'
+                isCompleted ? 'border-green-500/50 bg-green-50'
+                : isPending ? 'border-blue-500/50 bg-blue-50'
+                : isRejected ? 'border-rose-500/60 bg-rose-50 hover:border-rose-400'
+                : selectedOption === opt.id ? 'border-yellow-500 bg-slate-100'
+                : 'border-slate-200 bg-white hover:border-slate-400'
               }`}
               aria-label={`${opt.title}: ${opt.desc}${isCompleted ? ' - Completed' : isPending ? ' - Pending approval' : isRejected ? ' - Needs revision' : ''}`}
             >
               <div className="flex justify-between items-start mb-2">
-                <span className="text-xs font-black uppercase text-slate-400 group-hover:text-yellow-500">{opt.type}</span>
+                <span className="text-xs font-bold uppercase text-slate-600 group-hover:text-yellow-800">{opt.type}</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-yellow-500 font-bold">+{opt.xp} XP</span>
-                  {isCompleted && <CheckCircle2 className="w-5 h-5 text-green-500" aria-hidden="true" />}
-                  {isPending && <Clock className="w-5 h-5 text-blue-400" aria-hidden="true" />}
-                  {isRejected && <RotateCcw className="w-5 h-5 text-rose-400" aria-hidden="true" />}
+                  <span className="text-xs text-yellow-800 font-bold">+{opt.xp} XP</span>
+                  {isCompleted && <CheckCircle2 className="w-5 h-5 text-green-800" aria-hidden="true" />}
+                  {isPending && <Clock className="w-5 h-5 text-blue-700" aria-hidden="true" />}
+                  {isRejected && <RotateCcw className="w-5 h-5 text-rose-700" aria-hidden="true" />}
                 </div>
               </div>
               <h3 className="font-bold text-lg mb-1">{opt.title}</h3>
-              <p className="text-sm text-slate-400 leading-snug">{opt.desc}</p>
-              {isPending && <p className="text-xs text-blue-400 mt-2 font-medium">Waiting for teacher approval...</p>}
+              <p className="text-sm text-slate-600 leading-snug">{opt.desc}</p>
+              {isPending && <p className="text-xs text-blue-700 mt-2 font-medium">Waiting for teacher approval...</p>}
               {isRejected && (
-                <p className="text-xs text-rose-400 mt-2 font-bold flex items-center gap-1">
+                <p className="text-xs text-rose-700 mt-2 font-bold flex items-center gap-1">
                   <RotateCcw className="w-3.5 h-3.5" /> Needs revision &bull; Click to see feedback & resubmit
                 </p>
               )}
@@ -2271,9 +2271,9 @@ function InstructionModal({
   const isRejected = existingSubmission?.status === 'rejected' && !isCompleted;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="instruction-dialog-title" onKeyDown={(e) => e.key === 'Escape' && onClose()}>
-      <div className="bg-slate-800 border-2 border-yellow-500 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-        <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-white" aria-label="Close activity instructions">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="instruction-dialog-title" onKeyDown={(e) => e.key === 'Escape' && onClose()}>
+      <div className="bg-white border-2 border-slate-200 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+        <button onClick={onClose} className="absolute top-4 right-4 text-slate-600 hover:text-slate-900" aria-label="Close activity instructions">
           <X className="w-6 h-6" aria-hidden="true" />
         </button>
 
@@ -2284,27 +2284,27 @@ function InstructionModal({
                 <PlayCircle className="w-6 h-6 text-slate-900" />
               </div>
               <div>
-                <h3 id="instruction-dialog-title" className="text-2xl font-black uppercase italic">{activity.title}</h3>
-                <p className="text-yellow-500 text-sm font-bold uppercase tracking-widest">Active Objective</p>
+                <h3 id="instruction-dialog-title" className="text-2xl font-display font-bold">{activity.title}</h3>
+                <p className="text-yellow-800 text-sm font-bold uppercase tracking-widest">Active Objective</p>
               </div>
             </div>
 
             {/* Teacher Feedback / Revision Callout if rejected */}
             {isRejected && (
-              <div className="bg-rose-950/60 border border-rose-500/50 p-4 rounded-xl mb-6 text-xs shadow-sm">
-                <div className="flex items-center gap-1.5 text-rose-300 font-bold mb-1">
-                  <RotateCcw className="w-4 h-4 text-rose-400" />
+              <div className="bg-rose-50 border border-rose-500/50 p-4 rounded-xl mb-6 text-xs shadow-sm">
+                <div className="flex items-center gap-1.5 text-rose-700 font-bold mb-1">
+                  <RotateCcw className="w-4 h-4 text-rose-700" />
                   <span className="uppercase tracking-wider">Teacher Revision Request:</span>
                 </div>
                 {existingSubmission.teacherFeedback ? (
-                  <p className="text-rose-100 font-medium italic bg-rose-900/40 p-3 rounded-lg border border-rose-800/80 text-sm leading-relaxed whitespace-pre-wrap">
+                  <p className="text-rose-800 font-medium italic bg-rose-50 p-3 rounded-lg border border-rose-200 text-sm leading-relaxed whitespace-pre-wrap">
                     "{existingSubmission.teacherFeedback}"
                   </p>
                 ) : (
-                  <p className="text-rose-200 italic">Teacher requested revision for this activity. Please check your work and resubmit!</p>
+                  <p className="text-rose-800 italic">Teacher requested revision for this activity. Please check your work and resubmit!</p>
                 )}
                 {existingSubmission.reviewedAt && (
-                  <span className="text-[10px] text-slate-400 block mt-2">
+                  <span className="text-[10px] text-slate-600 block mt-2">
                     Reviewed: {new Date(existingSubmission.reviewedAt).toLocaleString()}
                   </span>
                 )}
@@ -2312,64 +2312,64 @@ function InstructionModal({
             )}
 
             {isDailyMatch && !dailyCompleted && (
-              <div className="bg-purple-600/30 border border-purple-500 p-3 rounded-lg mb-6 flex items-center gap-2" role="note">
-                <Target className="w-5 h-5 text-purple-400" aria-hidden="true" />
-                <span className="text-sm text-purple-200"><strong>Daily Quest Bonus!</strong> Earn {dailyQuest.multiplier}x XP</span>
+              <div className="bg-purple-100 border border-purple-500 p-3 rounded-lg mb-6 flex items-center gap-2" role="note">
+                <Target className="w-5 h-5 text-purple-700" aria-hidden="true" />
+                <span className="text-sm text-purple-800"><strong>Daily Quest Bonus!</strong> Earn {dailyQuest.multiplier}x XP</span>
               </div>
             )}
 
-            <div className="bg-slate-700/50 p-3 rounded-lg mb-6 flex items-center justify-center gap-2">
-              <Star className="w-5 h-5 text-yellow-500" />
-              <span className="font-bold text-yellow-400">+{activity.xp} XP</span>
-              {isDailyMatch && !dailyCompleted && <span className="text-purple-400 font-bold">→ +{activity.xp * dailyQuest.multiplier} XP</span>}
+            <div className="bg-slate-100 p-3 rounded-lg mb-6 flex items-center justify-center gap-2">
+              <Star className="w-5 h-5 text-yellow-800" />
+              <span className="font-bold text-yellow-800">+{activity.xp} XP</span>
+              {isDailyMatch && !dailyCompleted && <span className="text-purple-700 font-bold">→ +{activity.xp * dailyQuest.multiplier} XP</span>}
             </div>
 
             <div className="space-y-4 mb-8">
-              <h4 className="font-bold text-slate-300 uppercase text-xs tracking-widest">How to Play:</h4>
+              <h4 className="font-bold text-slate-700 uppercase text-xs tracking-widest">How to Play:</h4>
               <ol className="space-y-3">
                 {activity.steps.map((step, idx) => renderStep(step, idx))}
               </ol>
             </div>
 
             {activity.proTip && (
-              <div className="bg-blue-600/20 border border-blue-500/30 p-4 rounded-xl mb-6">
-                <div className="flex items-center gap-2 mb-1 text-blue-400">
+              <div className="bg-blue-100 border border-blue-500/30 p-4 rounded-xl mb-6">
+                <div className="flex items-center gap-2 mb-1 text-blue-700">
                   <Trophy className="w-4 h-4" />
-                  <span className="text-xs font-black uppercase tracking-widest">Pro Tip</span>
+                  <span className="text-xs font-bold uppercase tracking-widest">Pro Tip</span>
                 </div>
-                <p className="text-sm text-blue-100">{renderFormattedText(activity.proTip)}</p>
+                <p className="text-sm text-blue-800">{renderFormattedText(activity.proTip)}</p>
               </div>
             )}
 
             {isCompleted ? (
               <div className="space-y-3">
-                <div className="text-center text-green-400 font-bold py-3 bg-green-950/40 border border-green-600/40 rounded-xl" role="status">
-                  <CheckCircle2 className="w-6 h-6 inline mr-2 text-green-400" aria-hidden="true" />
+                <div className="text-center text-green-800 font-bold py-3 bg-green-50 border border-green-600/40 rounded-xl" role="status">
+                  <CheckCircle2 className="w-6 h-6 inline mr-2 text-green-800" aria-hidden="true" />
                   Activity Completed & Approved (+{activity.xp} XP)!
                 </div>
                 {existingSubmission?.teacherFeedback && (
-                  <div className="p-3 bg-slate-900/90 rounded-xl border border-slate-700 text-xs">
-                    <span className="text-slate-400 uppercase font-bold tracking-wider block mb-1">Teacher Feedback / Praise:</span>
-                    <p className="text-white italic text-sm">"{existingSubmission.teacherFeedback}"</p>
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+                    <span className="text-slate-600 uppercase font-bold tracking-wider block mb-1">Teacher Feedback / Praise:</span>
+                    <p className="text-slate-900 italic text-sm">"{existingSubmission.teacherFeedback}"</p>
                   </div>
                 )}
               </div>
             ) : isPending ? (
-              <div className="text-center text-blue-400 font-bold py-3 bg-blue-950/40 border border-blue-600/40 rounded-xl" role="status">
-                <Clock className="w-6 h-6 inline mr-2 text-blue-400" aria-hidden="true" />
+              <div className="text-center text-blue-700 font-bold py-3 bg-blue-50 border border-blue-600/40 rounded-xl" role="status">
+                <Clock className="w-6 h-6 inline mr-2 text-blue-700" aria-hidden="true" />
                 Waiting for teacher approval...
               </div>
             ) : isRejected ? (
               <button
                 onClick={() => setShowSubmitForm(true)}
-                className="w-full py-3 bg-amber-500 text-slate-900 font-black uppercase italic rounded-xl hover:bg-amber-400 transition-colors flex items-center justify-center gap-2 shadow"
+                className="w-full py-3 bg-amber-500 text-slate-900 font-bold rounded-xl hover:bg-amber-400 transition-colors flex items-center justify-center gap-2 shadow"
               >
                 <RotateCcw className="w-5 h-5" aria-hidden="true" /> Resubmit Revised Work
               </button>
             ) : (
               <button
                 onClick={() => setShowSubmitForm(true)}
-                className="w-full py-3 bg-yellow-500 text-slate-900 font-black uppercase italic rounded-xl hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2 shadow"
+                className="w-full py-3 bg-yellow-500 text-slate-900 font-bold rounded-xl hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2 shadow"
               >
                 <Rocket className="w-5 h-5" aria-hidden="true" /> Submit My Work
               </button>
@@ -2540,17 +2540,17 @@ function GameContent({ emulatedClassId } = {}) {
 
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 sm:p-6 lg:p-8 font-sans relative">
+    <div className="min-h-screen bg-slate-50 text-slate-900 p-4 sm:p-6 lg:p-8 font-sans relative">
       <a href="#main-content" className="sr-skip-link">Skip to main content</a>
       <div className="w-full max-w-[1920px] mx-auto">
         <header className="text-center mb-6">
           <div className="inline-flex items-center justify-center p-3 bg-yellow-500 rounded-full mb-4 shadow-lg shadow-yellow-500/20" aria-hidden="true">
             <Gamepad2 className="w-8 h-8 text-slate-900" />
           </div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tighter italic uppercase mb-2">
+          <h1 className="text-4xl md:text-5xl font-display font-bold mb-2">
             Level Up: Adventure Mission
           </h1>
-          <p className="text-slate-400 text-lg">Choose your path. Master the content. Own the game.</p>
+          <p className="text-slate-600 text-lg">Choose your path. Master the content. Own the game.</p>
         </header>
 
         <PlayerStats
@@ -2568,10 +2568,10 @@ function GameContent({ emulatedClassId } = {}) {
         <div className="flex gap-4 mb-6 flex-wrap">
           <button
             onClick={() => setShowTrophyCase(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg hover:border-yellow-500 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:border-yellow-500 transition-colors"
             aria-label={`Trophies: ${gameState.unlockedAchievements.length} of ${ACHIEVEMENTS.length} unlocked`}
           >
-            <Trophy className="w-5 h-5 text-yellow-500" aria-hidden="true" />
+            <Trophy className="w-5 h-5 text-yellow-800" aria-hidden="true" />
             <span className="font-bold">Trophies</span>
             <span className="text-xs bg-yellow-500 text-slate-900 px-2 py-0.5 rounded-full">
               {gameState.unlockedAchievements.length}/{ACHIEVEMENTS.length}
@@ -2579,77 +2579,77 @@ function GameContent({ emulatedClassId } = {}) {
           </button>
           <button
             onClick={() => setShowLeaderboard(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg hover:border-blue-500 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:border-blue-500 transition-colors"
             aria-label="View class leaderboard"
           >
-            <Crown className="w-5 h-5 text-blue-400" aria-hidden="true" />
+            <Crown className="w-5 h-5 text-blue-700" aria-hidden="true" />
             <span className="font-bold">Leaderboard</span>
           </button>
           <button
             onClick={() => setShowLevelEconomyGuide(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg hover:border-amber-400 transition-colors text-amber-300"
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:border-amber-400 transition-colors text-amber-800"
             aria-label="View Level Progression & Gold Guide"
           >
-            <Award className="w-5 h-5 text-amber-400" aria-hidden="true" />
+            <Award className="w-5 h-5 text-amber-800" aria-hidden="true" />
             <span className="font-bold">Levels & Gold Guide</span>
           </button>
           {/* Submissions & Feedback Button in action row */}
           <button
             onClick={() => setShowMySubmissions(true)}
-            className={`flex items-center gap-2 px-4 py-2 bg-slate-800 border rounded-lg transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2 bg-white border rounded-lg transition-colors ${
               myRejectedCount > 0
-                ? 'border-rose-500 text-rose-300 hover:border-rose-400 bg-rose-950/20'
+                ? 'border-rose-500 text-rose-700 hover:border-rose-400 bg-rose-50'
                 : myPendingCount > 0
-                ? 'border-blue-500 text-blue-300 hover:border-blue-400 bg-blue-950/20'
-                : 'border-slate-700 text-slate-200 hover:border-blue-500'
+                ? 'border-blue-500 text-blue-700 hover:border-blue-400 bg-blue-50'
+                : 'border-slate-200 text-slate-800 hover:border-blue-500'
             }`}
             aria-label="View My Submissions and Teacher Feedback"
           >
-            <ClipboardList className={`w-5 h-5 ${myRejectedCount > 0 ? 'text-rose-400' : myPendingCount > 0 ? 'text-blue-400' : 'text-blue-400'}`} aria-hidden="true" />
+            <ClipboardList className={`w-5 h-5 ${myRejectedCount > 0 ? 'text-rose-700' : myPendingCount > 0 ? 'text-blue-700' : 'text-blue-700'}`} aria-hidden="true" />
             <span className="font-bold">My Submissions</span>
             {myRejectedCount > 0 ? (
-              <span className="text-xs bg-rose-600 text-white font-black px-2 py-0.5 rounded-full animate-pulse">
+              <span className="text-xs bg-rose-600 text-white font-bold px-2 py-0.5 rounded-full animate-pulse">
                 {myRejectedCount} Fix
               </span>
             ) : myPendingCount > 0 ? (
-              <span className="text-xs bg-blue-600 text-white font-black px-2 py-0.5 rounded-full">
+              <span className="text-xs bg-blue-600 text-white font-bold px-2 py-0.5 rounded-full">
                 {myPendingCount}
               </span>
             ) : submissions && submissions.length > 0 ? (
-              <span className="text-xs bg-slate-700 text-slate-300 font-bold px-2 py-0.5 rounded-full">
+              <span className="text-xs bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded-full">
                 {submissions.length}
               </span>
             ) : null}
           </button>
           <button
             onClick={() => { setLegalModalTab('privacy'); setShowLegalModal(true); }}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg hover:border-emerald-500 transition-colors text-slate-300 hover:text-white ml-auto"
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:border-emerald-500 transition-colors text-slate-700 hover:text-slate-900 ml-auto"
             aria-label="View Student Data Privacy & Terms"
           >
-            <ShieldCheck className="w-5 h-5 text-emerald-400" aria-hidden="true" />
+            <ShieldCheck className="w-5 h-5 text-emerald-800" aria-hidden="true" />
             <span className="font-bold text-sm">Privacy & Terms</span>
           </button>
         </div>
 
         {/* Student Spotlight Banner */}
         {classSpotlight && (
-          <section className="mb-6 p-4 rounded-xl bg-gradient-to-r from-yellow-900/40 to-amber-900/40 border-2 border-yellow-500/50" aria-label="Student Spotlight">
+          <section className="mb-6 p-4 rounded-xl bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-500/50" aria-label="Student Spotlight">
             <div className="flex items-center gap-4">
               <div className="flex-shrink-0">
                 <Avatar3D avatar={classSpotlight.avatar} level={getLevelForXp(classSpotlight.xp).level} size="sm" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <Sparkles className="w-4 h-4 text-yellow-400" aria-hidden="true" />
-                  <span className="text-xs font-bold uppercase tracking-widest text-yellow-400">
+                  <Sparkles className="w-4 h-4 text-yellow-800" aria-hidden="true" />
+                  <span className="text-xs font-bold uppercase tracking-widest text-yellow-800">
                     {classSpotlight.category === 'star_student' && 'Star Student'}
                     {classSpotlight.category === 'most_improved' && 'Most Improved'}
                     {classSpotlight.category === 'team_player' && 'Team Player'}
                     {classSpotlight.category === 'creative_genius' && 'Creative Genius'}
                   </span>
                 </div>
-                <p className="font-black text-white text-lg">{classSpotlight.studentName}</p>
-                <p className="text-sm text-slate-300 italic">"{classSpotlight.message}"</p>
+                <p className="font-display font-bold text-slate-900 text-lg">{classSpotlight.studentName}</p>
+                <p className="text-sm text-slate-700 italic">"{classSpotlight.message}"</p>
               </div>
               <div className="text-3xl flex-shrink-0" aria-hidden="true">
                 {classSpotlight.category === 'star_student' && '⭐'}
@@ -2706,13 +2706,13 @@ function GameContent({ emulatedClassId } = {}) {
               className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 flex-shrink-0 ${
                 mobileCategoryFilter === 'all'
                   ? 'bg-yellow-500 text-slate-900 shadow-md ring-2 ring-yellow-400/50'
-                  : 'bg-slate-800 text-slate-300 border border-slate-700 hover:border-slate-500'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-400'
               }`}
               aria-pressed={mobileCategoryFilter === 'all'}
             >
               <span>All Categories</span>
               <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                mobileCategoryFilter === 'all' ? 'bg-slate-900/30 text-slate-950 font-black' : 'bg-slate-700 text-slate-300'
+                mobileCategoryFilter === 'all' ? 'bg-slate-50 text-slate-950 font-bold' : 'bg-slate-100 text-slate-700'
               }`}>
                 {learningPaths.reduce((acc, p) => acc + calculatePathProgressStats(p, gameState.completedActivities, approvedActivities).count, 0)}/
                 {learningPaths.reduce((acc, p) => acc + (p.options || []).length, 0)}
@@ -2731,18 +2731,18 @@ function GameContent({ emulatedClassId } = {}) {
                     isSelected
                       ? 'bg-yellow-500 text-slate-900 shadow-md ring-2 ring-yellow-400/50'
                       : isComplete
-                      ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-600/60'
-                      : 'bg-slate-800 text-slate-300 border border-slate-700 hover:border-slate-500'
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-600/60'
+                      : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-400'
                   }`}
                   aria-pressed={isSelected}
                 >
                   <span>{path.title}</span>
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
                     isSelected 
-                      ? 'bg-slate-900/30 text-slate-950 font-black' 
+                      ? 'bg-slate-50 text-slate-950 font-bold' 
                       : isComplete 
-                      ? 'bg-emerald-800 text-emerald-100' 
-                      : 'bg-slate-700 text-slate-300'
+                      ? 'bg-emerald-800 text-white' 
+                      : 'bg-slate-100 text-slate-700'
                   }`}>
                     {completedCount}/{totalCount}
                   </span>
@@ -2793,24 +2793,24 @@ function GameContent({ emulatedClassId } = {}) {
         })()}
 
         <div className="text-center pb-20">
-          <button onClick={() => setShowInfo(!showInfo)} className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-300 transition-colors" aria-expanded={showInfo} aria-controls="pedagogical-info">
+          <button onClick={() => setShowInfo(!showInfo)} className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-700 transition-colors" aria-expanded={showInfo} aria-controls="pedagogical-info">
             <Info className="w-4 h-4" aria-hidden="true" />
             {showInfo ? 'Hide Pedagogical Connections' : 'Show Pedagogical Connections'}
           </button>
 
           {showInfo && (
-            <div id="pedagogical-info" className="mt-6 p-6 bg-slate-800/50 rounded-xl border border-slate-700 text-left max-w-4xl mx-auto">
-              <h4 className="text-yellow-500 font-bold uppercase mb-4 flex items-center gap-2">
+            <div id="pedagogical-info" className="mt-6 p-6 bg-white rounded-xl border border-slate-200 text-left max-w-4xl mx-auto">
+              <h4 className="text-yellow-800 font-bold uppercase mb-4 flex items-center gap-2">
                 <Trophy className="w-5 h-5" /> Why this works
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                 <div>
-                  <p className="font-bold text-slate-300 underline mb-1">Removing Barriers (UDL)</p>
-                  <p className="text-slate-400 italic">"By offering 'Low Tech' options, students blocked by digital navigation can still show mastery."</p>
+                  <p className="font-bold text-slate-700 underline mb-1">Removing Barriers (UDL)</p>
+                  <p className="text-slate-600 italic">"By offering 'Low Tech' options, students blocked by digital navigation can still show mastery."</p>
                 </div>
                 <div>
-                  <p className="font-bold text-slate-300 underline mb-1">Teacher Verification</p>
-                  <p className="text-slate-400 italic">"Students submit proof of work. Teachers approve submissions before XP is awarded."</p>
+                  <p className="font-bold text-slate-700 underline mb-1">Teacher Verification</p>
+                  <p className="text-slate-600 italic">"Students submit proof of work. Teachers approve submissions before XP is awarded."</p>
                 </div>
               </div>
             </div>
@@ -2870,30 +2870,30 @@ function GameContent({ emulatedClassId } = {}) {
       {showAchievement && <AchievementModal achievement={showAchievement} onClose={() => setShowAchievement(null)} />}
       <LevelEconomyGuideModal isOpen={showLevelEconomyGuide} onClose={() => setShowLevelEconomyGuide(false)} />
 
-      <footer className="mt-12 pt-6 border-t border-slate-800 text-center text-xs text-slate-500 space-y-2 print:hidden">
+      <footer className="mt-12 pt-6 border-t border-slate-200 text-center text-xs text-slate-600 space-y-2 print:hidden">
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
           <button
             onClick={() => { setLegalModalTab('privacy'); setShowLegalModal(true); }}
-            className="hover:text-blue-400 transition-colors underline underline-offset-2"
+            className="hover:text-blue-700 transition-colors underline underline-offset-2"
           >
             Privacy Policy
           </button>
-          <span className="text-slate-700">•</span>
+          <span className="text-slate-400">•</span>
           <button
             onClick={() => { setLegalModalTab('terms'); setShowLegalModal(true); }}
-            className="hover:text-blue-400 transition-colors underline underline-offset-2"
+            className="hover:text-blue-700 transition-colors underline underline-offset-2"
           >
             Terms of Service
           </button>
-          <span className="text-slate-700">•</span>
+          <span className="text-slate-400">•</span>
           <button
             onClick={() => { setLegalModalTab('compliance'); setShowLegalModal(true); }}
-            className="hover:text-emerald-400 transition-colors flex items-center gap-1 inline-flex"
+            className="hover:text-emerald-800 transition-colors flex items-center gap-1 inline-flex"
           >
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Student Data Privacy Compliance
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-800" /> Student Data Privacy Compliance
           </button>
         </div>
-        <p className="text-[11px] text-slate-600">
+        <p className="text-[11px] text-slate-500">
           Designed for K-12 Classrooms. Compliant with FERPA, COPPA, SOPIPA & State Educational Privacy Statutes.
         </p>
       </footer>
@@ -2925,20 +2925,20 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
-          <div className="max-w-md w-full bg-slate-900 border-2 border-red-500/80 rounded-3xl p-6 shadow-2xl text-center space-y-4">
-            <div className="w-14 h-14 bg-red-500/20 text-red-400 rounded-2xl mx-auto flex items-center justify-center text-2xl font-black">
+        <div className="min-h-screen bg-slate-50 text-slate-900 flex items-center justify-center p-6">
+          <div className="max-w-md w-full bg-slate-50 border-2 border-red-500/80 rounded-3xl p-6 shadow-2xl text-center space-y-4">
+            <div className="w-14 h-14 bg-red-100 text-red-700 rounded-2xl mx-auto flex items-center justify-center text-2xl font-display font-bold">
               ⚠️
             </div>
-            <h2 className="text-xl font-black uppercase text-white">Something went wrong</h2>
-            <p className="text-xs text-slate-400">
+            <h2 className="text-xl font-display font-bold uppercase text-slate-900">Something went wrong</h2>
+            <p className="text-xs text-slate-600">
               An unexpected display issue occurred. Don't worry, your progress and data are safe!
             </p>
             {this.state.error && (
-              <div className="text-left bg-slate-950/80 p-3 rounded-xl border border-red-900/60 text-xs font-mono text-red-300 max-h-48 overflow-y-auto space-y-1">
-                <p className="font-bold text-red-400">{this.state.error.name}: {this.state.error.message}</p>
+              <div className="text-left bg-slate-50 p-3 rounded-xl border border-red-200 text-xs font-mono text-red-700 max-h-48 overflow-y-auto space-y-1">
+                <p className="font-bold text-red-700">{this.state.error.name}: {this.state.error.message}</p>
                 {this.state.error.stack && (
-                  <p className="text-[10px] text-slate-500 whitespace-pre-wrap">{this.state.error.stack.split('\n').slice(0, 5).join('\n')}</p>
+                  <p className="text-[10px] text-slate-600 whitespace-pre-wrap">{this.state.error.stack.split('\n').slice(0, 5).join('\n')}</p>
                 )}
               </div>
             )}
@@ -2948,7 +2948,7 @@ class ErrorBoundary extends React.Component {
                   this.setState({ hasError: false, error: null });
                   window.location.reload();
                 }}
-                className="px-5 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider transition-all shadow"
+                className="px-5 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-all shadow"
               >
                 Reload App
               </button>
@@ -2956,7 +2956,7 @@ class ErrorBoundary extends React.Component {
                 onClick={() => {
                   this.setState({ hasError: false, error: null });
                 }}
-                className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs uppercase tracking-wider transition-all border border-slate-700"
+                className="px-5 py-2.5 bg-white hover:bg-slate-100 text-slate-700 font-bold rounded-xl text-xs uppercase tracking-wider transition-all border border-slate-200"
               >
                 Try Again
               </button>
@@ -3033,7 +3033,7 @@ function AppContent() {
     }
   }, [user, isSuperAdmin]);
 
-  if (loading) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white" role="status" aria-live="polite">Loading...</div>;
+  if (loading) return <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-900" role="status" aria-live="polite">Loading...</div>;
 
   if (!user) {
     return <LoginScreen />;
@@ -3046,34 +3046,34 @@ function AppContent() {
     : (activeViewMode || (isSuperAdmin ? 'admin' : 'teacher'));
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       {/* Sticky Navigation View Switcher Bar (only for Admins/Teachers) */}
       {isElevatedUser && (
-        <header className="bg-slate-950/95 backdrop-blur border-b border-slate-800 px-4 py-2 flex flex-wrap items-center justify-between gap-3 shadow-lg sticky top-0 z-50">
+        <header className="bg-slate-50 backdrop-blur border-b border-slate-200 px-4 py-2 flex flex-wrap items-center justify-between gap-3 shadow-lg sticky top-0 z-50">
           <div className="flex items-center gap-3">
             {isSuperAdmin ? (
-              <span className="px-2.5 py-1 bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 text-xs font-black uppercase rounded-lg tracking-wider flex items-center gap-1.5">
+              <span className="px-2.5 py-1 bg-yellow-100 text-yellow-800 border border-yellow-500/30 text-xs font-bold uppercase rounded-lg tracking-wider flex items-center gap-1.5">
                 <Crown className="w-3.5 h-3.5" /> Super Admin
               </span>
             ) : (
-              <span className="px-2.5 py-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs font-black uppercase rounded-lg tracking-wider flex items-center gap-1.5">
+              <span className="px-2.5 py-1 bg-blue-100 text-blue-700 border border-blue-500/30 text-xs font-bold uppercase rounded-lg tracking-wider flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5" /> Teacher
               </span>
             )}
-            <span className="text-xs text-slate-400 font-medium hidden sm:inline">
-              Signed in as <strong className="text-white">{user.name || user.email}</strong>
+            <span className="text-xs text-slate-600 font-medium hidden sm:inline">
+              Signed in as <strong className="text-slate-900">{user.name || user.email}</strong>
             </span>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-slate-500 font-bold uppercase tracking-wider mr-1 hidden md:inline">Mode:</span>
+            <span className="text-xs text-slate-600 font-bold uppercase tracking-wider mr-1 hidden md:inline">Mode:</span>
             {isSuperAdmin && (
               <button
                 onClick={() => setActiveViewMode('admin')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                   currentMode === 'admin'
                     ? 'bg-yellow-500 text-slate-950 shadow-md ring-2 ring-yellow-400/50'
-                    : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'
+                    : 'bg-slate-50 hover:bg-white text-slate-700 border border-slate-200'
                 }`}
               >
                 <Crown className="w-3.5 h-3.5" /> Admin Dashboard
@@ -3085,7 +3085,7 @@ function AppContent() {
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                 currentMode === 'teacher'
                   ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-500/50'
-                  : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'
+                  : 'bg-slate-50 hover:bg-white text-slate-700 border border-slate-200'
               }`}
             >
               <Users className="w-3.5 h-3.5" /> Teacher View
@@ -3096,7 +3096,7 @@ function AppContent() {
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                 currentMode === 'student'
                   ? 'bg-purple-600 text-white shadow-md ring-2 ring-purple-500/50'
-                  : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'
+                  : 'bg-slate-50 hover:bg-white text-slate-700 border border-slate-200'
               }`}
             >
               <Gamepad2 className="w-3.5 h-3.5" /> Student Emulation View
@@ -3135,16 +3135,16 @@ function AppContent() {
           <div>
             {/* Student Emulation Banner ONLY visible to Teachers/Admins emulating students */}
             {isElevatedUser && (
-              <div className="bg-purple-950/90 border-b border-purple-800/60 p-3 px-6 flex flex-wrap items-center justify-between gap-3 text-xs text-purple-200 shadow-md">
+              <div className="bg-purple-50 border-b border-purple-200 p-3 px-6 flex flex-wrap items-center justify-between gap-3 text-xs text-purple-800 shadow-md">
                 <div className="flex items-center gap-3 flex-wrap">
                   <div className="flex items-center gap-2">
-                    <Gamepad2 className="w-4 h-4 text-purple-400" />
-                    <span className="font-bold text-white uppercase tracking-wider">Student Emulation Mode</span>
+                    <Gamepad2 className="w-4 h-4 text-purple-700" />
+                    <span className="font-bold text-slate-900 uppercase tracking-wider">Student Emulation Mode</span>
                   </div>
 
                   {/* Super admin toggle: My Classes vs Org Classes */}
                   {isSuperAdmin && (
-                    <div className="flex items-center bg-slate-900 border border-purple-700/60 rounded-lg p-0.5 text-[11px] gap-0.5">
+                    <div className="flex items-center bg-slate-50 border border-purple-300 rounded-lg p-0.5 text-[11px] gap-0.5">
                       <button
                         type="button"
                         onClick={() => {
@@ -3155,7 +3155,7 @@ function AppContent() {
                         className={`flex items-center gap-1 px-2 py-0.5 rounded font-bold transition-all ${
                           adminViewScope === 'mine'
                             ? 'bg-amber-500 text-slate-950 shadow-sm'
-                            : 'text-purple-300 hover:text-white'
+                            : 'text-purple-700 hover:text-slate-900'
                         }`}
                       >
                         <User className="w-3 h-3" />
@@ -3171,7 +3171,7 @@ function AppContent() {
                         className={`flex items-center gap-1 px-2 py-0.5 rounded font-bold transition-all ${
                           adminViewScope === 'org'
                             ? 'bg-amber-500 text-slate-950 shadow-sm'
-                            : 'text-purple-300 hover:text-white'
+                            : 'text-purple-700 hover:text-slate-900'
                         }`}
                       >
                         <Building2 className="w-3 h-3" />
@@ -3182,11 +3182,11 @@ function AppContent() {
 
                   {emulationClasses.length > 1 && (
                     <div className="flex items-center gap-2">
-                      <span className="text-purple-300 text-xs">Previewing Class:</span>
+                      <span className="text-purple-700 text-xs">Previewing Class:</span>
                       <select
                         value={emulatedClassId || ''}
                         onChange={e => setEmulatedClassId(e.target.value)}
-                        className="px-2 py-1 bg-slate-900 border border-purple-700/60 rounded text-xs text-white outline-none focus:border-yellow-400"
+                        className="px-2 py-1 bg-slate-50 border border-purple-300 rounded text-xs text-slate-900 outline-none focus:border-yellow-400"
                       >
                         {emulationClasses.map(c => (
                           <option key={c.id} value={c.id}>{c.name}</option>
@@ -3195,12 +3195,12 @@ function AppContent() {
                     </div>
                   )}
                   {emulationClasses.length === 1 && (
-                    <span className="text-purple-300 text-xs">
-                      Class: <strong className="text-white">{emulationClasses[0].name}</strong>
+                    <span className="text-purple-700 text-xs">
+                      Class: <strong className="text-slate-900">{emulationClasses[0].name}</strong>
                     </span>
                   )}
                   {emulationClasses.length === 0 && (
-                    <span className="text-purple-300 text-xs italic">
+                    <span className="text-purple-700 text-xs italic">
                       {isSuperAdmin && adminViewScope === 'mine'
                         ? 'No personal classes found (switch to "All Org" or create one in Teacher View)'
                         : 'No classes found'}

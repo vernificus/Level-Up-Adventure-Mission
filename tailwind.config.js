@@ -32,6 +32,20 @@ export default {
           900: '#1B2F7A',
           950: '#141F4D',
         },
+        // The stock 600 shades of these hues fail WCAG AA (4.5:1) with white
+        // text. They are used as solid fills for buttons, badges and the
+        // category/guild colours teachers save, so deepen them to pass.
+        green: { 600: '#15803D' },
+        emerald: { 600: '#047857' },
+        teal: { 600: '#0F766E' },
+        cyan: { 600: '#0E7490' },
+        sky: { 600: '#0369A1' },
+        orange: { 600: '#C2410C' },
+        amber: { 600: '#B45309' },
+        yellow: { 600: '#A16207' },
+        lime: { 600: '#4D7C0F' },
+        pink: { 600: '#BE185D' },
+        fuchsia: { 600: '#A21CAF' },
       },
       fontFamily: {
         sans: ['"Atkinson Hyperlegible"', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],

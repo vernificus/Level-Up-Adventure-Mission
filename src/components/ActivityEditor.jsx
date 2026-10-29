@@ -50,18 +50,18 @@ function StepEditor({ step, index, totalSteps, onChange, onRemove, onMoveUp, onM
   };
 
   return (
-    <div className="bg-slate-800/80 rounded-lg border border-slate-600 p-3 group/step">
+    <div className="bg-white rounded-lg border border-slate-300 p-3 group/step">
       <div className="flex items-start gap-2">
         {/* Step number badge */}
         <div className="flex flex-col items-center gap-1 pt-1">
-          <span className="w-6 h-6 rounded-full bg-slate-600 text-yellow-400 flex items-center justify-center text-xs font-bold flex-shrink-0">
+          <span className="w-6 h-6 rounded-full bg-slate-200 text-yellow-800 flex items-center justify-center text-xs font-bold flex-shrink-0">
             {index + 1}
           </span>
           <div className="flex flex-col gap-0.5 opacity-0 group-hover/step:opacity-100 transition-opacity">
             <button
               onClick={onMoveUp}
               disabled={index === 0}
-              className="p-0.5 text-slate-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+              className="p-0.5 text-slate-600 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed"
               aria-label={`Move step ${index + 1} up`}
             >
               <ArrowUp className="w-3 h-3" />
@@ -69,7 +69,7 @@ function StepEditor({ step, index, totalSteps, onChange, onRemove, onMoveUp, onM
             <button
               onClick={onMoveDown}
               disabled={index === totalSteps - 1}
-              className="p-0.5 text-slate-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+              className="p-0.5 text-slate-600 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed"
               aria-label={`Move step ${index + 1} down`}
             >
               <ArrowDown className="w-3 h-3" />
@@ -84,7 +84,7 @@ function StepEditor({ step, index, totalSteps, onChange, onRemove, onMoveUp, onM
             <button
               type="button"
               onClick={() => insertFormatting('**')}
-              className="p-1 text-slate-500 hover:text-white hover:bg-slate-700 rounded transition-colors"
+              className="p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors"
               title="Bold (**text**)"
               aria-label="Insert bold formatting"
             >
@@ -93,17 +93,17 @@ function StepEditor({ step, index, totalSteps, onChange, onRemove, onMoveUp, onM
             <button
               type="button"
               onClick={() => insertFormatting('*')}
-              className="p-1 text-slate-500 hover:text-white hover:bg-slate-700 rounded transition-colors"
+              className="p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors"
               title="Italic (*text*)"
               aria-label="Insert italic formatting"
             >
               <Italic className="w-3.5 h-3.5" />
             </button>
-            <div className="w-px h-4 bg-slate-600 mx-1" />
+            <div className="w-px h-4 bg-slate-200 mx-1" />
             <button
               type="button"
               onClick={() => setShowLink(!showLink)}
-              className={`p-1 rounded transition-colors flex items-center gap-1 text-xs ${showLink ? 'text-blue-400 bg-blue-500/20' : 'text-slate-500 hover:text-white hover:bg-slate-700'}`}
+              className={`p-1 rounded transition-colors flex items-center gap-1 text-xs ${showLink ? 'text-blue-700 bg-blue-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
               title="Add a link to this step"
               aria-label={showLink ? 'Hide link fields' : 'Add link to this step'}
             >
@@ -119,31 +119,31 @@ function StepEditor({ step, index, totalSteps, onChange, onRemove, onMoveUp, onM
             onChange={handleTextChange}
             placeholder="Describe this step..."
             rows={2}
-            className="w-full bg-slate-700 text-sm text-white px-3 py-2 rounded-lg border border-slate-600 focus:border-blue-500 outline-none resize-y min-h-[52px] placeholder-slate-500"
+            className="w-full bg-slate-100 text-sm text-slate-900 px-3 py-2 rounded-lg border border-slate-300 focus:border-blue-500 outline-none resize-y min-h-[52px] placeholder-slate-400"
             aria-label={`Step ${index + 1} instructions`}
           />
 
           {/* Link fields */}
           {showLink && (
-            <div className="mt-2 p-2.5 bg-slate-700/50 rounded-lg border border-slate-600/50 space-y-2">
+            <div className="mt-2 p-2.5 bg-slate-100 rounded-lg border border-slate-300 space-y-2">
               <div>
-                <label className="text-xs text-slate-400 font-medium block mb-1">
+                <label className="text-xs text-slate-600 font-medium block mb-1">
                   Link URL
                 </label>
                 <div className="flex items-center gap-2">
-                  <ExternalLink className="w-4 h-4 text-slate-500 flex-shrink-0" aria-hidden="true" />
+                  <ExternalLink className="w-4 h-4 text-slate-600 flex-shrink-0" aria-hidden="true" />
                   <input
                     type="url"
                     value={step.link || ''}
                     onChange={(e) => handleLinkChange('link', e.target.value)}
                     placeholder="https://example.com"
-                    className="flex-1 bg-slate-700 text-sm text-blue-300 px-2 py-1.5 rounded border border-slate-600 focus:border-blue-500 outline-none placeholder-slate-500"
+                    className="flex-1 bg-slate-100 text-sm text-blue-700 px-2 py-1.5 rounded border border-slate-300 focus:border-blue-500 outline-none placeholder-slate-400"
                     aria-label={`Step ${index + 1} link URL`}
                   />
                 </div>
               </div>
               <div>
-                <label className="text-xs text-slate-400 font-medium block mb-1">
+                <label className="text-xs text-slate-600 font-medium block mb-1">
                   Link display text (optional)
                 </label>
                 <input
@@ -151,7 +151,7 @@ function StepEditor({ step, index, totalSteps, onChange, onRemove, onMoveUp, onM
                   value={step.linkText || ''}
                   onChange={(e) => handleLinkChange('linkText', e.target.value)}
                   placeholder="Click here to open..."
-                  className="w-full bg-slate-700 text-sm text-white px-2 py-1.5 rounded border border-slate-600 focus:border-blue-500 outline-none placeholder-slate-500"
+                  className="w-full bg-slate-100 text-sm text-slate-900 px-2 py-1.5 rounded border border-slate-300 focus:border-blue-500 outline-none placeholder-slate-400"
                   aria-label={`Step ${index + 1} link display text`}
                 />
               </div>
@@ -162,7 +162,7 @@ function StepEditor({ step, index, totalSteps, onChange, onRemove, onMoveUp, onM
         {/* Delete button */}
         <button
           onClick={onRemove}
-          className="p-1 text-slate-600 hover:text-red-400 transition-colors flex-shrink-0 mt-1"
+          className="p-1 text-slate-500 hover:text-red-700 transition-colors flex-shrink-0 mt-1"
           aria-label={`Remove step ${index + 1}`}
         >
           <Trash2 className="w-4 h-4" />
@@ -177,32 +177,32 @@ function ActivityPreview({ activity }) {
   const steps = normalizeSteps(activity.steps);
 
   return (
-    <div className="bg-slate-900 rounded-xl border border-slate-700 p-5">
+    <div className="bg-slate-50 rounded-xl border border-slate-200 p-5">
       <div className="flex items-center gap-2 mb-3">
-        <Eye className="w-4 h-4 text-slate-500" aria-hidden="true" />
-        <span className="text-xs text-slate-500 uppercase tracking-widest font-bold">Student Preview</span>
+        <Eye className="w-4 h-4 text-slate-600" aria-hidden="true" />
+        <span className="text-xs text-slate-600 uppercase tracking-widest font-bold">Student Preview</span>
       </div>
 
-      <h4 className="text-lg font-black uppercase italic text-white mb-1">{activity.title || 'Untitled Activity'}</h4>
-      <p className="text-sm text-slate-400 mb-3">{activity.desc || 'No description'}</p>
+      <h4 className="text-lg font-display font-bold text-slate-900 mb-1">{activity.title || 'Untitled Activity'}</h4>
+      <p className="text-sm text-slate-600 mb-3">{activity.desc || 'No description'}</p>
 
       <div className="flex items-center gap-2 mb-4">
-        <span className="text-xs bg-slate-700 text-yellow-400 px-2 py-1 rounded-full font-bold">+{activity.xp} XP</span>
-        <span className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded-full">{activity.type}</span>
+        <span className="text-xs bg-slate-100 text-yellow-800 px-2 py-1 rounded-full font-bold">+{activity.xp} XP</span>
+        <span className="text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded-full">{activity.type}</span>
       </div>
 
       <div className="space-y-3 mb-4">
-        <h5 className="font-bold text-slate-300 uppercase text-xs tracking-widest">How to Play:</h5>
+        <h5 className="font-bold text-slate-700 uppercase text-xs tracking-widest">How to Play:</h5>
         <ol className="space-y-2.5">
           {steps.map((step, idx) => (
-            <li key={idx} className="flex gap-3 text-slate-300">
-              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-slate-700 text-yellow-500 flex items-center justify-center text-xs font-bold border border-slate-600">
+            <li key={idx} className="flex gap-3 text-slate-700">
+              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-slate-100 text-yellow-800 flex items-center justify-center text-xs font-bold border border-slate-300">
                 {idx + 1}
               </span>
               <div className="text-sm leading-relaxed">
                 <span>{renderFormattedText(step.text)}</span>
                 {step.link && (
-                  <span className="inline-flex items-center gap-1 ml-1 text-blue-400 underline">
+                  <span className="inline-flex items-center gap-1 ml-1 text-blue-700 underline">
                     <Link2 className="w-3 h-3" />
                     {step.linkText || step.link}
                   </span>
@@ -214,9 +214,9 @@ function ActivityPreview({ activity }) {
       </div>
 
       {activity.proTip && (
-        <div className="bg-blue-600/20 border border-blue-500/30 p-3 rounded-xl">
-          <span className="text-xs font-black uppercase tracking-widest text-blue-400 block mb-1">Pro Tip</span>
-          <p className="text-sm text-blue-100">{renderFormattedText(activity.proTip)}</p>
+        <div className="bg-blue-100 border border-blue-500/30 p-3 rounded-xl">
+          <span className="text-xs font-bold uppercase tracking-widest text-blue-700 block mb-1">Pro Tip</span>
+          <p className="text-sm text-blue-800">{renderFormattedText(activity.proTip)}</p>
         </div>
       )}
     </div>
@@ -650,12 +650,12 @@ export default function ActivityEditor({
 
   const getTypeBadgeClass = (type) => {
     switch (type) {
-      case 'Low Tech': return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
-      case 'High Tech': return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40';
-      case 'Collaboration': return 'bg-purple-500/20 text-purple-300 border-purple-500/40';
-      case 'Reflection': return 'bg-amber-500/20 text-amber-300 border-amber-500/40';
-      case 'Creation': return 'bg-pink-500/20 text-pink-300 border-pink-500/40';
-      default: return 'bg-blue-500/20 text-blue-300 border-blue-500/40';
+      case 'Low Tech': return 'bg-emerald-100 text-emerald-800 border-emerald-500/40';
+      case 'High Tech': return 'bg-cyan-100 text-cyan-800 border-cyan-500/40';
+      case 'Collaboration': return 'bg-purple-100 text-purple-700 border-purple-500/40';
+      case 'Reflection': return 'bg-amber-100 text-amber-800 border-amber-500/40';
+      case 'Creation': return 'bg-pink-100 text-pink-700 border-pink-500/40';
+      default: return 'bg-blue-100 text-blue-700 border-blue-500/40';
     }
   };
 
@@ -745,8 +745,8 @@ export default function ActivityEditor({
   return (
     <div className="space-y-4">
       {/* Top toolbar */}
-      <div className="flex flex-wrap justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700 sticky top-0 z-10 shadow-xl gap-3">
-        <h2 className="text-xl font-bold text-white">Edit Choice Board</h2>
+      <div className="flex flex-wrap justify-between items-center bg-white p-4 rounded-xl border border-slate-200 sticky top-0 z-10 shadow-xl gap-3">
+        <h2 className="text-xl font-bold text-slate-900">Edit Choice Board</h2>
         <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
@@ -782,7 +782,7 @@ export default function ActivityEditor({
       {/* Activity Library Modal Overlay */}
       {showLibrary && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="library-dialog-title"
@@ -791,27 +791,27 @@ export default function ActivityEditor({
           }}
           onKeyDown={(e) => e.key === 'Escape' && setShowLibrary(false)}
         >
-          <div className="bg-slate-800 border-2 border-blue-500/80 rounded-2xl w-full max-w-5xl p-6 h-[88vh] flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white border-2 border-blue-500/80 rounded-2xl w-full max-w-5xl p-6 h-[88vh] flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             {/* Modal Header */}
-            <div className="flex flex-wrap justify-between items-center pb-4 border-b border-slate-700 gap-3">
+            <div className="flex flex-wrap justify-between items-center pb-4 border-b border-slate-200 gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 border border-blue-500/40 flex items-center justify-center text-blue-700">
                   <BookOpen className="w-5 h-5" aria-hidden="true" />
                 </div>
                 <div>
-                  <h3 id="library-dialog-title" className="text-xl font-black text-white flex items-center gap-2 flex-wrap">
+                  <h3 id="library-dialog-title" className="text-xl font-display font-bold text-slate-900 flex items-center gap-2 flex-wrap">
                     Activity Library
-                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-500/30">
                       {filteredLibraryActivities.length} of {libraryActivities.length} {libraryActivities.length === 1 ? 'activity' : 'activities'}
                     </span>
                     {(user?.role === 'admin' ? (filterOrgName || userOrgName) : (userOrgName || 'My Organization')) && (
-                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-950/80 text-purple-300 border border-purple-800/60 flex items-center gap-1">
-                        <Building2 className="w-3.5 h-3.5 text-purple-400" />
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 flex items-center gap-1">
+                        <Building2 className="w-3.5 h-3.5 text-purple-700" />
                         {user?.role === 'admin' ? (filterOrgName || userOrgName) : (userOrgName || 'My Organization')}
                       </span>
                     )}
                   </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-600 mt-0.5">
                     Browse and import activities shared by teachers in your organization.
                   </p>
                 </div>
@@ -820,16 +820,16 @@ export default function ActivityEditor({
               <div className="flex items-center gap-2">
                 {/* Admin Organization Switcher */}
                 {user?.role === 'admin' && organizationsList.length > 0 && (
-                  <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-700 px-2.5 py-1 rounded-xl text-xs">
-                    <Building2 className="w-3.5 h-3.5 text-yellow-400" />
-                    <span className="text-slate-400 font-semibold">Org:</span>
+                  <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-xl text-xs">
+                    <Building2 className="w-3.5 h-3.5 text-yellow-800" />
+                    <span className="text-slate-600 font-semibold">Org:</span>
                     <select
                       value={filterOrgId || ''}
                       onChange={(e) => handleOrgChange(e.target.value)}
-                      className="bg-transparent text-white font-bold outline-none cursor-pointer text-xs"
+                      className="bg-transparent text-slate-900 font-bold outline-none cursor-pointer text-xs"
                     >
                       {organizationsList.map(org => (
-                        <option key={org.id} value={org.id} className="bg-slate-900">
+                        <option key={org.id} value={org.id} className="bg-slate-50">
                           {org.name}
                         </option>
                       ))}
@@ -839,7 +839,7 @@ export default function ActivityEditor({
 
                 <button
                   onClick={() => setShowLibrary(false)}
-                  className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-xl transition-colors"
+                  className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
                   aria-label="Close activity library"
                 >
                   <X className="w-5 h-5" aria-hidden="true" />
@@ -849,18 +849,18 @@ export default function ActivityEditor({
 
             {/* Imported Toast Feedback */}
             {importedToast && (
-              <div className="mt-3 p-3 bg-emerald-950/80 border border-emerald-500/50 rounded-xl flex items-center gap-2 text-emerald-300 text-sm font-semibold animate-in fade-in slide-in-from-top-2">
-                <Check className="w-4 h-4 text-emerald-400" />
+              <div className="mt-3 p-3 bg-emerald-50 border border-emerald-500/50 rounded-xl flex items-center gap-2 text-emerald-800 text-sm font-semibold animate-in fade-in slide-in-from-top-2">
+                <Check className="w-4 h-4 text-emerald-800" />
                 <span>{importedToast}</span>
               </div>
             )}
 
             {/* Organization & Filter Controls Bar */}
-            <div className="py-3 space-y-3 border-b border-slate-700/60">
+            <div className="py-3 space-y-3 border-b border-slate-200">
               <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
                 {/* Search Bar */}
                 <div className="flex-1 relative">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" aria-hidden="true" />
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600 w-4 h-4" aria-hidden="true" />
                   <label htmlFor="library-search" className="sr-only">Search activities</label>
                   <input
                     id="library-search"
@@ -868,12 +868,12 @@ export default function ActivityEditor({
                     placeholder="Search by title, description, teacher, or category..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-8 py-2 bg-slate-900/80 rounded-xl text-white text-xs border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-500"
+                    className="w-full pl-10 pr-8 py-2 bg-slate-50 rounded-xl text-slate-900 text-xs border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-600"
                   />
                   {searchQuery && (
                     <button
                       onClick={() => setSearchQuery('')}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-900"
                       aria-label="Clear search"
                     >
                       <X className="w-3.5 h-3.5" />
@@ -882,41 +882,41 @@ export default function ActivityEditor({
                 </div>
 
                 {/* Sort Option Dropdown */}
-                <div className="flex items-center gap-1.5 bg-slate-900/80 border border-slate-700 px-3 py-1.5 rounded-xl text-xs">
-                  <ArrowUpDown className="w-3.5 h-3.5 text-blue-400" />
-                  <label htmlFor="sort-library" className="text-slate-400 font-semibold whitespace-nowrap">Sort:</label>
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-xs">
+                  <ArrowUpDown className="w-3.5 h-3.5 text-blue-700" />
+                  <label htmlFor="sort-library" className="text-slate-600 font-semibold whitespace-nowrap">Sort:</label>
                   <select
                     id="sort-library"
                     value={selectedSortOption}
                     onChange={(e) => setSelectedSortOption(e.target.value)}
-                    className="bg-transparent text-white font-bold outline-none cursor-pointer text-xs"
+                    className="bg-transparent text-slate-900 font-bold outline-none cursor-pointer text-xs"
                   >
-                    <option value="newest" className="bg-slate-900">Newest Added</option>
-                    <option value="oldest" className="bg-slate-900">Oldest Added</option>
-                    <option value="alpha-asc" className="bg-slate-900">Title (A → Z)</option>
-                    <option value="alpha-desc" className="bg-slate-900">Title (Z → A)</option>
-                    <option value="xp-high" className="bg-slate-900">XP (Highest First)</option>
-                    <option value="xp-low" className="bg-slate-900">XP (Lowest First)</option>
-                    <option value="steps-most" className="bg-slate-900">Most Steps</option>
-                    <option value="steps-least" className="bg-slate-900">Fewest Steps</option>
+                    <option value="newest" className="bg-slate-50">Newest Added</option>
+                    <option value="oldest" className="bg-slate-50">Oldest Added</option>
+                    <option value="alpha-asc" className="bg-slate-50">Title (A → Z)</option>
+                    <option value="alpha-desc" className="bg-slate-50">Title (Z → A)</option>
+                    <option value="xp-high" className="bg-slate-50">XP (Highest First)</option>
+                    <option value="xp-low" className="bg-slate-50">XP (Lowest First)</option>
+                    <option value="steps-most" className="bg-slate-50">Most Steps</option>
+                    <option value="steps-least" className="bg-slate-50">Fewest Steps</option>
                   </select>
                 </div>
 
                 {/* Author Filter Dropdown */}
                 {uniqueAuthors.length > 0 && (
-                  <div className="flex items-center gap-1.5 bg-slate-900/80 border border-slate-700 px-3 py-1.5 rounded-xl text-xs">
-                    <User className="w-3.5 h-3.5 text-emerald-400" />
-                    <label htmlFor="author-library" className="text-slate-400 font-semibold whitespace-nowrap">Teacher:</label>
+                  <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-xs">
+                    <User className="w-3.5 h-3.5 text-emerald-800" />
+                    <label htmlFor="author-library" className="text-slate-600 font-semibold whitespace-nowrap">Teacher:</label>
                     <select
                       id="author-library"
                       value={selectedAuthorFilter}
                       onChange={(e) => setSelectedAuthorFilter(e.target.value)}
-                      className="bg-transparent text-white font-bold outline-none cursor-pointer text-xs max-w-[140px] truncate"
+                      className="bg-transparent text-slate-900 font-bold outline-none cursor-pointer text-xs max-w-[140px] truncate"
                     >
-                      <option value="All" className="bg-slate-900">All Teachers</option>
-                      <option value="mine" className="bg-slate-900">My Published Only</option>
+                      <option value="All" className="bg-slate-50">All Teachers</option>
+                      <option value="mine" className="bg-slate-50">My Published Only</option>
                       {uniqueAuthors.map(author => (
-                        <option key={author} value={author} className="bg-slate-900">
+                        <option key={author} value={author} className="bg-slate-50">
                           {author}
                         </option>
                       ))}
@@ -927,7 +927,7 @@ export default function ActivityEditor({
 
               {/* Type Filter Pills */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-                <span className="text-slate-400 font-bold mr-1 flex items-center gap-1">
+                <span className="text-slate-600 font-bold mr-1 flex items-center gap-1">
                   <Filter className="w-3.5 h-3.5" /> Type:
                 </span>
                 {activityTypes.map(type => (
@@ -938,7 +938,7 @@ export default function ActivityEditor({
                     className={`px-3 py-1 rounded-lg font-bold transition-all whitespace-nowrap ${
                       selectedTypeFilter === type
                         ? 'bg-blue-600 text-white shadow-md'
-                        : 'bg-slate-700/70 text-slate-300 hover:bg-slate-700 hover:text-white'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-100 hover:text-slate-900'
                     }`}
                   >
                     {type}
@@ -950,22 +950,22 @@ export default function ActivityEditor({
             {/* Activities Content Area */}
             <div className="flex-1 overflow-y-auto pr-1 pt-3">
               {!user?.organizationId && user?.role !== 'admin' ? (
-                <div className="h-full flex flex-col items-center justify-center py-12 text-center p-8 bg-slate-900/40 rounded-2xl border border-amber-500/30">
-                  <Building2 className="w-12 h-12 text-amber-500/80 mb-3" />
-                  <h4 className="text-base font-bold text-white mb-1">No Organization Assigned</h4>
-                  <p className="text-xs text-slate-300 max-w-md">
+                <div className="h-full flex flex-col items-center justify-center py-12 text-center p-8 bg-slate-50 rounded-2xl border border-amber-500/30">
+                  <Building2 className="w-12 h-12 text-amber-800 mb-3" />
+                  <h4 className="text-base font-bold text-slate-900 mb-1">No Organization Assigned</h4>
+                  <p className="text-xs text-slate-700 max-w-md">
                     Your account is not currently assigned to an organization in the user list. Activities in the library are private and only visible to users in their respective organization. Please contact an administrator to assign your account to an organization.
                   </p>
                 </div>
               ) : libraryLoading ? (
                 <div className="h-full flex flex-col items-center justify-center py-12 text-center">
-                  <Loader2 className="w-8 h-8 text-blue-400 animate-spin mb-3" />
-                  <p className="text-sm font-semibold text-slate-300">Loading organization library activities...</p>
+                  <Loader2 className="w-8 h-8 text-blue-700 animate-spin mb-3" />
+                  <p className="text-sm font-semibold text-slate-700">Loading organization library activities...</p>
                 </div>
               ) : libraryError ? (
-                <div className="h-full flex flex-col items-center justify-center py-12 text-center p-6 bg-slate-900/50 rounded-xl border border-red-500/30">
-                  <p className="text-sm font-bold text-red-400 mb-2">Error Loading Library</p>
-                  <p className="text-xs text-slate-400 max-w-md mb-4">{libraryError}</p>
+                <div className="h-full flex flex-col items-center justify-center py-12 text-center p-6 bg-slate-50 rounded-xl border border-red-500/30">
+                  <p className="text-sm font-bold text-red-700 mb-2">Error Loading Library</p>
+                  <p className="text-xs text-slate-600 max-w-md mb-4">{libraryError}</p>
                   <button
                     type="button"
                     onClick={() => loadLibrary()}
@@ -975,14 +975,14 @@ export default function ActivityEditor({
                   </button>
                 </div>
               ) : filteredLibraryActivities.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center py-12 text-center p-8 bg-slate-900/40 rounded-2xl border border-slate-700/60">
-                  <div className="w-14 h-14 bg-slate-800 rounded-2xl flex items-center justify-center mb-3 text-slate-500">
+                <div className="h-full flex flex-col items-center justify-center py-12 text-center p-8 bg-slate-50 rounded-2xl border border-slate-200">
+                  <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mb-3 text-slate-600">
                     <BookOpen className="w-7 h-7" />
                   </div>
-                  <h4 className="text-base font-bold text-slate-200 mb-1">
+                  <h4 className="text-base font-bold text-slate-800 mb-1">
                     {libraryActivities.length === 0 ? "No activities published yet for your organization" : "No matching activities"}
                   </h4>
-                  <p className="text-xs text-slate-400 max-w-sm mb-4">
+                  <p className="text-xs text-slate-600 max-w-sm mb-4">
                     {libraryActivities.length === 0
                       ? "Publish your own choice board activities to your school library using the 'Publish' button on any activity card!"
                       : "Try clearing your search query, changing the sort order, or selecting a different filter."}
@@ -991,7 +991,7 @@ export default function ActivityEditor({
                     <button
                       type="button"
                       onClick={() => { setSearchQuery(''); setSelectedTypeFilter('All'); setSelectedAuthorFilter('All'); }}
-                      className="px-3.5 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-bold transition-colors"
+                      className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition-colors"
                     >
                       Reset All Filters
                     </button>
@@ -1004,37 +1004,37 @@ export default function ActivityEditor({
                     return (
                       <div
                         key={activity.id}
-                        className="bg-slate-900/70 hover:bg-slate-900/90 p-5 rounded-2xl border border-slate-700/80 hover:border-slate-600 transition-all flex flex-col justify-between shadow-lg"
+                        className="bg-slate-50 hover:bg-slate-50 p-5 rounded-2xl border border-slate-200 hover:border-slate-300 transition-all flex flex-col justify-between shadow-lg"
                       >
                         <div className="space-y-3">
                           {/* Badges, XP & Delete Header */}
                           <div className="flex items-center justify-between gap-2 flex-wrap">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className={`text-[11px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${getTypeBadgeClass(activity.type)}`}>
+                              <span className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${getTypeBadgeClass(activity.type)}`}>
                                 {activity.type || 'Low Tech'}
                               </span>
                               {activity.categoryTag && (
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 flex items-center gap-1">
-                                  <Tag className="w-3 h-3 text-slate-400" />
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-slate-700 border border-slate-200 flex items-center gap-1">
+                                  <Tag className="w-3 h-3 text-slate-600" />
                                   {activity.categoryTag}
                                 </span>
                               )}
                               {activity.organizationName && (
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-950/60 text-purple-300 border border-purple-800/40 flex items-center gap-1">
-                                  <Building2 className="w-3 h-3 text-purple-400" />
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 flex items-center gap-1">
+                                  <Building2 className="w-3 h-3 text-purple-700" />
                                   {activity.organizationName}
                                 </span>
                               )}
                             </div>
                             <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-black text-amber-400 bg-amber-400/10 border border-amber-400/30 px-2 py-0.5 rounded-full">
+                              <span className="text-xs font-bold text-amber-800 bg-amber-100 border border-amber-400/30 px-2 py-0.5 rounded-full">
                                 +{activity.xp || 100} XP
                               </span>
                               {isAuthorOrAdmin && (
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteFromLibrary(activity.id, activity.title)}
-                                  className="p-1 text-slate-500 hover:text-red-400 hover:bg-red-950/40 rounded-lg transition-colors"
+                                  className="p-1 text-slate-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                                   title="Delete from organization library"
                                   aria-label={`Delete ${activity.title} from library`}
                                 >
@@ -1046,16 +1046,16 @@ export default function ActivityEditor({
 
                           {/* Title & Desc */}
                           <div>
-                            <h4 className="text-base font-black text-white">{activity.title}</h4>
+                            <h4 className="text-base font-bold text-slate-900">{activity.title}</h4>
                             {activity.desc && (
-                              <p className="text-xs text-slate-300 mt-1 line-clamp-3 leading-relaxed">
+                              <p className="text-xs text-slate-700 mt-1 line-clamp-3 leading-relaxed">
                                 {activity.desc}
                               </p>
                             )}
                           </div>
 
                           {/* Steps, ProTip and Author Attribution */}
-                          <div className="flex items-center gap-3 text-[11px] text-slate-400 flex-wrap">
+                          <div className="flex items-center gap-3 text-[11px] text-slate-600 flex-wrap">
                             <span>📋 {activity.steps?.length || 1} {activity.steps?.length === 1 ? 'step' : 'steps'}</span>
                             {activity.proTip && <span>💡 Pro Tip included</span>}
                             {activity.authorName && (
@@ -1065,8 +1065,8 @@ export default function ActivityEditor({
                         </div>
 
                         {/* Import Action Row */}
-                        <div className="mt-4 pt-3 border-t border-slate-800">
-                          <span className="text-[11px] font-bold text-slate-400 block mb-2">Import to Path:</span>
+                        <div className="mt-4 pt-3 border-t border-slate-200">
+                          <span className="text-[11px] font-bold text-slate-600 block mb-2">Import to Path:</span>
                           <div className="flex gap-1.5 flex-wrap">
                             {learningPaths.map(path => (
                               <button
@@ -1097,15 +1097,15 @@ export default function ActivityEditor({
         {/* Left sidebar: Activity list organized by path */}
         <div className="w-full lg:w-72 flex-shrink-0 space-y-3">
           {learningPaths.map(path => (
-            <div key={path.id} className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+            <div key={path.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
               {/* Path header - collapsible */}
               <button
                 onClick={() => setExpandedPaths(prev => ({ ...prev, [path.id]: !prev[path.id] }))}
-                className={`w-full flex items-center justify-between p-3 ${path.color} hover:brightness-110 transition-all`}
+                className={`text-white w-full flex items-center justify-between p-3 ${path.color} hover:brightness-110 transition-all`}
                 aria-expanded={expandedPaths[path.id]}
                 aria-controls={`path-list-${path.id}`}
               >
-                <span className="font-black uppercase italic text-white text-sm truncate">{path.title}</span>
+                <span className="font-bold text-white text-sm truncate">{path.title}</span>
                 <div className="flex items-center gap-1">
                   <span className="text-xs bg-white/20 text-white px-1.5 py-0.5 rounded-full">{path.options.length}</span>
                   {expandedPaths[path.id]
@@ -1130,13 +1130,13 @@ export default function ActivityEditor({
                         }}
                         className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                           isActive
-                            ? 'bg-blue-600/30 border border-blue-500 text-white font-bold'
-                            : 'hover:bg-slate-700 text-slate-300 border border-transparent'
+                            ? 'bg-blue-100 border border-blue-500 text-slate-900 font-bold'
+                            : 'hover:bg-slate-100 text-slate-700 border border-transparent'
                         }`}
                         aria-current={isActive ? 'true' : undefined}
                       >
                         <div className="font-bold truncate">{activity.title}</div>
-                        <div className="text-xs text-slate-400 truncate">{activity.type} &middot; {activity.xp} XP</div>
+                        <div className="text-xs text-slate-600 truncate">{activity.type} &middot; {activity.xp} XP</div>
                       </button>
                     );
                   })}
@@ -1144,7 +1144,7 @@ export default function ActivityEditor({
                   {/* Add activity button */}
                   <button
                     onClick={() => handleAddActivity(path.id)}
-                    className="w-full flex items-center justify-center gap-1.5 px-3 py-2 border border-dashed border-slate-600 rounded-lg text-slate-400 hover:border-slate-400 hover:text-slate-200 text-sm transition-colors"
+                    className="w-full flex items-center justify-center gap-1.5 px-3 py-2 border border-dashed border-slate-300 rounded-lg text-slate-600 hover:border-slate-400 hover:text-slate-800 text-sm transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5" aria-hidden="true" /> Add Activity
                   </button>
@@ -1157,12 +1157,12 @@ export default function ActivityEditor({
         {/* Right panel: Activity editor or empty state */}
         <div className="flex-1 min-w-0">
           {editingActivity ? (
-            <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg">
+            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-lg">
               {/* Editor header */}
-              <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-slate-700 bg-slate-800/90">
+              <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-slate-200 bg-white">
                 <div className="flex items-center gap-2 flex-wrap min-w-0">
-                  <h3 className="text-lg font-bold text-white truncate">Edit Activity</h3>
-                  <span className="text-xs bg-slate-700 text-slate-300 font-semibold px-2.5 py-1 rounded-full border border-slate-600 truncate max-w-[220px]">
+                  <h3 className="text-lg font-bold text-slate-900 truncate">Edit Activity</h3>
+                  <span className="text-xs bg-slate-100 text-slate-700 font-semibold px-2.5 py-1 rounded-full border border-slate-300 truncate max-w-[220px]">
                     {learningPaths.find(p => p.id === editingPathId)?.title}
                   </span>
                 </div>
@@ -1170,7 +1170,7 @@ export default function ActivityEditor({
                   <button
                     onClick={() => setShowPreview(!showPreview)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                      showPreview ? 'bg-blue-600/30 text-blue-400 border border-blue-500' : 'bg-slate-700 text-slate-300 hover:text-white border border-slate-600'
+                      showPreview ? 'bg-blue-100 text-blue-700 border border-blue-500' : 'bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-300'
                     }`}
                     aria-pressed={showPreview}
                   >
@@ -1179,7 +1179,7 @@ export default function ActivityEditor({
                   </button>
                   <button
                     onClick={() => handleDuplicateActivity(editingPathId, editingActivity)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-bold transition-colors border border-slate-600"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition-colors border border-slate-300"
                     aria-label="Duplicate this activity"
                   >
                     <Copy className="w-3.5 h-3.5" />
@@ -1187,7 +1187,7 @@ export default function ActivityEditor({
                   </button>
                   <button
                     onClick={() => handlePublish(editingActivity)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 hover:text-blue-300 rounded-lg text-xs font-bold transition-colors border border-slate-600"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 hover:text-blue-700 rounded-lg text-xs font-bold transition-colors border border-slate-300"
                     aria-label="Publish to library"
                   >
                     <BookOpen className="w-3.5 h-3.5" />
@@ -1195,7 +1195,7 @@ export default function ActivityEditor({
                   </button>
                   <button
                     onClick={() => handleDeleteActivity(editingPathId, editingActivityId)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-950/60 hover:bg-red-900/80 text-red-300 rounded-lg text-xs font-bold transition-colors border border-red-800/60"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-50 text-red-700 rounded-lg text-xs font-bold transition-colors border border-red-200"
                     aria-label="Delete this activity"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -1208,12 +1208,12 @@ export default function ActivityEditor({
                 {/* Basic info section */}
                 <div className="space-y-4">
                   <div>
-                    <label htmlFor={`edit-title-${editingActivityId}`} className="block text-sm font-bold text-slate-300 mb-1.5">
+                    <label htmlFor={`edit-title-${editingActivityId}`} className="block text-sm font-bold text-slate-700 mb-1.5">
                       Activity Title
                     </label>
                     <input
                       id={`edit-title-${editingActivityId}`}
-                      className="w-full bg-slate-700 text-white text-lg font-bold px-4 py-2.5 rounded-lg border border-slate-600 focus:border-blue-500 outline-none"
+                      className="w-full bg-slate-100 text-slate-900 text-lg font-bold px-4 py-2.5 rounded-lg border border-slate-300 focus:border-blue-500 outline-none"
                       value={editingActivity.title}
                       onChange={(e) => handleUpdateActivity(editingPathId, editingActivityId, 'title', e.target.value)}
                       placeholder="Activity title..."
@@ -1221,28 +1221,28 @@ export default function ActivityEditor({
                   </div>
 
                   <div>
-                    <label htmlFor={`edit-desc-${editingActivityId}`} className="block text-sm font-bold text-slate-300 mb-1.5">
+                    <label htmlFor={`edit-desc-${editingActivityId}`} className="block text-sm font-bold text-slate-700 mb-1.5">
                       Description
                     </label>
                     <textarea
                       id={`edit-desc-${editingActivityId}`}
-                      className="w-full bg-slate-700 text-sm text-slate-200 px-4 py-2.5 rounded-lg border border-slate-600 focus:border-blue-500 outline-none resize-y min-h-[60px]"
+                      className="w-full bg-slate-100 text-sm text-slate-800 px-4 py-2.5 rounded-lg border border-slate-300 focus:border-blue-500 outline-none resize-y min-h-[60px]"
                       value={editingActivity.desc}
                       onChange={(e) => handleUpdateActivity(editingPathId, editingActivityId, 'desc', e.target.value)}
                       placeholder="Brief description of the activity..."
                       rows={2}
                     />
-                    <p className="text-xs text-slate-500 mt-1">Use **bold** and *italic* for formatting.</p>
+                    <p className="text-xs text-slate-600 mt-1">Use **bold** and *italic* for formatting.</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor={`edit-xp-${editingActivityId}`} className="block text-sm font-bold text-slate-300 mb-1.5">
+                      <label htmlFor={`edit-xp-${editingActivityId}`} className="block text-sm font-bold text-slate-700 mb-1.5">
                         XP Reward
                       </label>
                       <input
                         id={`edit-xp-${editingActivityId}`}
-                        className="w-full bg-slate-700 text-yellow-400 font-bold px-4 py-2.5 rounded-lg border border-slate-600 focus:border-blue-500 outline-none"
+                        className="w-full bg-slate-100 text-yellow-800 font-bold px-4 py-2.5 rounded-lg border border-slate-300 focus:border-blue-500 outline-none"
                         type="number"
                         min="0"
                         step="10"
@@ -1251,12 +1251,12 @@ export default function ActivityEditor({
                       />
                     </div>
                     <div>
-                      <label htmlFor={`edit-type-${editingActivityId}`} className="block text-sm font-bold text-slate-300 mb-1.5">
+                      <label htmlFor={`edit-type-${editingActivityId}`} className="block text-sm font-bold text-slate-700 mb-1.5">
                         Activity Type
                       </label>
                       <select
                         id={`edit-type-${editingActivityId}`}
-                        className="w-full bg-slate-700 text-slate-200 px-4 py-2.5 rounded-lg border border-slate-600 focus:border-blue-500 outline-none"
+                        className="w-full bg-slate-100 text-slate-800 px-4 py-2.5 rounded-lg border border-slate-300 focus:border-blue-500 outline-none"
                         value={editingActivity.type}
                         onChange={(e) => handleUpdateActivity(editingPathId, editingActivityId, 'type', e.target.value)}
                       >
@@ -1271,16 +1271,16 @@ export default function ActivityEditor({
                 </div>
 
                 {/* Divider */}
-                <div className="border-t border-slate-700" />
+                <div className="border-t border-slate-200" />
 
                 {/* Steps section */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <h4 className="text-sm font-bold text-slate-300 uppercase tracking-widest">Steps</h4>
-                      <p className="text-xs text-slate-500 mt-0.5">Instructions students will follow. Use formatting toolbar for **bold** and *italic*.</p>
+                      <h4 className="text-sm font-bold text-slate-700 uppercase tracking-widest">Steps</h4>
+                      <p className="text-xs text-slate-600 mt-0.5">Instructions students will follow. Use formatting toolbar for **bold** and *italic*.</p>
                     </div>
-                    <span className="text-xs bg-slate-700 text-slate-400 px-2 py-1 rounded-full">
+                    <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
                       {editingActivity.steps.length} {editingActivity.steps.length === 1 ? 'step' : 'steps'}
                     </span>
                   </div>
@@ -1305,35 +1305,35 @@ export default function ActivityEditor({
 
                   <button
                     onClick={addStep}
-                    className="w-full mt-3 py-2.5 border-2 border-dashed border-slate-600 rounded-lg text-slate-400 hover:border-blue-500 hover:text-blue-400 flex items-center justify-center gap-2 transition-colors"
+                    className="w-full mt-3 py-2.5 border-2 border-dashed border-slate-300 rounded-lg text-slate-600 hover:border-blue-500 hover:text-blue-700 flex items-center justify-center gap-2 transition-colors"
                   >
                     <Plus className="w-4 h-4" aria-hidden="true" /> Add Step
                   </button>
                 </div>
 
                 {/* Divider */}
-                <div className="border-t border-slate-700" />
+                <div className="border-t border-slate-200" />
 
                 {/* Pro Tip */}
                 <div>
-                  <label htmlFor={`edit-protip-${editingActivityId}`} className="block text-sm font-bold text-slate-300 mb-1.5">
+                  <label htmlFor={`edit-protip-${editingActivityId}`} className="block text-sm font-bold text-slate-700 mb-1.5">
                     Pro Tip
                   </label>
                   <textarea
                     id={`edit-protip-${editingActivityId}`}
-                    className="w-full bg-slate-700 text-blue-300 px-4 py-2.5 rounded-lg border border-slate-600 focus:border-blue-500 outline-none resize-y min-h-[60px]"
+                    className="w-full bg-slate-100 text-blue-700 px-4 py-2.5 rounded-lg border border-slate-300 focus:border-blue-500 outline-none resize-y min-h-[60px]"
                     value={editingActivity.proTip || ''}
                     onChange={(e) => handleUpdateActivity(editingPathId, editingActivityId, 'proTip', e.target.value)}
                     placeholder="Optional tip for students to earn extra XP..."
                     rows={2}
                   />
-                  <p className="text-xs text-slate-500 mt-1">Supports **bold** and *italic* formatting.</p>
+                  <p className="text-xs text-slate-600 mt-1">Supports **bold** and *italic* formatting.</p>
                 </div>
 
                 {/* Preview section */}
                 {showPreview && (
                   <>
-                    <div className="border-t border-slate-700" />
+                    <div className="border-t border-slate-200" />
                     <ActivityPreview activity={editingActivity} />
                   </>
                 )}
@@ -1341,12 +1341,12 @@ export default function ActivityEditor({
             </div>
           ) : (
             /* Empty state when no activity is selected */
-            <div className="bg-slate-800 rounded-xl border border-slate-700 flex flex-col items-center justify-center min-h-[400px] text-center p-8">
-              <div className="w-16 h-16 bg-slate-700 rounded-2xl flex items-center justify-center mb-4">
-                <Type className="w-8 h-8 text-slate-500" aria-hidden="true" />
+            <div className="bg-white rounded-xl border border-slate-200 flex flex-col items-center justify-center min-h-[400px] text-center p-8">
+              <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4">
+                <Type className="w-8 h-8 text-slate-600" aria-hidden="true" />
               </div>
-              <h3 className="text-lg font-bold text-slate-300 mb-2">Select an Activity to Edit</h3>
-              <p className="text-sm text-slate-500 max-w-md">
+              <h3 className="text-lg font-bold text-slate-700 mb-2">Select an Activity to Edit</h3>
+              <p className="text-sm text-slate-600 max-w-md">
                 Click on any activity in the sidebar to start editing. You can also add new activities using the
                 "+ Add Activity" button under each learning path.
               </p>

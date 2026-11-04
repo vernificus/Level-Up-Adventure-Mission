@@ -380,18 +380,18 @@ export function getRedemptionStatusBadge(status) {
   if (status === 'fulfilled') {
     return {
       label: '✓ Fulfilled',
-      className: 'bg-green-100 text-green-800 border border-green-500/40'
+      className: 'bg-green-100 text-green-800 border border-green-500/40 dark:bg-green-500/20 dark:text-green-400'
     };
   }
   if (status === 'cancelled') {
     return {
       label: '✕ Cancelled',
-      className: 'bg-red-100 text-red-700 border border-red-500/40'
+      className: 'bg-red-100 text-red-700 border border-red-500/40 dark:bg-red-500/20 dark:text-red-400'
     };
   }
   return {
     label: '⏳ Waiting for Teacher',
-    className: 'bg-yellow-100 text-yellow-800 border border-yellow-500/40'
+    className: 'bg-yellow-100 text-yellow-800 border border-yellow-500/40 dark:bg-yellow-500/20 dark:text-yellow-300'
   };
 }
 

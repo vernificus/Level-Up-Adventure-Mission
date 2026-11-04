@@ -12,7 +12,8 @@ const suites = [
   './boundaryStress.test.js',
   './portalUtils.test.js',
   './guildChallengeReliability.test.js',
-  './costZeroStorage.test.js'
+  './costZeroStorage.test.js',
+  './theme.test.js'
 ];
 
 try {

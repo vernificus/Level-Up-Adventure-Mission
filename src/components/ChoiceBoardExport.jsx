@@ -4,6 +4,7 @@ import { Download, X, Loader2 } from 'lucide-react';
 import { LEARNING_PATHS as DEFAULT_PATHS, PATH_COLORS } from '../data/gameData';
 import { resolveClassLearningPaths } from '../utils/gameUtils';
 import { realBackend as backend } from '../services/realBackend';
+import { useTheme } from '../context/ThemeContext';
 
 // Map Tailwind bg color classes to hex values for the export render
 const COLOR_HEX = {
@@ -20,10 +21,33 @@ function getHexColor(tailwindClass) {
 }
 
 export default function ChoiceBoardExport({ classId, className }) {
+  const { isDark } = useTheme();
   const [exporting, setExporting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [paths, setPaths] = useState(null);
   const boardRef = useRef(null);
+
+  const palette = isDark
+    ? {
+        canvasBg: '#0f172a',
+        cardBg: '#1e293b',
+        cardBorder: '#334155',
+        itemBg: '#0f172a',
+        titleText: '#f8fafc',
+        subText: '#94a3b8',
+        mutedText: '#64748b',
+        xpText: '#fbbf24',
+      }
+    : {
+        canvasBg: '#F6F7FB',
+        cardBg: '#FFFFFF',
+        cardBorder: '#E1E5F0',
+        itemBg: '#F6F7FB',
+        titleText: '#1B2340',
+        subText: '#4A5270',
+        mutedText: '#5D6687',
+        xpText: '#A16207',
+      };
 
   const loadPaths = useCallback(async () => {
     const classDoc = await backend.getClass(classId);
@@ -42,7 +66,7 @@ export default function ChoiceBoardExport({ classId, className }) {
     setExporting(true);
     try {
       const canvas = await html2canvas(boardRef.current, {
-        backgroundColor: '#0f172a',
+        backgroundColor: palette.canvasBg,
         scale: 2,
         useCORS: true,
       });
@@ -70,11 +94,11 @@ export default function ChoiceBoardExport({ classId, className }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 flex items-start justify-center z-50 overflow-y-auto p-4">
-      <div className="bg-slate-50 rounded-xl border border-slate-200 w-full max-w-6xl my-8">
+    <div className="fixed inset-0 bg-slate-900/60 flex items-start justify-center z-50 overflow-y-auto p-4 dark:bg-black/70">
+      <div className="bg-slate-50 rounded-xl border border-slate-200 w-full max-w-6xl my-8 dark:bg-slate-900 dark:border-slate-700">
         {/* Toolbar */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-200">
-          <h3 className="text-lg font-bold text-slate-900">Export Choice Board</h3>
+        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white">Export Choice Board</h3>
           <div className="flex items-center gap-3">
             <button
               onClick={handleExport}
@@ -86,7 +110,7 @@ export default function ChoiceBoardExport({ classId, className }) {
             </button>
             <button
               onClick={() => { setShowPreview(false); setPaths(null); }}
-              className="p-2 text-slate-600 hover:text-slate-900 transition-colors"
+              className="p-2 text-slate-600 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:text-white"
               aria-label="Close export preview"
             >
               <X className="w-5 h-5" />
@@ -98,23 +122,23 @@ export default function ChoiceBoardExport({ classId, className }) {
         <div className="p-4 overflow-auto">
           {!paths ? (
             <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-8 h-8 text-green-800 animate-spin" />
+              <Loader2 className="w-8 h-8 text-green-800 animate-spin dark:text-green-400" />
             </div>
           ) : (
             <div
               ref={boardRef}
               style={{
-                backgroundColor: '#0f172a',
+                backgroundColor: palette.canvasBg,
                 padding: '32px',
                 fontFamily: 'system-ui, -apple-system, sans-serif',
               }}
             >
               {/* Header */}
               <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-                <h1 style={{ color: '#f8fafc', fontSize: '28px', fontWeight: 800, margin: 0 }}>
+                <h1 style={{ color: palette.titleText, fontSize: '28px', fontWeight: 800, margin: 0 }}>
                   {className || 'Choice Board'}
                 </h1>
-                <p style={{ color: '#94a3b8', fontSize: '14px', marginTop: '4px' }}>
+                <p style={{ color: palette.subText, fontSize: '14px', marginTop: '4px' }}>
                   Choose one activity from each category to complete
                 </p>
               </div>
@@ -127,10 +151,10 @@ export default function ChoiceBoardExport({ classId, className }) {
                     style={{
                       flex: '1 1 280px',
                       minWidth: '280px',
-                      backgroundColor: '#1e293b',
+                      backgroundColor: palette.cardBg,
                       borderRadius: '12px',
                       overflow: 'hidden',
-                      border: '1px solid #334155',
+                      border: `1px solid ${palette.cardBorder}`,
                     }}
                   >
                     {/* Category header */}
@@ -157,20 +181,20 @@ export default function ChoiceBoardExport({ classId, className }) {
                           <div
                             key={option.id}
                             style={{
-                              backgroundColor: '#0f172a',
+                              backgroundColor: palette.itemBg,
                               borderRadius: '8px',
                               padding: '12px 14px',
                               marginBottom: '10px',
-                              border: '1px solid #334155',
+                              border: `1px solid ${palette.cardBorder}`,
                             }}
                           >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
-                              <h3 style={{ color: '#f8fafc', fontSize: '15px', fontWeight: 600, margin: 0 }}>
+                              <h3 style={{ color: palette.titleText, fontSize: '15px', fontWeight: 600, margin: 0 }}>
                                 {option.title}
                               </h3>
                               <span
                                 style={{
-                                  color: '#fbbf24',
+                                  color: palette.xpText,
                                   fontSize: '12px',
                                   fontWeight: 700,
                                   whiteSpace: 'nowrap',
@@ -180,7 +204,7 @@ export default function ChoiceBoardExport({ classId, className }) {
                                 {option.xp} XP
                               </span>
                             </div>
-                            <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0, lineHeight: '1.4' }}>
+                            <p style={{ color: palette.subText, fontSize: '13px', margin: 0, lineHeight: '1.4' }}>
                               {option.desc}
                             </p>
                             {option.type && (
@@ -189,11 +213,11 @@ export default function ChoiceBoardExport({ classId, className }) {
                                   display: 'inline-block',
                                   marginTop: '6px',
                                   fontSize: '11px',
-                                  color: '#64748b',
-                                  backgroundColor: '#1e293b',
+                                  color: palette.mutedText,
+                                  backgroundColor: palette.cardBg,
                                   padding: '2px 8px',
                                   borderRadius: '4px',
-                                  border: '1px solid #334155',
+                                  border: `1px solid ${palette.cardBorder}`,
                                 }}
                               >
                                 {option.type}
@@ -202,7 +226,7 @@ export default function ChoiceBoardExport({ classId, className }) {
                           </div>
                         ))
                       ) : (
-                        <p style={{ color: '#475569', fontSize: '13px', textAlign: 'center', padding: '16px 0' }}>
+                        <p style={{ color: palette.mutedText, fontSize: '13px', textAlign: 'center', padding: '16px 0' }}>
                           No activities yet
                         </p>
                       )}

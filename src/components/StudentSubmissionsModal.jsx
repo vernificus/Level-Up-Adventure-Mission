@@ -249,33 +249,33 @@ export default function StudentSubmissionsModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-md overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-md overflow-y-auto dark:bg-slate-950/85"
       role="dialog"
       aria-modal="true"
       aria-labelledby="student-submissions-title"
     >
-      <div className="bg-slate-50 border border-slate-200 rounded-2xl max-w-5xl w-full p-4 sm:p-5 shadow-2xl my-auto max-h-[94vh] flex flex-col text-slate-900 overflow-hidden print:max-h-none print:m-0 print:border-none print:shadow-none print:bg-white print:text-black">
+      <div className="bg-slate-50 border border-slate-200 rounded-2xl max-w-5xl w-full p-4 sm:p-5 shadow-2xl my-auto max-h-[94vh] flex flex-col text-slate-900 overflow-hidden print:max-h-none print:m-0 print:border-none print:shadow-none print:bg-white print:text-black dark:bg-slate-900 dark:border-slate-700/80 dark:text-slate-100">
 
         {/* ── HEADER (No Avatar, Maximum Space for History) ── */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-slate-200 print:border-b-2 print:border-black flex-shrink-0">
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-slate-200 print:border-b-2 print:border-black flex-shrink-0 dark:border-slate-800">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 id="student-submissions-title" className="text-xl sm:text-2xl font-display font-bold text-slate-900 flex items-center gap-2 print:text-black leading-tight">
+              <h2 id="student-submissions-title" className="text-xl sm:text-2xl font-display font-bold text-slate-900 flex items-center gap-2 print:text-black leading-tight dark:text-white">
                 {currentStudent.name}
               </h2>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold bg-white border border-slate-200 ${studentLevel.color} print:text-black print:border-gray-400`}>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold bg-white border border-slate-200 dark:bg-slate-800 dark:border-slate-700 ${studentLevel.color} print:text-black print:border-gray-400`}>
                 Lvl {studentLevel.level} - {studentLevel.title}
               </span>
-              <span className="text-xs text-slate-600 hidden sm:inline print:inline">
+              <span className="text-xs text-slate-600 hidden sm:inline print:inline dark:text-slate-400">
                 &bull; {currentStudent.xp || 0} XP &bull; {currentStudent.coins || 0} Coins &bull; {(currentStudent.completedActivities || []).length} Activities Done
               </span>
               {className && (
-                <span className="text-xs text-green-800 font-medium hidden md:inline">
+                <span className="text-xs text-green-800 font-medium hidden md:inline dark:text-green-400">
                   &bull; {className}
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-slate-600 sm:hidden print:hidden leading-tight mt-0.5">
+            <p className="text-[11px] text-slate-600 sm:hidden print:hidden leading-tight mt-0.5 dark:text-slate-400">
               {currentStudent.xp || 0} XP &bull; {currentStudent.coins || 0} Coins &bull; {(currentStudent.completedActivities || []).length} Done {className ? `• ${className}` : ''}
             </p>
           </div>
@@ -283,12 +283,12 @@ export default function StudentSubmissionsModal({
           <div className="flex items-center gap-2 print:hidden flex-wrap">
             {/* Student Switcher dropdown & controls */}
             {allStudents.length > 1 && onSelectStudent && (
-              <div className="flex items-center gap-0.5 bg-white border border-slate-200 rounded-lg p-0.5">
+              <div className="flex items-center gap-0.5 bg-white border border-slate-200 rounded-lg p-0.5 dark:bg-slate-800 dark:border-slate-700">
                 <button
                   type="button"
                   onClick={handlePrevStudent}
                   disabled={!hasPrev}
-                  className="p-1 text-slate-600 hover:text-slate-900 disabled:opacity-30 disabled:hover:text-slate-600 transition-colors"
+                  className="p-1 text-slate-600 hover:text-slate-900 disabled:opacity-30 disabled:hover:text-slate-600 transition-colors dark:text-slate-400 dark:hover:text-white dark:disabled:hover:text-slate-400"
                   title="Previous student"
                   aria-label="Previous student"
                 >
@@ -300,11 +300,11 @@ export default function StudentSubmissionsModal({
                     const next = allStudents.find(s => s.id === e.target.value);
                     if (next) onSelectStudent(next);
                   }}
-                  className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none px-1 py-0.5 max-w-[120px] sm:max-w-[160px] truncate cursor-pointer"
+                  className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none px-1 py-0.5 max-w-[120px] sm:max-w-[160px] truncate cursor-pointer dark:text-slate-200"
                   aria-label="Select student"
                 >
                   {allStudents.map(s => (
-                    <option key={s.id} value={s.id} className="bg-slate-50 text-slate-900">
+                    <option key={s.id} value={s.id} className="bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-white">
                       {s.name}
                     </option>
                   ))}
@@ -313,7 +313,7 @@ export default function StudentSubmissionsModal({
                   type="button"
                   onClick={handleNextStudent}
                   disabled={!hasNext}
-                  className="p-1 text-slate-600 hover:text-slate-900 disabled:opacity-30 disabled:hover:text-slate-600 transition-colors"
+                  className="p-1 text-slate-600 hover:text-slate-900 disabled:opacity-30 disabled:hover:text-slate-600 transition-colors dark:text-slate-400 dark:hover:text-white dark:disabled:hover:text-slate-400"
                   title="Next student"
                   aria-label="Next student"
                 >
@@ -325,17 +325,17 @@ export default function StudentSubmissionsModal({
             <button
               type="button"
               onClick={handlePrint}
-              className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5"
+              className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:border-slate-700"
               title="Print student work portfolio"
             >
-              <Printer className="w-3.5 h-3.5 text-blue-700" />
+              <Printer className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400" />
               <span className="hidden sm:inline">Print</span>
             </button>
 
             <button
               type="button"
               onClick={onClose}
-              className="p-1 text-slate-600 hover:text-slate-900 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 transition-colors"
+              className="p-1 text-slate-600 hover:text-slate-900 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 transition-colors dark:text-slate-400 dark:hover:text-white dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
               aria-label="Close modal"
             >
               <X className="w-5 h-5" />
@@ -345,9 +345,9 @@ export default function StudentSubmissionsModal({
 
         {/* ── UNSYNCED XP BANNER: Detects when approved submissions haven't tallied to student balance ── */}
         {totalEarnedXp > (currentStudent.xp || 0) && (
-          <div className="my-2 p-3 bg-amber-50 border border-amber-500/50 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs text-amber-800 print:hidden flex-shrink-0 animate-fadeIn">
+          <div className="my-2 p-3 bg-amber-50 border border-amber-500/50 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs text-amber-800 print:hidden flex-shrink-0 animate-fadeIn dark:bg-amber-950/70 dark:text-amber-200">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-800 shrink-0" />
+              <AlertTriangle className="w-4 h-4 text-amber-800 shrink-0 dark:text-amber-400" />
               <span>
                 Approved submissions tally to <strong>{totalEarnedXp} XP</strong>, but <strong>{currentStudent.name}</strong> currently only has <strong>{currentStudent.xp || 0} XP</strong>.
               </span>
@@ -366,8 +366,8 @@ export default function StudentSubmissionsModal({
 
         {/* ── ACTION NOTICE BANNER ── */}
         {actionNotice && (
-          <div className="my-1.5 px-3 py-1 bg-emerald-50 border border-emerald-600/40 text-emerald-800 rounded-lg text-xs font-bold flex items-center gap-2 animate-fadeIn print:hidden flex-shrink-0">
-            <CheckCircle2 className="w-4 h-4 text-emerald-800" />
+          <div className="my-1.5 px-3 py-1 bg-emerald-50 border border-emerald-600/40 text-emerald-800 rounded-lg text-xs font-bold flex items-center gap-2 animate-fadeIn print:hidden flex-shrink-0 dark:bg-emerald-950/80 dark:text-emerald-300">
+            <CheckCircle2 className="w-4 h-4 text-emerald-800 dark:text-emerald-400" />
             <span>{actionNotice}</span>
           </div>
         )}
@@ -383,21 +383,21 @@ export default function StudentSubmissionsModal({
         {/* ── UNIFIED FILTER TABS & SEARCH CONTROLS (Single sleek toolbar) ── */}
         <div className="flex flex-wrap items-center justify-between gap-2 my-2 print:hidden flex-shrink-0">
           {/* Status Tabs */}
-          <div className="flex items-center gap-1 bg-slate-50 p-0.5 rounded-lg border border-slate-200 text-xs font-bold overflow-x-auto">
+          <div className="flex items-center gap-1 bg-slate-50 p-0.5 rounded-lg border border-slate-200 text-xs font-bold overflow-x-auto dark:bg-slate-950 dark:border-slate-800">
             <button
               type="button"
               onClick={() => setStatusFilter('all')}
               className={`px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 ${
                 statusFilter === 'all'
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
               <span>All</span>
-              <span className="px-1.5 py-0.2 bg-slate-50 rounded-full text-[10px] text-slate-700 font-bold border border-slate-200">
+              <span className="px-1.5 py-0.2 bg-slate-50 rounded-full text-[10px] text-slate-700 font-bold border border-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700/60">
                 {totalCount}
               </span>
-              <span className="text-[10px] text-slate-600 font-normal hidden sm:inline">({approvalRate}%)</span>
+              <span className="text-[10px] text-slate-600 font-normal hidden sm:inline dark:text-slate-500">({approvalRate}%)</span>
             </button>
 
             <button
@@ -406,13 +406,13 @@ export default function StudentSubmissionsModal({
               className={`px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 ${
                 statusFilter === 'approved'
                   ? 'bg-emerald-600 text-white font-bold shadow-sm'
-                  : 'text-emerald-800 hover:text-emerald-800'
+                  : 'text-emerald-800 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300'
               }`}
             >
               <Check className="w-3.5 h-3.5" />
               <span>Approved</span>
               <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                statusFilter === 'approved' ? 'bg-emerald-700 text-white' : 'bg-emerald-50 text-emerald-800 border border-emerald-300'
+                statusFilter === 'approved' ? 'bg-emerald-700 text-white' : 'bg-emerald-50 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-700/60'
               }`}>
                 {approvedSubs.length}
               </span>
@@ -424,13 +424,13 @@ export default function StudentSubmissionsModal({
               className={`px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 ${
                 statusFilter === 'pending'
                   ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-                  : 'text-amber-800 hover:text-amber-800'
+                  : 'text-amber-800 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300'
               }`}
             >
               <Clock className="w-3.5 h-3.5" />
               <span>Pending</span>
               <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                statusFilter === 'pending' ? 'bg-amber-600 text-white' : 'bg-amber-50 text-amber-800 border border-amber-300'
+                statusFilter === 'pending' ? 'bg-amber-600 text-white' : 'bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-700/60'
               }`}>
                 {pendingSubs.length}
               </span>
@@ -445,13 +445,13 @@ export default function StudentSubmissionsModal({
               className={`px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 ${
                 statusFilter === 'rejected'
                   ? 'bg-rose-600 text-white font-bold shadow-sm'
-                  : 'text-rose-700 hover:text-rose-700'
+                  : 'text-rose-700 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300'
               }`}
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Needs Revision</span>
               <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                statusFilter === 'rejected' ? 'bg-rose-700 text-white' : 'bg-rose-50 text-rose-700 border border-rose-300'
+                statusFilter === 'rejected' ? 'bg-rose-700 text-white' : 'bg-rose-50 text-rose-700 border border-rose-300 dark:bg-rose-950/80 dark:text-rose-300 dark:border-rose-700/60'
               }`}>
                 {rejectedSubs.length}
               </span>
@@ -461,19 +461,19 @@ export default function StudentSubmissionsModal({
           {/* Search, Formats & Sort Controls */}
           <div className="flex items-center gap-1.5 flex-wrap flex-1 justify-end min-w-[240px]">
             <div className="relative flex-1 min-w-[130px] max-w-xs">
-              <Search className="w-3.5 h-3.5 text-slate-600 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-slate-600 absolute left-2.5 top-1/2 -translate-y-1/2 dark:text-slate-500" />
               <input
                 type="text"
                 placeholder="Search responses..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-6 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-xs placeholder:text-slate-600 focus:border-green-500 focus:outline-none"
+                className="w-full pl-8 pr-6 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-xs placeholder:text-slate-600 focus:border-green-500 focus:outline-none dark:bg-slate-950 dark:border-slate-800 dark:text-white dark:placeholder:text-slate-500"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-900 text-xs"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-900 text-xs dark:text-slate-500 dark:hover:text-white"
                 >
                   ✕
                 </button>
@@ -483,7 +483,7 @@ export default function StudentSubmissionsModal({
             <select
               value={typeFilter}
               onChange={e => setTypeFilter(e.target.value)}
-              className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-xs font-semibold focus:border-green-500 focus:outline-none"
+              className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-xs font-semibold focus:border-green-500 focus:outline-none dark:bg-slate-950 dark:border-slate-800 dark:text-white"
               aria-label="Filter by type"
             >
               <option value="all">📁 All Formats</option>
@@ -497,7 +497,7 @@ export default function StudentSubmissionsModal({
             <select
               value={sortBy}
               onChange={e => setSortBy(e.target.value)}
-              className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-xs font-semibold focus:border-green-500 focus:outline-none"
+              className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 text-xs font-semibold focus:border-green-500 focus:outline-none dark:bg-slate-950 dark:border-slate-800 dark:text-white"
               aria-label="Sort submissions"
             >
               <option value="newest">🕒 Newest</option>
@@ -510,19 +510,19 @@ export default function StudentSubmissionsModal({
         {/* ── SUBMISSIONS LIST ── */}
         <div className="flex-1 overflow-y-auto pr-1 space-y-4 print:overflow-visible">
           {loading ? (
-            <div className="text-center py-16 text-slate-600 flex flex-col items-center justify-center gap-2">
+            <div className="text-center py-16 text-slate-600 flex flex-col items-center justify-center gap-2 dark:text-slate-500">
               <Clock className="w-8 h-8 animate-spin opacity-40" />
               <p className="text-sm">Loading {student.name}'s submission history...</p>
             </div>
           ) : filteredSubmissions.length === 0 ? (
-            <div className="text-center py-16 px-4 border border-dashed border-slate-200 rounded-2xl bg-slate-50">
-              <BookOpen className="w-12 h-12 text-slate-500 mx-auto mb-3 opacity-40" />
-              <h3 className="text-lg font-bold text-slate-900 mb-1">
+            <div className="text-center py-16 px-4 border border-dashed border-slate-200 rounded-2xl bg-slate-50 dark:border-slate-800 dark:bg-slate-950/40">
+              <BookOpen className="w-12 h-12 text-slate-500 mx-auto mb-3 opacity-40 dark:text-slate-600" />
+              <h3 className="text-lg font-bold text-slate-900 mb-1 dark:text-white">
                 {totalCount === 0
                   ? `No Submissions Recorded Yet for ${student.name}`
                   : 'No Submissions Match Your Filters'}
               </h3>
-              <p className="text-xs text-slate-600 max-w-md mx-auto">
+              <p className="text-xs text-slate-600 max-w-md mx-auto dark:text-slate-400">
                 {totalCount === 0
                   ? `When ${student.name} completes choice board activities or boss challenges, their written responses, links, and uploaded files will be cataloged here.`
                   : 'Try selecting a different status filter or clearing your search term.'}
@@ -531,7 +531,7 @@ export default function StudentSubmissionsModal({
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="mt-3 text-xs text-green-800 hover:underline font-bold"
+                  className="mt-3 text-xs text-green-800 hover:underline font-bold dark:text-green-400"
                 >
                   Clear search query
                 </button>
@@ -549,9 +549,9 @@ export default function StudentSubmissionsModal({
               return (
                 <article
                   key={sub.id}
-                  className={`bg-white border rounded-2xl p-5 shadow-lg transition-all ${
+                  className={`bg-white border rounded-2xl p-5 shadow-lg transition-all dark:bg-slate-800/90 ${
                     sub.status === 'pending'
-                      ? 'border-amber-500/40 hover:border-amber-500/70 bg-gradient-to-br from-white to-amber-50'
+                      ? 'border-amber-500/40 hover:border-amber-500/70 bg-gradient-to-br from-white to-amber-50 dark:from-slate-800 dark:to-amber-950/10'
                       : sub.status === 'approved'
                       ? 'border-emerald-500/30 hover:border-emerald-500/50'
                       : 'border-rose-500/30 hover:border-rose-500/50'
@@ -562,26 +562,26 @@ export default function StudentSubmissionsModal({
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         {isBoss && (
-                          <span className="px-2 py-0.5 bg-red-50 text-red-700 border border-red-300 rounded-md text-[10px] font-bold uppercase tracking-wider">
+                          <span className="px-2 py-0.5 bg-red-50 text-red-700 border border-red-300 rounded-md text-[10px] font-bold uppercase tracking-wider dark:bg-red-950/80 dark:text-red-300 dark:border-red-700/50">
                             Boss Challenge
                           </span>
                         )}
                         {sub.activityType && !isBoss && (
-                          <span className="px-2 py-0.5 bg-slate-50 text-slate-700 border border-slate-200 rounded-md text-[10px] font-bold">
+                          <span className="px-2 py-0.5 bg-slate-50 text-slate-700 border border-slate-200 rounded-md text-[10px] font-bold dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700">
                             {sub.activityType}
                           </span>
                         )}
-                        <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 border border-yellow-500/30 rounded-md text-[11px] font-bold">
+                        <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 border border-yellow-500/30 rounded-md text-[11px] font-bold dark:bg-yellow-500/10 dark:text-yellow-400">
                           +{sub.xp || 0} XP
                         </span>
                       </div>
-                      <h3 className="text-lg font-bold text-slate-900 print:text-black leading-snug">
+                      <h3 className="text-lg font-bold text-slate-900 print:text-black leading-snug dark:text-white">
                         {sub.activityTitle || 'Untitled Activity'}
                       </h3>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <span className="text-[11px] text-slate-600 flex items-center gap-1 print:text-slate-500">
+                      <span className="text-[11px] text-slate-600 flex items-center gap-1 print:text-slate-500 dark:text-slate-400">
                         <Calendar className="w-3.5 h-3.5" />
                         {new Date(sub.submittedAt || Date.now()).toLocaleDateString(undefined, {
                           month: 'short',
@@ -595,14 +595,14 @@ export default function StudentSubmissionsModal({
                       {/* Status Badge */}
                       <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm ${
                         sub.status === 'approved'
-                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-300'
+                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-700/60'
                           : sub.status === 'pending'
-                          ? 'bg-amber-50 text-amber-800 border border-amber-300'
-                          : 'bg-rose-50 text-rose-700 border border-rose-300'
+                          ? 'bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-700/60'
+                          : 'bg-rose-50 text-rose-700 border border-rose-300 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-700/60'
                       } print:border-black print:text-black`}>
-                        {sub.status === 'approved' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-800" />}
-                        {sub.status === 'pending' && <Clock className="w-3.5 h-3.5 text-amber-800 animate-spin" />}
-                        {sub.status === 'rejected' && <XCircle className="w-3.5 h-3.5 text-rose-700" />}
+                        {sub.status === 'approved' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-800 dark:text-emerald-400" />}
+                        {sub.status === 'pending' && <Clock className="w-3.5 h-3.5 text-amber-800 animate-spin dark:text-amber-400" />}
+                        {sub.status === 'rejected' && <XCircle className="w-3.5 h-3.5 text-rose-700 dark:text-rose-400" />}
                         {sub.status === 'approved' ? 'Approved' : sub.status === 'pending' ? 'Pending Review' : 'Needs Revision'}
                       </span>
                     </div>
@@ -618,23 +618,23 @@ export default function StudentSubmissionsModal({
                   />
 
                   {/* Submission Content Body */}
-                  <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 mb-3 space-y-3 print:bg-gray-50 print:border-gray-300">
+                  <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 mb-3 space-y-3 print:bg-gray-50 print:border-gray-300 dark:bg-slate-950/60 dark:border-slate-800/80">
                     <div>
-                      <p className="text-[11px] text-slate-600 uppercase font-bold tracking-wider mb-2 flex items-center gap-1.5 print:text-slate-400">
-                        {sub.submissionType === 'text' && <><MessageSquare className="w-3.5 h-3.5 text-purple-700" /> Written Response</>}
-                        {sub.submissionType === 'link' && <><ExternalLink className="w-3.5 h-3.5 text-blue-700" /> Submitted Link</>}
-                        {sub.submissionType === 'file' && <><FileText className="w-3.5 h-3.5 text-green-800" /> Attached File</>}
-                        {sub.submissionType === 'video' && <><Video className="w-3.5 h-3.5 text-red-700" /> Video Recording</>}
+                      <p className="text-[11px] text-slate-600 uppercase font-bold tracking-wider mb-2 flex items-center gap-1.5 print:text-slate-400 dark:text-slate-400">
+                        {sub.submissionType === 'text' && <><MessageSquare className="w-3.5 h-3.5 text-purple-700 dark:text-purple-400" /> Written Response</>}
+                        {sub.submissionType === 'link' && <><ExternalLink className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400" /> Submitted Link</>}
+                        {sub.submissionType === 'file' && <><FileText className="w-3.5 h-3.5 text-green-800 dark:text-green-400" /> Attached File</>}
+                        {sub.submissionType === 'video' && <><Video className="w-3.5 h-3.5 text-red-700 dark:text-red-400" /> Video Recording</>}
                         {!['text', 'link', 'file', 'video'].includes(sub.submissionType) && <>Submission Work</>}
                       </p>
 
                       {sub.submissionType === 'link' ? (
-                        <div className="flex items-center justify-between gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                        <div className="flex items-center justify-between gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg dark:bg-slate-900 dark:border-slate-800">
                           <a
                             href={sub.submissionContent}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-700 hover:text-blue-700 hover:underline break-all font-mono text-xs flex items-center gap-1.5"
+                            className="text-blue-700 hover:text-blue-700 hover:underline break-all font-mono text-xs flex items-center gap-1.5 dark:text-blue-400 dark:hover:text-blue-300"
                           >
                             <ExternalLink className="w-4 h-4 flex-shrink-0" />
                             <span>{sub.submissionContent}</span>
@@ -649,11 +649,11 @@ export default function StudentSubmissionsModal({
                           </a>
                         </div>
                       ) : sub.submissionType === 'text' ? (
-                        <div className="p-3.5 bg-slate-50 rounded-lg text-slate-800 text-sm leading-relaxed whitespace-pre-wrap border border-slate-200 font-sans print:text-black print:bg-white print:border-gray-300">
-                          {sub.submissionContent || <span className="text-slate-600 italic">No text provided.</span>}
+                        <div className="p-3.5 bg-slate-50 rounded-lg text-slate-800 text-sm leading-relaxed whitespace-pre-wrap border border-slate-200 font-sans print:text-black print:bg-white print:border-gray-300 dark:bg-slate-900/90 dark:text-slate-200 dark:border-slate-800">
+                          {sub.submissionContent || <span className="text-slate-600 italic dark:text-slate-500">No text provided.</span>}
                         </div>
                       ) : (
-                        <div className="p-2 bg-slate-50 rounded-lg border border-slate-200">
+                        <div className="p-2 bg-slate-50 rounded-lg border border-slate-200 dark:bg-slate-900/90 dark:border-slate-800">
                           {sub.submissionContent ? (
                             <FileViewer
                               content={sub.submissionContent}
@@ -663,7 +663,7 @@ export default function StudentSubmissionsModal({
                               isChunked={sub.isChunked}
                             />
                           ) : (
-                            <span className="text-slate-600 italic text-xs">No file content attached</span>
+                            <span className="text-slate-600 italic text-xs dark:text-slate-500">No file content attached</span>
                           )}
                         </div>
                       )}
@@ -671,11 +671,11 @@ export default function StudentSubmissionsModal({
 
                     {/* Student Note */}
                     {sub.submissionNote && (
-                      <div className="pt-2 border-t border-slate-200">
-                        <span className="text-[11px] text-slate-600 uppercase font-bold tracking-wider block mb-1">
+                      <div className="pt-2 border-t border-slate-200 dark:border-slate-800/80">
+                        <span className="text-[11px] text-slate-600 uppercase font-bold tracking-wider block mb-1 dark:text-slate-500">
                           Student Note to Teacher:
                         </span>
-                        <p className="text-xs text-slate-700 italic bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                        <p className="text-xs text-slate-700 italic bg-slate-50 p-2.5 rounded-lg border border-slate-200 dark:text-slate-300 dark:bg-slate-900/40 dark:border-slate-800">
                           "{sub.submissionNote}"
                         </p>
                       </div>
@@ -684,15 +684,15 @@ export default function StudentSubmissionsModal({
 
                   {/* Teacher Feedback Display */}
                   {sub.teacherFeedback && (
-                    <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs space-y-1 print:bg-gray-100 print:border-gray-400">
-                      <span className="text-[11px] text-blue-700 uppercase font-bold tracking-wider block">
+                    <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs space-y-1 print:bg-gray-100 print:border-gray-400 dark:bg-blue-950/40 dark:border-blue-900/40">
+                      <span className="text-[11px] text-blue-700 uppercase font-bold tracking-wider block dark:text-blue-400">
                         Teacher Feedback:
                       </span>
-                      <p className="text-blue-800 font-medium italic">
+                      <p className="text-blue-800 font-medium italic dark:text-blue-100">
                         "{sub.teacherFeedback}"
                       </p>
                       {sub.reviewedAt && (
-                        <p className="text-[10px] text-slate-600 pt-1">
+                        <p className="text-[10px] text-slate-600 pt-1 dark:text-slate-500">
                           Reviewed: {new Date(sub.reviewedAt).toLocaleString()}
                         </p>
                       )}
@@ -700,7 +700,7 @@ export default function StudentSubmissionsModal({
                   )}
 
                   {/* Inline Review & Decision Controls */}
-                  <div className="pt-3 border-t border-slate-200 print:hidden space-y-3">
+                  <div className="pt-3 border-t border-slate-200 print:hidden space-y-3 dark:border-slate-700/60">
                     <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
                       <div className="flex-1 relative">
                         <input
@@ -708,7 +708,7 @@ export default function StudentSubmissionsModal({
                           value={feedbackVal}
                           onChange={e => setFeedbackInputs({ ...feedbackInputs, [sub.id]: e.target.value })}
                           placeholder={sub.teacherFeedback ? 'Edit feedback...' : 'Add teacher feedback or comment (optional)...'}
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs placeholder:text-slate-600 focus:border-green-500 focus:outline-none"
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs placeholder:text-slate-600 focus:border-green-500 focus:outline-none dark:bg-slate-950 dark:border-slate-700 dark:text-white dark:placeholder:text-slate-500"
                         />
                       </div>
 
@@ -719,7 +719,7 @@ export default function StudentSubmissionsModal({
                               type="button"
                               onClick={() => handleReviewSubmission(sub.id, 'rejected')}
                               disabled={isSubmitting}
-                              className="px-3 py-2 bg-rose-50 hover:bg-rose-50 text-rose-800 border border-rose-200 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+                              className="px-3 py-2 bg-rose-50 hover:bg-rose-50 text-rose-800 border border-rose-200 rounded-xl text-xs font-bold transition-all disabled:opacity-50 dark:bg-rose-950/60 dark:hover:bg-rose-900 dark:text-rose-200 dark:border-rose-800"
                             >
                               Needs Revision
                             </button>
@@ -739,7 +739,7 @@ export default function StudentSubmissionsModal({
                               type="button"
                               onClick={() => handleReviewSubmission(sub.id, 'approved')}
                               disabled={isSubmitting}
-                              className="px-3 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-colors disabled:opacity-50"
+                              className="px-3 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-colors disabled:opacity-50 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:border-slate-700"
                             >
                               {isSubmitting ? 'Saving...' : 'Update Feedback'}
                             </button>
@@ -747,7 +747,7 @@ export default function StudentSubmissionsModal({
                               type="button"
                               onClick={() => handleReviewSubmission(sub.id, 'rejected')}
                               disabled={isSubmitting}
-                              className="px-3 py-2 bg-rose-50 hover:bg-rose-50 text-rose-800 border border-rose-200 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+                              className="px-3 py-2 bg-rose-50 hover:bg-rose-50 text-rose-800 border border-rose-200 rounded-xl text-xs font-bold transition-all disabled:opacity-50 dark:bg-rose-950/60 dark:hover:bg-rose-900 dark:text-rose-200 dark:border-rose-800"
                             >
                               Change to Needs Revision
                             </button>
@@ -758,7 +758,7 @@ export default function StudentSubmissionsModal({
                               type="button"
                               onClick={() => handleReviewSubmission(sub.id, 'rejected')}
                               disabled={isSubmitting}
-                              className="px-3 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-colors disabled:opacity-50"
+                              className="px-3 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-colors disabled:opacity-50 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:border-slate-700"
                             >
                               {isSubmitting ? 'Saving...' : 'Update Feedback'}
                             </button>
@@ -783,14 +783,14 @@ export default function StudentSubmissionsModal({
         </div>
 
         {/* ── FOOTER ── */}
-        <div className="pt-4 mt-4 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 print:hidden">
+        <div className="pt-4 mt-4 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 print:hidden dark:border-slate-800 dark:text-slate-500">
           <span>
             Displaying <strong>{filteredSubmissions.length}</strong> of <strong>{totalCount}</strong> submissions from {student.name}
           </span>
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-900 rounded-xl font-bold transition-colors"
+            className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-900 rounded-xl font-bold transition-colors dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white"
           >
             Done
           </button>

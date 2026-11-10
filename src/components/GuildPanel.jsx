@@ -1039,7 +1039,7 @@ export default function GuildPanel({
                             return (
                               <div
                                 key={reward.id}
-                                className="p-4 rounded-2xl border-2 transition-all flex flex-col justify-between bg-white border-amber-200/90 hover:border-amber-400 shadow-md dark:bg-slate-850 dark:border-amber-500/30 dark:hover:border-amber-400"
+                                className="p-4 rounded-2xl border-2 transition-all flex flex-col justify-between bg-white border-amber-200/90 hover:border-amber-400 shadow-md dark:bg-slate-800 dark:border-amber-500/40 dark:hover:border-amber-300"
                               >
                                 <div>
                                   <div className="flex items-start justify-between gap-2 mb-2">
@@ -1133,13 +1133,13 @@ export default function GuildPanel({
                               className={`p-4 rounded-2xl border-2 transition-all flex flex-col justify-between ${
                                 !isUnlocked
                                   ? 'bg-slate-50 border-slate-200 text-slate-600 opacity-75 dark:bg-slate-900/50 dark:border-slate-800 dark:text-slate-500'
-                                  : 'bg-white border-slate-200 hover:border-emerald-500/60 shadow-md dark:bg-slate-850 dark:border-slate-700'
+                                  : 'bg-white border-slate-200 hover:border-emerald-500/60 shadow-md dark:bg-slate-800 dark:border-slate-700'
                               }`}
                             >
                               <div>
                                 <div className="flex items-start justify-between gap-2 mb-2">
                                   <div className="flex items-center gap-2.5 min-w-0">
-                                    <span className="text-3xl p-1.5 bg-white rounded-xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700 flex-shrink-0">{item.icon || '⚙️'}</span>
+                                    <span className="text-3xl p-1.5 bg-slate-100 rounded-xl border border-slate-200 dark:bg-slate-900 dark:border-slate-700 flex-shrink-0">{item.icon || '⚙️'}</span>
                                     <div className="min-w-0">
                                       <div className="flex items-center gap-1.5 flex-wrap">
                                         <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-300">
@@ -1601,7 +1601,7 @@ export default function GuildPanel({
             {/* Tab 1: Upload File */}
             {botPicTab === 'upload' && (
               <div className="space-y-3">
-                <label className="block p-5 border-2 border-dashed border-slate-200 hover:border-yellow-500/60 rounded-2xl text-center cursor-pointer bg-white transition-colors dark:border-slate-700 dark:bg-slate-850">
+                <label className="block p-5 border-2 border-dashed border-slate-200 hover:border-yellow-500/60 rounded-2xl text-center cursor-pointer bg-white transition-colors dark:border-slate-700 dark:bg-slate-800">
                   <Upload className="w-8 h-8 text-yellow-800 mx-auto mb-2 dark:text-yellow-400" />
                   <span className="text-xs font-bold text-slate-900 block dark:text-white">Click to select photo</span>
                   <span className="text-[11px] text-slate-600 mt-1 block dark:text-slate-400">JPG, PNG, WEBP (auto-compressed)</span>

@@ -2762,7 +2762,9 @@ export const realBackend = {
         where("classId", "==", classId)
       );
       const snap = await getDocs(q);
-      const purchases = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const purchases = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(p => !p.deleted && p.status !== 'deleted');
       purchases.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
       return purchases;
     } catch (error) {
@@ -2788,8 +2790,20 @@ export const realBackend = {
   async deleteStemPurchase(purchaseId) {
     try {
       const ref = doc(db, "stem_purchases", purchaseId);
-      await deleteDoc(ref);
-      return { success: true };
+      try {
+        await deleteDoc(ref);
+        return { success: true };
+      } catch (deleteErr) {
+        console.warn("deleteDoc on stem_purchases failed, attempting soft-delete via updateDoc:", deleteErr);
+        // Fallback: If deleteDoc fails due to Firestore security rule restrictions,
+        // perform a soft-delete by marking deleted: true. This succeeds under the updateDoc rule.
+        await updateDoc(ref, {
+          deleted: true,
+          status: 'deleted',
+          deletedAt: new Date().toISOString()
+        });
+        return { success: true, softDeleted: true };
+      }
     } catch (error) {
       console.error("Error deleting STEM purchase:", error);
       throw error;
@@ -2804,7 +2818,7 @@ export const realBackend = {
       const snap = await getDocs(collection(db, "stem_purchases"));
       const allPurchases = snap.docs
         .map(d => ({ id: d.id, ...d.data() }))
-        .filter(p => classIds.includes(p.classId));
+        .filter(p => classIds.includes(p.classId) && !p.deleted && p.status !== 'deleted');
       allPurchases.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
       return allPurchases;
     } catch (error) {

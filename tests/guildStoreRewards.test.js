@@ -142,5 +142,24 @@ assert.strictEqual(filteredPurchases.length, 2, 'Deleted STEM orders must be exc
 assert.strictEqual(filteredPurchases.find(p => p.id === 'p2'), undefined, 'Deleted order p2 must not be returned');
 console.log('✔ Test 11: getStemPurchases strictly filters out soft-deleted orders');
 
+// Test 12: Firestore Security Rules Audit for STEM Purchases & Redemptions
+const firestoreRulesSrc = fs.readFileSync(path.resolve('./firestore.rules'), 'utf8');
+assert(
+  firestoreRulesSrc.includes('match /stem_purchases/{purchaseId}') &&
+  firestoreRulesSrc.includes('allow update, delete: if isAuthenticated();'),
+  'firestore.rules must allow authenticated teachers & admins to update and delete stem_purchases'
+);
+assert(
+  firestoreRulesSrc.includes('match /classes/{classId}/redemptions/{redemptionId}') &&
+  firestoreRulesSrc.includes('allow update, delete: if isAuthenticated() && isTeacherOfClass(classId);'),
+  'firestore.rules must allow teachers & admins to update and delete reward redemptions'
+);
+assert(
+  firestoreRulesSrc.includes('exists(/databases/$(database)/documents/classes/$(classId))'),
+  'isClassTeacherOrCoTeacher must verify class document existence before reading .data to prevent CEL runtime exceptions'
+);
+console.log('✔ Test 12: firestore.rules permission matrix and CEL existence guards verified');
+
 console.log('\n✔ All Guild Store & Teacher Rewards tests passed successfully!\n');
+
 

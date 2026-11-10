@@ -13,7 +13,8 @@ const suites = [
   './portalUtils.test.js',
   './guildChallengeReliability.test.js',
   './costZeroStorage.test.js',
-  './theme.test.js'
+  './theme.test.js',
+  './guildStoreRewards.test.js'
 ];
 
 try {

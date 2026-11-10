@@ -2670,6 +2670,7 @@ function GameContent({ emulatedClassId } = {}) {
           onJoinGuild={joinGuild}
           guildXp={gameState.guildXpContributed}
           classId={effectiveClassId}
+          userId={user?.id}
           gameState={{ id: user?.id, name: gameState.playerName, ...gameState }}
           onStateUpdate={refreshClassData}
           onRecordHighFive={recordHighFive}

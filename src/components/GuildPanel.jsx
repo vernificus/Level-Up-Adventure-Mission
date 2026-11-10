@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import Avatar3D from './Avatar3D';
 import { compressImageFile, isValidImageUrl } from '../utils/imageUtils';
+import { filterAndSortRedemptions } from '../utils/portalUtils';
 
 export default function GuildPanel({
   currentGuild,
@@ -26,7 +27,8 @@ export default function GuildPanel({
   spendCoins,
   highFiveLimit = 'daily',
   allowStudentGuildSelect = true,
-  onClaimGuildChallenge
+  onClaimGuildChallenge,
+  userId
 }) {
   const availableGuilds = guilds && guilds.length > 0 ? guilds : GUILDS;
 
@@ -70,13 +72,20 @@ export default function GuildPanel({
   const [botPicPreview, setBotPicPreview] = useState(null);
   const [savingBotPic, setSavingBotPic] = useState(false);
 
-  // STEM Supplies Depot State
+  // STEM Supplies Depot & Guild Store State
   const [stemItems, setStemItems] = useState(DEFAULT_STEM_SUPPLIES);
   const [stemPurchases, setStemPurchases] = useState([]);
   const [loadingStem, setLoadingStem] = useState(false);
   const [selectedTierFilter, setSelectedTierFilter] = useState('all'); // 'all' or 1, 2, 3, 4, 5
   const [purchasingItem, setPurchasingItem] = useState(null);
   const [buyingProcess, setBuyingProcess] = useState(false);
+
+  // Teacher Custom Rewards & Redemptions State
+  const [customRewards, setCustomRewards] = useState([]);
+  const [myRedemptions, setMyRedemptions] = useState([]);
+  const [redeemingReward, setRedeemingReward] = useState(null);
+  const [redeemProcess, setRedeemProcess] = useState(false);
+  const [storeCategoryFilter, setStoreCategoryFilter] = useState('all'); // 'all' | 'rewards' | 'stem' | 'history'
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -97,13 +106,22 @@ export default function GuildPanel({
         setNoticeText(hall?.notice?.text || '');
       }
 
-      // Also load STEM shop items & purchases
-      const [items, purchases] = await Promise.all([
-        backend.getStemShopItems(classId),
-        backend.getStemPurchases(classId)
+      // Load STEM shop items, STEM purchases, teacher custom rewards, and student redemptions
+      const [items, purchases, rewardsData, allRedemptions] = await Promise.all([
+        backend.getStemShopItems(classId).catch(() => []),
+        backend.getStemPurchases(classId).catch(() => []),
+        backend.getCustomRewards(classId).catch(() => []),
+        backend.getRedemptions(classId).catch(() => [])
       ]);
       if (items && items.length > 0) setStemItems(items);
       setStemPurchases(purchases || []);
+
+      const activeRewards = (rewardsData || []).filter(r => r && r.active !== false);
+      setCustomRewards(activeRewards);
+
+      const effectiveStudentId = gameState?.id || userId;
+      const effectiveStudentName = gameState?.playerName || gameState?.name;
+      setMyRedemptions(filterAndSortRedemptions(allRedemptions || [], effectiveStudentId, effectiveStudentName));
     } catch (e) {
       console.error("Failed to load guild data", e);
     }
@@ -115,6 +133,26 @@ export default function GuildPanel({
       loadGuildData();
     }
   }, [classId, currentGuild]);
+
+  // Live subscription to redemptions so teacher fulfillments reflect in real-time
+  useEffect(() => {
+    if (!classId) return;
+    let unsub;
+    if (typeof backend.subscribeToRedemptions === 'function') {
+      try {
+        unsub = backend.subscribeToRedemptions(classId, (allRedemptions) => {
+          const effectiveStudentId = gameState?.id || userId;
+          const effectiveStudentName = gameState?.playerName || gameState?.name;
+          setMyRedemptions(filterAndSortRedemptions(allRedemptions || [], effectiveStudentId, effectiveStudentName));
+        });
+      } catch (e) {
+        console.error("Failed to subscribe to redemptions", e);
+      }
+    }
+    return () => {
+      if (unsub) unsub();
+    };
+  }, [classId, gameState?.id, gameState?.playerName, gameState?.name, userId]);
 
   const handleSaveHall = async () => {
     if (!classId || !currentGuild) return;
@@ -281,6 +319,39 @@ export default function GuildPanel({
       alert('Error purchasing STEM supply: ' + err.message);
     }
     setBuyingProcess(false);
+  };
+
+  // Teacher Custom Reward Redemption handler
+  const handleExecuteRedeemReward = async () => {
+    if (!redeemingReward || !classId) return;
+    const studentCoins = gameState?.coins || 0;
+    if (studentCoins < redeemingReward.cost) {
+      alert('You do not have enough coins to redeem this reward.');
+      return;
+    }
+    setRedeemProcess(true);
+    try {
+      const studentId = gameState?.id || userId || '';
+      const studentName = gameState?.playerName || gameState?.name || 'Student';
+      await backend.redeemCustomReward(classId, redeemingReward.id, {
+        studentId: studentId,
+        studentName: studentName,
+        itemName: redeemingReward.name,
+        cost: redeemingReward.cost,
+        directions: redeemingReward.directions || '',
+      });
+      if (spendCoins) {
+        spendCoins(redeemingReward.cost);
+      }
+      showToast(`🎉 Redeemed "${redeemingReward.name}"! Your teacher has been notified.`);
+      setRedeemingReward(null);
+      if (onStateUpdate) onStateUpdate();
+      loadGuildData();
+    } catch (err) {
+      alert('Error redeeming reward: ' + err.message);
+    } finally {
+      setRedeemProcess(false);
+    }
   };
 
   const guild = availableGuilds.find(g => g.id === currentGuild) || GUILDS.find(g => g.id === currentGuild);
@@ -541,91 +612,91 @@ export default function GuildPanel({
           onClick={() => { setShowGuildDetails(true); loadGuildData(); }}
           className="w-full py-3 bg-white hover:bg-yellow-300 text-slate-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 relative z-10 active:scale-[0.99] min-h-[44px]"
         >
-          <Shield className="w-4 h-4 text-slate-900" /> Enter Guild HQ, Bot Showcase & STEM Shop <ChevronRight className="w-4 h-4" />
+          <Shield className="w-4 h-4 text-slate-900" /> Enter Guild HQ, Bot Showcase & Guild Store <ChevronRight className="w-4 h-4" />
         </button>
       </section>
 
       {/* Guild Headquarters Full Modal */}
       {showGuildDetails && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-md dark:bg-slate-950/90"
+          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-slate-900/60 backdrop-blur-md dark:bg-slate-950/90"
           role="dialog"
           aria-modal="true"
           onClick={() => setShowGuildDetails(false)}
         >
           <div
-            className="bg-slate-50 border-2 border-slate-200 rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 dark:bg-slate-900 dark:border-yellow-500/70"
+            className="bg-slate-50 border-2 border-slate-200 rounded-2xl sm:rounded-3xl max-w-5xl w-full h-[94vh] sm:h-[90vh] max-h-[880px] flex flex-col shadow-2xl overflow-hidden min-h-0 animate-in fade-in zoom-in-95 duration-200 dark:bg-slate-900 dark:border-yellow-500/70"
             onClick={e => e.stopPropagation()}
           >
             {/* Castle Header Banner with Theme */}
-            <div className={`text-white p-6 bg-gradient-to-br ${bannerGradients[guildHall?.banner || 'default']} border-b border-slate-200 relative dark:border-slate-800`}>
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
+            <div className={`text-white p-3.5 sm:p-4 md:p-5 bg-gradient-to-br ${bannerGradients[guildHall?.banner || 'default']} border-b border-slate-200 relative dark:border-slate-800 flex-shrink-0`}>
+              <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+                <div className="flex items-center gap-3 min-w-0">
                   {/* Bot Picture or Guild Emoji */}
                   {activeBotPicture ? (
                     <div className="relative group flex-shrink-0">
                       <img
                         src={activeBotPicture}
                         alt={`${guild?.name || 'Guild'} robot`}
-                        className="w-20 h-20 rounded-2xl object-cover border-2 border-yellow-400 shadow-2xl bg-black/40"
+                        className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl object-cover border-2 border-yellow-400 shadow-xl bg-black/40"
                       />
                       <button
                         onClick={handleOpenBotPicModal}
-                        className="absolute -bottom-1.5 -right-1.5 p-1.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-lg shadow-lg transition-transform active:scale-95"
+                        className="absolute -bottom-1 -right-1 p-1 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-lg shadow-lg transition-transform active:scale-95"
                         title="Update Bot Photo"
                         aria-label="Update Bot Photo"
                       >
-                        <Camera className="w-3.5 h-3.5" />
+                        <Camera className="w-3 h-3" />
                       </button>
                     </div>
                   ) : (
                     <div className="relative flex-shrink-0">
-                      <div className="w-18 h-18 rounded-2xl bg-black/40 border-2 border-white/30 flex items-center justify-center text-4xl shadow-xl p-3">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-black/40 border-2 border-white/30 flex items-center justify-center text-2xl sm:text-3xl shadow-xl">
                         {guild?.emoji || '🛡️'}
                       </div>
                       <button
                         onClick={handleOpenBotPicModal}
-                        className="absolute -bottom-1 -right-1 p-1.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-lg shadow font-bold text-[10px] flex items-center gap-1"
+                        className="absolute -bottom-1 -right-1 p-1 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-lg shadow font-bold text-[9px] flex items-center gap-0.5"
                         title="Add Bot Photo"
                       >
-                        <Camera className="w-3 h-3" /> +Bot
+                        <Camera className="w-2.5 h-2.5" /> +Bot
                       </button>
                     </div>
                   )}
 
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-2xl font-display font-bold text-white">{guild?.name || 'Guild'}</h3>
-                      <span className="text-xs font-bold uppercase px-3 py-1 rounded-full bg-yellow-500 text-slate-950 shadow">
+                      <h3 className="text-lg sm:text-xl md:text-2xl font-display font-bold text-white truncate">{guild?.name || 'Guild'}</h3>
+                      <span className="text-[10px] sm:text-xs font-bold uppercase px-2.5 py-0.5 rounded-full bg-yellow-500 text-slate-950 shadow whitespace-nowrap">
                         Level {levelInfo.level} • {levelInfo.name}
                       </span>
                     </div>
-                    <p className="text-white text-xs mt-0.5 italic dark:text-slate-300">"{guild?.motto || ''}"</p>
+                    <p className="text-white text-xs mt-0.5 italic truncate max-w-xs sm:max-w-md dark:text-slate-300">"{guild?.motto || ''}"</p>
                     {guildHall?.description && (
-                      <p className="text-white text-xs font-semibold mt-1 dark:text-yellow-300">"{guildHall.description}"</p>
+                      <p className="text-white text-xs font-semibold mt-0.5 truncate max-w-xs sm:max-w-md dark:text-yellow-300">"{guildHall.description}"</p>
                     )}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2 flex-shrink-0 ml-auto sm:ml-0">
                   <button
                     onClick={handleOpenBotPicModal}
-                    className="px-3 py-1.5 bg-white hover:bg-slate-100 text-yellow-800 rounded-xl text-xs font-bold border border-yellow-500/40 flex items-center gap-1.5 transition-colors min-h-[36px] dark:bg-slate-800/90 dark:hover:bg-slate-700 dark:text-yellow-400"
+                    className="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-yellow-800 rounded-xl text-xs font-bold border border-yellow-500/40 flex items-center gap-1.5 transition-colors min-h-[36px] dark:bg-slate-800/90 dark:hover:bg-slate-700 dark:text-yellow-400"
                   >
-                    <Camera className="w-3.5 h-3.5" /> {activeBotPicture ? 'Edit Bot Photo' : 'Add Bot Photo'}
+                    <Camera className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{activeBotPicture ? 'Edit Bot Photo' : 'Add Bot Photo'}</span><span className="sm:hidden">Photo</span>
                   </button>
 
                   <button
                     onClick={() => setEditingHall(!editingHall)}
-                    className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 rounded-xl text-xs font-bold border border-slate-200 flex items-center gap-1.5 transition-colors min-h-[36px] dark:bg-slate-800/80 dark:hover:bg-slate-700 dark:text-slate-200 dark:border-slate-700"
+                    className="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-800 rounded-xl text-xs font-bold border border-slate-200 flex items-center gap-1.5 transition-colors min-h-[36px] dark:bg-slate-800/80 dark:hover:bg-slate-700 dark:text-slate-200 dark:border-slate-700"
                     title="Customize Castle Theme & Notice"
                   >
-                    <Edit3 className="w-3.5 h-3.5 text-yellow-800 dark:text-yellow-400" /> Customize Castle
+                    <Edit3 className="w-3.5 h-3.5 text-yellow-800 dark:text-yellow-400" /> <span className="hidden sm:inline">Customize Castle</span><span className="sm:hidden">Theme</span>
                   </button>
 
                   <button
                     onClick={() => setShowGuildDetails(false)}
-                    className="p-2 text-slate-400 hover:text-white hover:bg-white rounded-xl transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center dark:hover:bg-slate-800"
+                    className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
                     aria-label="Close modal"
                   >
                     <X className="w-5 h-5" />
@@ -635,9 +706,9 @@ export default function GuildPanel({
 
               {/* Noticeboard Banner (if present) */}
               {guildHall?.notice && !editingHall && (
-                <div className="mt-4 p-3 bg-amber-50 border border-amber-500/40 rounded-xl flex items-center gap-2.5 text-amber-800 text-xs dark:bg-amber-950/40 dark:text-amber-200">
+                <div className="mt-2.5 p-2 sm:p-2.5 bg-amber-50/90 border border-amber-500/40 rounded-xl flex items-center gap-2 text-amber-900 text-xs dark:bg-amber-950/40 dark:text-amber-200">
                   <MessageSquare className="w-4 h-4 text-amber-800 flex-shrink-0 dark:text-amber-400" />
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <span className="font-bold text-amber-800 dark:text-amber-300">Noticeboard ({guildHall.notice.authorName}): </span>
                     <span>{guildHall.notice.text}</span>
                   </div>
@@ -647,7 +718,7 @@ export default function GuildPanel({
 
             {/* Customize Guild Hall Drawer */}
             {editingHall && (
-              <div className="p-5 bg-white border-b border-slate-200 space-y-4 animate-in slide-in-from-top-2 dark:bg-slate-800/90 dark:border-slate-700">
+              <div className="p-4 sm:p-5 bg-white border-b border-slate-200 space-y-3 max-h-64 overflow-y-auto flex-shrink-0 animate-in slide-in-from-top-2 dark:bg-slate-800/90 dark:border-slate-700">
                 <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2 dark:text-white">
                   <Edit3 className="w-4 h-4 text-yellow-800 dark:text-yellow-400" /> Customize Guild Castle & Noticeboard
                 </h4>
@@ -727,10 +798,10 @@ export default function GuildPanel({
             )}
 
             {/* Navigation Tabs */}
-            <div className="flex items-center gap-2 px-6 pt-3 border-b border-slate-200 overflow-x-auto text-xs font-bold dark:border-slate-800">
+            <div className="flex items-center gap-1 sm:gap-2 px-3 sm:px-6 pt-2 border-b border-slate-200 overflow-x-auto text-xs font-bold dark:border-slate-800 flex-shrink-0">
               {[
                 { id: 'overview', label: 'Overview & Perks', icon: Sparkles },
-                { id: 'stem_depot', label: 'STEM Supplies Depot', icon: Package },
+                { id: 'stem_depot', label: `Guild Store & Rewards (${customRewards.length + stemItems.length})`, icon: ShoppingBag },
                 { id: 'quests', label: `Live Quests (${myGuildData?.challenges?.length || 5})`, icon: Swords },
                 { id: 'members', label: `Members (${myGuildData?.memberCount || 0})`, icon: Users },
                 { id: 'trophies', label: `Trophies (${guildHall?.trophies?.length || 0})`, icon: Trophy },
@@ -742,7 +813,7 @@ export default function GuildPanel({
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`pb-3 px-3 flex items-center gap-1.5 border-b-2 transition-all whitespace-nowrap min-h-[44px] ${
+                    className={`pb-2.5 pt-1 px-2.5 sm:px-3 flex items-center gap-1.5 border-b-2 transition-all whitespace-nowrap min-h-[40px] ${
                       active
                         ? 'border-yellow-400 text-yellow-800 font-bold dark:text-yellow-400'
                         : 'border-transparent text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
@@ -755,7 +826,7 @@ export default function GuildPanel({
             </div>
 
             {/* Modal Body Content */}
-            <div className="p-6 overflow-y-auto flex-1 space-y-6">
+            <div className="p-3 sm:p-5 md:p-6 overflow-y-auto flex-1 min-h-0 space-y-4 sm:space-y-6">
               
               {/* TAB 1: OVERVIEW & LEVEL ROADMAP */}
               {activeTab === 'overview' && (
@@ -837,180 +908,415 @@ export default function GuildPanel({
                 </div>
               )}
 
-              {/* TAB 2: STEM SUPPLIES DEPOT (TIERED SHOP) */}
+              {/* TAB 2: GUILD STORE & REWARDS (TEACHER REWARDS & STEM SUPPLIES) */}
               {activeTab === 'stem_depot' && (
-                <div className="space-y-6">
-                  {/* Balance and Info Card */}
-                  <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-slate-50 border border-emerald-500/40 shadow-xl flex flex-wrap items-center justify-between gap-4 dark:from-emerald-950/40 dark:via-teal-950/30 dark:to-slate-900">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <Package className="w-5 h-5 text-emerald-800 dark:text-emerald-400" />
-                        <h4 className="text-lg font-display font-bold text-slate-900 dark:text-white">Guild STEM Supply Depot</h4>
+                <div className="space-y-5">
+                  {/* Compact Balance & Store Banner */}
+                  <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-slate-50 border border-emerald-500/40 shadow-sm flex flex-wrap items-center justify-between gap-3 dark:from-emerald-950/40 dark:via-teal-950/30 dark:to-slate-900">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-100 border border-emerald-500/40 flex items-center justify-center text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400 flex-shrink-0">
+                        <ShoppingBag className="w-5 h-5" />
                       </div>
-                      <p className="text-xs text-slate-700 max-w-xl dark:text-slate-300">
-                        Purchase hardware, structural components, and field perks for <strong>{guild.name}</strong> using your own coins. Supplies unlock in tiers as your guild levels up!
-                      </p>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-base sm:text-lg font-display font-bold text-slate-900 dark:text-white">Guild Store & Supplies</h4>
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-400/40 dark:bg-emerald-500/20 dark:text-emerald-300">
+                            {customRewards.length + stemItems.length} Available
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-600 dark:text-slate-300">
+                          Redeem teacher rewards and purchase STEM gear for <strong>{guild.name}</strong> using your coins!
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="bg-slate-50 px-4 py-2.5 rounded-2xl border border-emerald-500/50 text-right dark:bg-slate-900/90">
-                      <span className="text-[10px] font-bold uppercase text-slate-600 block dark:text-slate-400">Your Coin Balance</span>
-                      <span className="text-xl font-display font-bold text-yellow-800 flex items-center justify-end gap-1 dark:text-yellow-400">
-                        🪙 {(gameState?.coins || 0).toLocaleString()} Coins
+                    <div className="bg-white px-3.5 py-1.5 sm:py-2 rounded-xl border border-emerald-500/50 flex items-center gap-2 shadow-sm dark:bg-slate-900">
+                      <span className="text-[10px] font-bold uppercase text-slate-500 block dark:text-slate-400">Your Coins:</span>
+                      <span className="text-base sm:text-lg font-display font-bold text-yellow-700 flex items-center gap-1 dark:text-yellow-400">
+                        🪙 {(gameState?.coins || 0).toLocaleString()}
                       </span>
                     </div>
                   </div>
 
-                  {/* Tier Filter Pills */}
-                  <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-bold">
-                    <span className="text-slate-600 mr-1 dark:text-slate-400">Filter Tier:</span>
-                    {['all', '1', '2', '3', '4', '5'].map(t => (
+                  {/* Store Filter Navigation Bar */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3 dark:border-slate-800">
+                    <div className="flex items-center gap-1.5 overflow-x-auto text-xs font-bold py-0.5 no-scrollbar">
                       <button
-                        key={t}
-                        onClick={() => setSelectedTierFilter(t)}
-                        className={`px-3 py-1.5 rounded-xl border transition-all min-h-[44px] ${
-                          selectedTierFilter === t
-                            ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-bold shadow'
-                            : 'bg-white text-slate-700 border-slate-200 hover:border-slate-400 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:border-slate-500'
+                        onClick={() => setStoreCategoryFilter('all')}
+                        className={`px-3 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 min-h-[38px] ${
+                          storeCategoryFilter === 'all'
+                            ? 'bg-emerald-600 text-white border-emerald-600 shadow'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700'
                         }`}
                       >
-                        {t === 'all' ? 'All Supplies & Perks' : `Tier ${t}`}
+                        <ShoppingBag className="w-3.5 h-3.5" /> All Store Items ({customRewards.length + stemItems.length})
                       </button>
-                    ))}
-                  </div>
 
-                  {/* STEM Items Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {filteredStemItems.map(item => {
-                      const isUnlocked = levelInfo.level >= (item.requiredGuildLevel || 1);
-                      const hasEnoughCoins = (gameState?.coins || 0) >= item.costCoins;
-                      const canBuy = isUnlocked && hasEnoughCoins;
+                      <button
+                        onClick={() => setStoreCategoryFilter('rewards')}
+                        className={`px-3 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 min-h-[38px] ${
+                          storeCategoryFilter === 'rewards'
+                            ? 'bg-amber-500 text-slate-950 border-amber-500 font-bold shadow'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        <Gift className="w-3.5 h-3.5" /> Teacher Rewards ({customRewards.length})
+                      </button>
 
-                      return (
-                        <div
-                          key={item.id}
-                          className={`p-4 rounded-2xl border-2 transition-all flex flex-col justify-between ${
-                            !isUnlocked
-                              ? 'bg-slate-50 border-slate-200 text-slate-600 opacity-75 dark:bg-slate-900/50 dark:border-slate-800 dark:text-slate-500'
-                              : 'bg-white border-slate-200 hover:border-emerald-500/60 shadow-lg dark:bg-slate-850 dark:border-slate-700'
-                          }`}
-                        >
-                          <div>
-                            <div className="flex items-start justify-between gap-2 mb-2">
-                              <div className="flex items-center gap-2.5">
-                                <span className="text-3xl p-2 bg-white rounded-xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">{item.icon || '⚙️'}</span>
-                                <div>
-                                  <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-300">
-                                      Tier {item.tier || 1}
-                                    </span>
-                                    {item.category === 'perk' && (
-                                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 border border-purple-500/30 dark:bg-purple-500/20 dark:text-purple-300">
-                                        Perk
-                                      </span>
-                                    )}
-                                  </div>
-                                  <h5 className="font-bold text-slate-900 text-base mt-1 dark:text-white">{item.name}</h5>
-                                </div>
-                              </div>
+                      <button
+                        onClick={() => setStoreCategoryFilter('stem')}
+                        className={`px-3 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 min-h-[38px] ${
+                          storeCategoryFilter === 'stem'
+                            ? 'bg-purple-600 text-white border-purple-600 shadow'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        <Package className="w-3.5 h-3.5" /> STEM Supplies ({stemItems.length})
+                      </button>
 
-                              <div className="text-right">
-                                <span className="text-base font-bold text-yellow-800 dark:text-yellow-400">🪙 {item.costCoins}</span>
-                              </div>
-                            </div>
+                      <button
+                        onClick={() => setStoreCategoryFilter('history')}
+                        className={`px-3 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 min-h-[38px] ${
+                          storeCategoryFilter === 'history'
+                            ? 'bg-slate-800 text-white border-slate-800 shadow dark:bg-slate-700'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        <Clock className="w-3.5 h-3.5" /> History ({myRedemptions.length + guildPurchases.length})
+                      </button>
+                    </div>
 
-                            <p className="text-xs text-slate-700 mb-3 dark:text-slate-300">{item.desc}</p>
-                          </div>
-
-                          <div className="pt-3 border-t border-slate-200 flex items-center justify-between gap-3 dark:border-slate-800">
-                            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">
-                              {isUnlocked ? (
-                                <span className="text-emerald-800 flex items-center gap-1 dark:text-emerald-400">
-                                  <Unlock className="w-3 h-3" /> Unlocked (Req: Lvl {item.requiredGuildLevel})
-                                </span>
-                              ) : (
-                                <span className="text-amber-800 flex items-center gap-1 dark:text-amber-400">
-                                  <Lock className="w-3 h-3" /> Req: Guild Level {item.requiredGuildLevel}
-                                </span>
-                              )}
-                            </span>
-
-                            <button
-                              disabled={!canBuy}
-                              onClick={() => setPurchasingItem(item)}
-                              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow min-h-[44px] ${
-                                canBuy
-                                  ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 active:scale-95'
-                                  : !isUnlocked
-                                  ? 'bg-white text-slate-600 cursor-not-allowed border border-slate-200 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700'
-                                  : 'bg-amber-100 text-amber-800 border border-amber-500/40 cursor-not-allowed dark:bg-amber-500/20 dark:text-amber-300'
-                              }`}
-                            >
-                              <ShoppingBag className="w-3.5 h-3.5" />
-                              {canBuy
-                                ? `Buy for Guild (${item.costCoins} 🪙)`
-                                : !isUnlocked
-                                ? `Locked (Lvl ${item.requiredGuildLevel})`
-                                : `Need ${item.costCoins - (gameState?.coins || 0)} More Coins`}
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Guild Purchases & Deliveries Audit */}
-                  <div className="mt-8 bg-white rounded-2xl border border-slate-200 p-5 dark:bg-slate-800/80 dark:border-slate-700">
-                    <h4 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2 dark:text-white">
-                      <Clock className="w-4 h-4 text-emerald-800 dark:text-emerald-400" /> {guild.name} Supply Orders & Deliveries ({guildPurchases.length})
-                    </h4>
-                    <p className="text-xs text-slate-600 mb-4 dark:text-slate-400">
-                      Items purchased by your team members. Teachers are notified to distribute supplies in class.
-                    </p>
-
-                    {guildPurchases.length === 0 ? (
-                      <p className="text-slate-600 text-xs text-center py-4 italic dark:text-slate-500">
-                        No STEM supplies purchased yet. Be the first to supply your robot!
-                      </p>
-                    ) : (
-                      <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                        {guildPurchases.map(p => (
-                          <div
-                            key={p.id}
-                            className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs flex-wrap gap-2 dark:bg-slate-900 dark:border-slate-700"
+                    {(storeCategoryFilter === 'all' || storeCategoryFilter === 'stem') && (
+                      <div className="flex items-center gap-1 text-xs">
+                        <span className="text-[11px] text-slate-500 font-medium mr-1 dark:text-slate-400">Tier:</span>
+                        {['all', '1', '2', '3', '4', '5'].map(t => (
+                          <button
+                            key={t}
+                            onClick={() => setSelectedTierFilter(t)}
+                            className={`px-2 py-1 rounded-lg border text-xs font-bold transition-all min-h-[32px] ${
+                              selectedTierFilter === t
+                                ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-sm'
+                                : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
+                            }`}
                           >
-                            <div className="flex items-center gap-2.5">
-                              <span className="text-xl">{p.icon || '⚙️'}</span>
-                              <div>
-                                <p className="font-bold text-slate-900 dark:text-white">{p.itemName}</p>
-                                <p className="text-[11px] text-slate-600 dark:text-slate-400">
-                                  Contributed by <span className="text-yellow-800 font-semibold dark:text-yellow-400">{p.studentName}</span> • {new Date(p.timestamp).toLocaleDateString()}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-3">
-                              <span className="text-yellow-800 font-bold dark:text-yellow-400">🪙 {p.costCoins}</span>
-                              <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase flex items-center gap-1 ${
-                                p.fulfilled
-                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-300'
-                                  : 'bg-amber-100 text-amber-800 border border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-300'
-                              }`}>
-                                {p.fulfilled ? (
-                                  <>
-                                    <CheckCircle2 className="w-3 h-3 text-emerald-800 dark:text-emerald-400" /> Delivered
-                                  </>
-                                ) : (
-                                  <>
-                                    <Clock className="w-3 h-3 text-amber-800 dark:text-amber-400" /> Order Placed
-                                  </>
-                                )}
-                              </span>
-                            </div>
-                          </div>
+                            {t === 'all' ? 'All' : `T${t}`}
+                          </button>
                         ))}
                       </div>
                     )}
                   </div>
+
+                  {/* 1. TEACHER REWARDS SECTION */}
+                  {(storeCategoryFilter === 'all' || storeCategoryFilter === 'rewards') && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Gift className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                          <h5 className="font-bold text-sm text-slate-900 dark:text-white">Classroom Rewards from Teacher</h5>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-500/20 dark:text-amber-300">
+                            {customRewards.length} Active
+                          </span>
+                        </div>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline">
+                          Redeem with coins, teacher fulfills in class!
+                        </span>
+                      </div>
+
+                      {customRewards.length === 0 ? (
+                        <div className="p-6 rounded-2xl bg-amber-50/50 border border-amber-200/70 text-center dark:bg-slate-800/40 dark:border-slate-700">
+                          <Gift className="w-8 h-8 text-amber-400 mx-auto mb-2 opacity-80" />
+                          <p className="font-bold text-sm text-slate-800 dark:text-slate-200">No Teacher Rewards Listed Yet</p>
+                          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto dark:text-slate-400">
+                            Your teacher has not published custom classroom rewards for this class yet. Ask your teacher to add rewards in the Teacher Portal!
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                          {customRewards.map(reward => {
+                            const studentCoins = gameState?.coins || 0;
+                            const canAfford = studentCoins >= reward.cost;
+
+                            return (
+                              <div
+                                key={reward.id}
+                                className="p-4 rounded-2xl border-2 transition-all flex flex-col justify-between bg-white border-amber-200/90 hover:border-amber-400 shadow-md dark:bg-slate-850 dark:border-amber-500/30 dark:hover:border-amber-400"
+                              >
+                                <div>
+                                  <div className="flex items-start justify-between gap-2 mb-2">
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                      <div className="w-10 h-10 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-xl dark:bg-amber-500/20 dark:border-amber-500/40 flex-shrink-0">
+                                        🎁
+                                      </div>
+                                      <div className="min-w-0">
+                                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40">
+                                          Teacher Reward
+                                        </span>
+                                        <h5 className="font-bold text-slate-900 text-base mt-0.5 truncate dark:text-white">{reward.name}</h5>
+                                      </div>
+                                    </div>
+
+                                    <div className="text-right flex-shrink-0">
+                                      <span className="text-base font-bold text-yellow-700 dark:text-yellow-400">🪙 {reward.cost}</span>
+                                    </div>
+                                  </div>
+
+                                  {reward.description && (
+                                    <p className="text-xs text-slate-700 mb-2 dark:text-slate-300 line-clamp-2">{reward.description}</p>
+                                  )}
+
+                                  {reward.directions && (
+                                    <div className="mb-3 p-2 rounded-lg bg-amber-50/80 border border-amber-200 text-[11px] text-amber-900 dark:bg-amber-950/30 dark:border-amber-500/30 dark:text-amber-200">
+                                      <span className="font-bold">Instructions: </span>{reward.directions}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="pt-3 border-t border-slate-200 flex items-center justify-between gap-3 dark:border-slate-700">
+                                  <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                                    {canAfford ? (
+                                      <span className="text-emerald-700 flex items-center gap-1 dark:text-emerald-400">
+                                        <CheckCircle2 className="w-3.5 h-3.5" /> Can Afford
+                                      </span>
+                                    ) : (
+                                      <span className="text-amber-700 flex items-center gap-1 dark:text-amber-400">
+                                        Need {reward.cost - studentCoins} more coins
+                                      </span>
+                                    )}
+                                  </span>
+
+                                  <button
+                                    disabled={!canAfford}
+                                    onClick={() => setRedeemingReward(reward)}
+                                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow min-h-[38px] ${
+                                      canAfford
+                                        ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 active:scale-95'
+                                        : 'bg-slate-200 text-slate-500 cursor-not-allowed border border-slate-300 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700'
+                                    }`}
+                                  >
+                                    <Gift className="w-3.5 h-3.5" />
+                                    {canAfford ? `Redeem (${reward.cost} 🪙)` : `Locked (${reward.cost} 🪙)`}
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 2. STEM HARDWARE & PERKS SECTION */}
+                  {(storeCategoryFilter === 'all' || storeCategoryFilter === 'stem') && (
+                    <div className="space-y-3 pt-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Package className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                          <h5 className="font-bold text-sm text-slate-900 dark:text-white">Guild STEM Supplies & Field Upgrades</h5>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300">
+                            {filteredStemItems.length} Items
+                          </span>
+                        </div>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline">
+                          Requires Guild Level to unlock
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                        {filteredStemItems.map(item => {
+                          const isUnlocked = levelInfo.level >= (item.requiredGuildLevel || 1);
+                          const hasEnoughCoins = (gameState?.coins || 0) >= item.costCoins;
+                          const canBuy = isUnlocked && hasEnoughCoins;
+
+                          return (
+                            <div
+                              key={item.id}
+                              className={`p-4 rounded-2xl border-2 transition-all flex flex-col justify-between ${
+                                !isUnlocked
+                                  ? 'bg-slate-50 border-slate-200 text-slate-600 opacity-75 dark:bg-slate-900/50 dark:border-slate-800 dark:text-slate-500'
+                                  : 'bg-white border-slate-200 hover:border-emerald-500/60 shadow-md dark:bg-slate-850 dark:border-slate-700'
+                              }`}
+                            >
+                              <div>
+                                <div className="flex items-start justify-between gap-2 mb-2">
+                                  <div className="flex items-center gap-2.5 min-w-0">
+                                    <span className="text-3xl p-1.5 bg-white rounded-xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700 flex-shrink-0">{item.icon || '⚙️'}</span>
+                                    <div className="min-w-0">
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-300">
+                                          Tier {item.tier || 1}
+                                        </span>
+                                        {item.category === 'perk' && (
+                                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 border border-purple-500/30 dark:bg-purple-500/20 dark:text-purple-300">
+                                            Perk
+                                          </span>
+                                        )}
+                                      </div>
+                                      <h5 className="font-bold text-slate-900 text-base mt-0.5 truncate dark:text-white">{item.name}</h5>
+                                    </div>
+                                  </div>
+
+                                  <div className="text-right flex-shrink-0">
+                                    <span className="text-base font-bold text-yellow-700 dark:text-yellow-400">🪙 {item.costCoins}</span>
+                                  </div>
+                                </div>
+
+                                <p className="text-xs text-slate-700 mb-3 dark:text-slate-300 line-clamp-2">{item.desc}</p>
+                              </div>
+
+                              <div className="pt-3 border-t border-slate-200 flex items-center justify-between gap-3 dark:border-slate-700">
+                                <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">
+                                  {isUnlocked ? (
+                                    <span className="text-emerald-700 flex items-center gap-1 dark:text-emerald-400">
+                                      <Unlock className="w-3 h-3" /> Unlocked (Req: Lvl {item.requiredGuildLevel})
+                                    </span>
+                                  ) : (
+                                    <span className="text-amber-700 flex items-center gap-1 dark:text-amber-400">
+                                      <Lock className="w-3 h-3" /> Req: Guild Level {item.requiredGuildLevel}
+                                    </span>
+                                  )}
+                                </span>
+
+                                <button
+                                  disabled={!canBuy}
+                                  onClick={() => setPurchasingItem(item)}
+                                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow min-h-[38px] ${
+                                    canBuy
+                                      ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 active:scale-95'
+                                      : !isUnlocked
+                                      ? 'bg-slate-200 text-slate-500 cursor-not-allowed border border-slate-300 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700'
+                                      : 'bg-amber-100 text-amber-800 border border-amber-500/40 cursor-not-allowed dark:bg-amber-500/20 dark:text-amber-300'
+                                  }`}
+                                >
+                                  <ShoppingBag className="w-3.5 h-3.5" />
+                                  {canBuy
+                                    ? `Buy for Guild (${item.costCoins} 🪙)`
+                                    : !isUnlocked
+                                    ? `Locked (Lvl ${item.requiredGuildLevel})`
+                                    : `Need ${item.costCoins - (gameState?.coins || 0)} More Coins`}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 3. ORDERS & REDEMPTIONS AUDIT HISTORY */}
+                  {(storeCategoryFilter === 'all' || storeCategoryFilter === 'history') && (
+                    <div className="mt-6 space-y-4">
+                      {/* Teacher Reward Redemptions */}
+                      <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 dark:bg-slate-800/80 dark:border-slate-700">
+                        <h4 className="text-sm font-bold text-slate-900 mb-1 flex items-center gap-2 dark:text-white">
+                          <Gift className="w-4 h-4 text-amber-600 dark:text-amber-400" /> My Teacher Reward Redemptions ({myRedemptions.length})
+                        </h4>
+                        <p className="text-xs text-slate-500 mb-3 dark:text-slate-400">
+                          Classroom rewards you have redeemed. Follow directions and confirm with your teacher.
+                        </p>
+
+                        {myRedemptions.length === 0 ? (
+                          <p className="text-slate-500 text-xs text-center py-3 italic dark:text-slate-500">
+                            You haven't redeemed any teacher rewards yet.
+                          </p>
+                        ) : (
+                          <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                            {myRedemptions.map(r => (
+                              <div
+                                key={r.id}
+                                className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs flex-wrap gap-2 dark:bg-slate-900 dark:border-slate-700"
+                              >
+                                <div className="flex items-center gap-2.5">
+                                  <span className="text-xl">🎁</span>
+                                  <div>
+                                    <p className="font-bold text-slate-900 dark:text-white">{r.itemName}</p>
+                                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                                      Cost: <span className="font-semibold text-yellow-700 dark:text-yellow-400">{r.cost} 🪙</span>
+                                      {r.redeemedAt?.toDate ? ` • ${new Date(r.redeemedAt.toDate()).toLocaleDateString()}` : r.redeemedAt ? ` • ${new Date(r.redeemedAt).toLocaleDateString()}` : ''}
+                                    </p>
+                                    {r.directions && (
+                                      <p className="text-[11px] text-amber-700 italic mt-0.5 dark:text-amber-300">
+                                        Directions: {r.directions}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase flex items-center gap-1 ${
+                                  r.status === 'fulfilled'
+                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-300'
+                                    : 'bg-amber-100 text-amber-800 border border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-300'
+                                }`}>
+                                  {r.status === 'fulfilled' ? (
+                                    <>
+                                      <CheckCircle2 className="w-3 h-3 text-emerald-700 dark:text-emerald-400" /> Fulfilled
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Clock className="w-3 h-3 text-amber-700 dark:text-amber-400" /> Pending Teacher
+                                    </>
+                                  )}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Guild STEM Supply Orders */}
+                      <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 dark:bg-slate-800/80 dark:border-slate-700">
+                        <h4 className="text-sm font-bold text-slate-900 mb-1 flex items-center gap-2 dark:text-white">
+                          <Package className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> {guild.name} Team STEM Orders ({guildPurchases.length})
+                        </h4>
+                        <p className="text-xs text-slate-500 mb-3 dark:text-slate-400">
+                          Parts and perks contributed by your guild members. Teachers distribute supplies in class.
+                        </p>
+
+                        {guildPurchases.length === 0 ? (
+                          <p className="text-slate-500 text-xs text-center py-3 italic dark:text-slate-500">
+                            No STEM supplies ordered for your team yet.
+                          </p>
+                        ) : (
+                          <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                            {guildPurchases.map(p => (
+                              <div
+                                key={p.id}
+                                className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs flex-wrap gap-2 dark:bg-slate-900 dark:border-slate-700"
+                              >
+                                <div className="flex items-center gap-2.5">
+                                  <span className="text-xl">{p.icon || '⚙️'}</span>
+                                  <div>
+                                    <p className="font-bold text-slate-900 dark:text-white">{p.itemName}</p>
+                                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                                      Contributed by <span className="text-yellow-700 font-semibold dark:text-yellow-400">{p.studentName}</span> • {new Date(p.timestamp).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                  <span className="text-yellow-700 font-bold dark:text-yellow-400">🪙 {p.costCoins}</span>
+                                  <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase flex items-center gap-1 ${
+                                    p.fulfilled
+                                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-300'
+                                      : 'bg-amber-100 text-amber-800 border border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-300'
+                                  }`}>
+                                    {p.fulfilled ? (
+                                      <>
+                                        <CheckCircle2 className="w-3 h-3 text-emerald-700 dark:text-emerald-400" /> Delivered
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Clock className="w-3 h-3 text-amber-700 dark:text-amber-400" /> Order Placed
+                                      </>
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1370,6 +1676,88 @@ export default function GuildPanel({
                   {savingBotPic ? 'Saving...' : 'Save Photo'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Teacher Custom Reward Redemption Confirmation Modal */}
+      {redeemingReward && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm dark:bg-slate-950/80"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="redeem-reward-modal-title"
+          onClick={() => setRedeemingReward(null)}
+          onKeyDown={e => e.key === 'Escape' && setRedeemingReward(null)}
+        >
+          <div
+            className="bg-slate-50 border-2 border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 dark:bg-slate-900 dark:border-amber-500"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 id="redeem-reward-modal-title" className="text-lg font-display font-bold text-slate-900 flex items-center gap-2 dark:text-white">
+                <Gift className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Confirm Reward Redemption
+              </h3>
+              <button
+                onClick={() => setRedeemingReward(null)}
+                className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 bg-white rounded-2xl border border-slate-200 flex items-start gap-3 dark:bg-slate-800 dark:border-slate-700">
+              <span className="text-3xl flex-shrink-0">🎁</span>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-bold text-slate-900 text-base dark:text-white">{redeemingReward.name}</h4>
+                {redeemingReward.description && (
+                  <p className="text-xs text-slate-700 mt-0.5 dark:text-slate-300">{redeemingReward.description}</p>
+                )}
+                <span className="text-xs font-bold text-yellow-700 mt-1 block dark:text-yellow-400">
+                  Cost: {redeemingReward.cost} Coins
+                </span>
+              </div>
+            </div>
+
+            {redeemingReward.directions && (
+              <div className="bg-amber-50 border border-amber-300 p-3 rounded-xl text-xs text-amber-900 dark:bg-amber-950/30 dark:border-amber-500/40 dark:text-amber-200">
+                📌 <strong>Teacher Directions:</strong> {redeemingReward.directions}
+              </div>
+            )}
+
+            <div className="bg-slate-100 p-3 rounded-xl border border-slate-200 text-xs text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
+              <div className="flex justify-between mb-1">
+                <span>Current Balance:</span>
+                <span className="font-bold">🪙 {(gameState?.coins || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between mb-1 text-red-600 dark:text-red-400">
+                <span>Reward Cost:</span>
+                <span className="font-bold">- {redeemingReward.cost}</span>
+              </div>
+              <div className="flex justify-between pt-1 border-t border-slate-300 dark:border-slate-600 font-bold text-slate-900 dark:text-white">
+                <span>Balance After:</span>
+                <span>🪙 {Math.max(0, (gameState?.coins || 0) - redeemingReward.cost).toLocaleString()}</span>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setRedeemingReward(null)}
+                className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 font-bold rounded-xl text-xs min-h-[44px] dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={redeemProcess}
+                onClick={handleExecuteRedeemReward}
+                className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition-colors shadow min-h-[44px]"
+              >
+                {redeemProcess ? 'Redeeming...' : `Confirm & Spend ${redeemingReward.cost} Coins`}
+              </button>
             </div>
           </div>
         </div>

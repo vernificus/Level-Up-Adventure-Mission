@@ -23,7 +23,7 @@ import {
 import { auth, db, storage } from "./firebase";
 import { ref as storageRef, uploadString, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { LEVELS, GUILDS, DEFAULT_10_GUILDS, DEFAULT_15_GUILDS, DEFAULT_STEM_SUPPLIES, GUILD_LEVELS, GUILD_CHALLENGES, BOSS_CHALLENGES, DEFAULT_PATHS, PATH_COLORS, getGuildLevelInfo, getHighFiveCooldownStatus } from "../data/gameData";
-import { calculateLevelAndBonusCoins, calculatePathMastersProgress } from "../utils/gameUtils.js";
+import { calculateLevelAndBonusCoins, calculatePathMastersProgress, isSubmissionAfterReset } from "../utils/gameUtils.js";
 import {
   generateStoragePath,
   isMediaPayload,
@@ -1098,162 +1098,200 @@ export const realBackend = {
       };
 
       // Synchronize student's XP, completedActivities, level, coins, guild XP directly in Firestore
-      if (subData.studentId) {
+      let resolvedStudentRef = subData.studentId ? doc(db, "students", subData.studentId) : null;
+      let studentSnap = resolvedStudentRef ? await getDoc(resolvedStudentRef) : null;
+
+      // Fallback lookup by playerName within class if studentId doc wasn't found
+      if ((!studentSnap || !studentSnap.exists()) && subData.classId && subData.playerName) {
         try {
-          const studentRef = doc(db, "students", subData.studentId);
-          const studentSnap = await getDoc(studentRef);
-          if (studentSnap.exists()) {
-            const studentData = studentSnap.data();
-            const currentXp = Number(studentData.xp) || 0;
-            const currentCoins = Number(studentData.coins) || 100;
-            const currentGuildXp = Number(studentData.guildXpContributed) || 0;
-            const completed = Array.isArray(studentData.completedActivities)
-              ? [...studentData.completedActivities]
-              : [];
-            const completedBosses = Array.isArray(studentData.completedBossChallenges)
-              ? [...studentData.completedBossChallenges]
-              : [];
-            const totalCompleted = Number(studentData.totalActivitiesCompleted) || completed.length;
+          const fallbackQ = query(collection(db, "students"), where("classId", "==", subData.classId));
+          const fallbackSnap = await getDocs(fallbackQ);
+          const normalizedTarget = subData.playerName.trim().toLowerCase();
+          const matchedDoc = fallbackSnap.docs.find(
+            d => (d.data().name || '').trim().toLowerCase() === normalizedTarget
+          );
+          if (matchedDoc) {
+            resolvedStudentRef = doc(db, "students", matchedDoc.id);
+            studentSnap = matchedDoc;
+          }
+        } catch (lookupErr) {
+          console.warn("Fallback student lookup failed in reviewSubmission:", lookupErr);
+        }
+      }
 
-            if (status === 'approved' && prevStatus !== 'approved') {
-              // APPROVED: Award XP, level-up coins, and mark completed
-              const newXp = currentXp + xpEarned;
-              const { bonusCoins } = calculateLevelAndBonusCoins(currentXp, newXp);
-              const newCoins = currentCoins + bonusCoins;
-              const newGuildXp = studentData.guild ? (currentGuildXp + xpEarned) : currentGuildXp;
-              const newTotalCompleted = totalCompleted + 1;
-              const earnedMysteryBox = newTotalCompleted % 3 === 0;
-              const currentPendingBoxes = Number(studentData.pendingMysteryBoxes) || 0;
-              const newPendingBoxes = earnedMysteryBox ? currentPendingBoxes + 1 : currentPendingBoxes;
+      if (resolvedStudentRef && studentSnap && studentSnap.exists()) {
+        try {
+          const studentData = studentSnap.data();
+          const currentXp = Number(studentData.xp) || 0;
+          const currentCoins = (studentData.coins !== undefined && studentData.coins !== null) ? Number(studentData.coins) : 100;
+          const currentGuildXp = Number(studentData.guildXpContributed) || 0;
+          const completed = Array.isArray(studentData.completedActivities)
+            ? [...studentData.completedActivities]
+            : [];
+          const completedBosses = Array.isArray(studentData.completedBossChallenges)
+            ? [...studentData.completedBossChallenges]
+            : [];
+          const totalCompleted = Number(studentData.totalActivitiesCompleted) || completed.length;
 
-              const studentUpdates = {
-                xp: newXp,
-                coins: newCoins,
-                guildXpContributed: newGuildXp,
-                totalActivitiesCompleted: newTotalCompleted,
-                pendingMysteryBoxes: newPendingBoxes
-              };
-
-              if (subData.isBoss) {
-                if (subData.activityId && !completedBosses.includes(subData.activityId)) {
-                  studentUpdates.completedBossChallenges = arrayUnion(subData.activityId);
-                }
-              } else {
-                if (subData.activityId && !completed.includes(subData.activityId)) {
-                  studentUpdates.completedActivities = arrayUnion(subData.activityId);
-                }
-              }
-
-              await updateDoc(studentRef, studentUpdates);
-              subUpdates.xpAwarded = xpEarned;
-
-              // 🤝 CO-OP / SQUAD SUBMISSIONS: Award XP & completion to tagged teammates
-              if (Array.isArray(subData.collaborators) && subData.collaborators.length > 0 && !subData.isCoOpCopy) {
-                for (const collab of subData.collaborators) {
-                  const collabId = typeof collab === 'string' ? collab : collab?.id;
-                  if (!collabId || collabId === subData.studentId) continue;
-                  try {
-                    const collabRef = doc(db, "students", collabId);
-                    const collabSnap = await getDoc(collabRef);
-                    if (!collabSnap.exists()) continue;
-                    const collabData = collabSnap.data();
-
-                    // Check if a co-op submission copy already exists for this teammate
-                    const existingCoOpQuery = query(
-                      collection(db, "submissions"),
-                      where("parentSubmissionId", "==", submissionId),
-                      where("studentId", "==", collabId)
-                    );
-                    const existingCoOpSnap = await getDocs(existingCoOpQuery);
-                    if (!existingCoOpSnap.empty) continue;
-
-                    const cXp = Number(collabData.xp) || 0;
-                    const cCoins = Number(collabData.coins) || 100;
-                    const cGuildXp = Number(collabData.guildXpContributed) || 0;
-                    const cCompleted = Array.isArray(collabData.completedActivities) ? [...collabData.completedActivities] : [];
-                    const cBosses = Array.isArray(collabData.completedBossChallenges) ? [...collabData.completedBossChallenges] : [];
-                    const cTotal = Number(collabData.totalActivitiesCompleted) || cCompleted.length;
-
-                    const newCXp = cXp + xpEarned;
-                    const { bonusCoins: cBonusCoins } = calculateLevelAndBonusCoins(cXp, newCXp);
-                    const newCCoins = cCoins + cBonusCoins;
-                    const newCGuildXp = collabData.guild ? (cGuildXp + xpEarned) : cGuildXp;
-                    const newCTotal = cTotal + 1;
-                    const cPendingBoxes = Number(collabData.pendingMysteryBoxes) || 0;
-                    const newCPendingBoxes = (newCTotal % 3 === 0) ? cPendingBoxes + 1 : cPendingBoxes;
-
-                    const collabUpdates = {
-                      xp: newCXp,
-                      coins: newCCoins,
-                      guildXpContributed: newCGuildXp,
-                      totalActivitiesCompleted: newCTotal,
-                      pendingMysteryBoxes: newCPendingBoxes
-                    };
-
-                    if (subData.isBoss) {
-                      if (subData.activityId && !cBosses.includes(subData.activityId)) {
-                        collabUpdates.completedBossChallenges = arrayUnion(subData.activityId);
-                      }
-                    } else {
-                      if (subData.activityId && !cCompleted.includes(subData.activityId)) {
-                        collabUpdates.completedActivities = arrayUnion(subData.activityId);
-                      }
-                    }
-
-                    await updateDoc(collabRef, collabUpdates);
-
-                    // Create an approved submission record for the teammate so XP reconciliation preserves it
-                    await addDoc(collection(db, "submissions"), {
-                      ...subData,
-                      studentId: collabId,
-                      playerName: collabData.name || collabData.displayName || collab.name || 'Teammate',
-                      playerAvatar: collabData.avatar || '🧙',
-                      guild: collabData.guild || null,
-                      status: 'approved',
-                      xpAwarded: xpEarned,
-                      isCoOpCopy: true,
-                      parentSubmissionId: submissionId,
-                      coOpLeaderName: subData.playerName || 'Teammate',
-                      teacherFeedback: feedback
-                        ? `[Co-Op with ${subData.playerName}] ${feedback}`
-                        : `Approved Co-Op Mission with ${subData.playerName}!`,
-                      reviewedAt: new Date().toISOString()
-                    });
-                  } catch (collabErr) {
-                    console.warn("Could not award Co-Op XP to collaborator:", collabId, collabErr);
-                  }
-                }
-              }
-            } else if (status !== 'approved' && prevStatus === 'approved') {
-              // REJECTED OR REVOKED: Deduct previously awarded XP and rewards
-              const xpToDeduct = Number(subData.xpAwarded) || xpEarned;
-              const newXp = Math.max(0, currentXp - xpToDeduct);
-              const newGuildXp = Math.max(0, currentGuildXp - xpToDeduct);
-              const newTotalCompleted = Math.max(0, totalCompleted - 1);
-
-              const studentUpdates = {
-                xp: newXp,
-                guildXpContributed: newGuildXp,
-                totalActivitiesCompleted: newTotalCompleted
-              };
-
-              if (subData.isBoss) {
-                if (subData.activityId) {
-                  studentUpdates.completedBossChallenges = arrayRemove(subData.activityId);
-                }
-              } else {
-                if (subData.activityId) {
-                  studentUpdates.completedActivities = arrayRemove(subData.activityId);
-                }
-              }
-
-              await updateDoc(studentRef, studentUpdates);
-              subUpdates.xpAwarded = 0;
+          if (status === 'approved' && prevStatus !== 'approved') {
+            // APPROVED: Award XP (including active double XP token), level-up coins, and mark completed
+            let effectiveXpEarned = xpEarned;
+            const hasDoubleXp = Boolean(studentData.doubleXpActive);
+            if (hasDoubleXp) {
+              effectiveXpEarned *= 2;
+              subUpdates.doubleXpApplied = true;
             }
+
+            const newXp = currentXp + effectiveXpEarned;
+            const { bonusCoins } = calculateLevelAndBonusCoins(currentXp, newXp);
+            const newCoins = currentCoins + bonusCoins;
+            const newGuildXp = studentData.guild ? (currentGuildXp + effectiveXpEarned) : currentGuildXp;
+            const newTotalCompleted = totalCompleted + 1;
+            const earnedMysteryBox = newTotalCompleted % 3 === 0;
+            const currentPendingBoxes = Number(studentData.pendingMysteryBoxes) || 0;
+            const newPendingBoxes = earnedMysteryBox ? currentPendingBoxes + 1 : currentPendingBoxes;
+
+            const studentUpdates = {
+              xp: newXp,
+              coins: newCoins,
+              guildXpContributed: newGuildXp,
+              totalActivitiesCompleted: newTotalCompleted,
+              pendingMysteryBoxes: newPendingBoxes
+            };
+
+            if (hasDoubleXp) {
+              studentUpdates.doubleXpActive = false;
+            }
+
+            if (subData.isBoss) {
+              if (subData.activityId && !completedBosses.includes(subData.activityId)) {
+                studentUpdates.completedBossChallenges = arrayUnion(subData.activityId);
+              }
+            } else {
+              if (subData.activityId && !completed.includes(subData.activityId)) {
+                studentUpdates.completedActivities = arrayUnion(subData.activityId);
+              }
+            }
+
+            await updateDoc(resolvedStudentRef, studentUpdates);
+            subUpdates.xpAwarded = effectiveXpEarned;
+            subUpdates.xpSyncFailed = false;
+
+            // 🤝 CO-OP / SQUAD SUBMISSIONS: Award XP & completion to tagged teammates
+            if (Array.isArray(subData.collaborators) && subData.collaborators.length > 0 && !subData.isCoOpCopy) {
+              for (const collab of subData.collaborators) {
+                const collabId = typeof collab === 'string' ? collab : collab?.id;
+                if (!collabId || collabId === subData.studentId) continue;
+                try {
+                  const collabRef = doc(db, "students", collabId);
+                  const collabSnap = await getDoc(collabRef);
+                  if (!collabSnap.exists()) continue;
+                  const collabData = collabSnap.data();
+
+                  // Check if a co-op submission copy already exists for this teammate
+                  const existingCoOpQuery = query(
+                    collection(db, "submissions"),
+                    where("parentSubmissionId", "==", submissionId),
+                    where("studentId", "==", collabId)
+                  );
+                  const existingCoOpSnap = await getDocs(existingCoOpQuery);
+                  if (!existingCoOpSnap.empty) continue;
+
+                  const cXp = Number(collabData.xp) || 0;
+                  const cCoins = (collabData.coins !== undefined && collabData.coins !== null) ? Number(collabData.coins) : 100;
+                  const cGuildXp = Number(collabData.guildXpContributed) || 0;
+                  const cCompleted = Array.isArray(collabData.completedActivities) ? [...collabData.completedActivities] : [];
+                  const cBosses = Array.isArray(collabData.completedBossChallenges) ? [...collabData.completedBossChallenges] : [];
+                  const cTotal = Number(collabData.totalActivitiesCompleted) || cCompleted.length;
+
+                  const newCXp = cXp + xpEarned;
+                  const { bonusCoins: cBonusCoins } = calculateLevelAndBonusCoins(cXp, newCXp);
+                  const newCCoins = cCoins + cBonusCoins;
+                  const newCGuildXp = collabData.guild ? (cGuildXp + xpEarned) : cGuildXp;
+                  const newCTotal = cTotal + 1;
+                  const cPendingBoxes = Number(collabData.pendingMysteryBoxes) || 0;
+                  const newCPendingBoxes = (newCTotal % 3 === 0) ? cPendingBoxes + 1 : cPendingBoxes;
+
+                  const collabUpdates = {
+                    xp: newCXp,
+                    coins: newCCoins,
+                    guildXpContributed: newCGuildXp,
+                    totalActivitiesCompleted: newCTotal,
+                    pendingMysteryBoxes: newCPendingBoxes
+                  };
+
+                  if (subData.isBoss) {
+                    if (subData.activityId && !cBosses.includes(subData.activityId)) {
+                      collabUpdates.completedBossChallenges = arrayUnion(subData.activityId);
+                    }
+                  } else {
+                    if (subData.activityId && !cCompleted.includes(subData.activityId)) {
+                      collabUpdates.completedActivities = arrayUnion(subData.activityId);
+                    }
+                  }
+
+                  await updateDoc(collabRef, collabUpdates);
+
+                  // Create an approved submission record for the teammate so XP reconciliation preserves it
+                  await addDoc(collection(db, "submissions"), {
+                    ...subData,
+                    studentId: collabId,
+                    playerName: collabData.name || collabData.displayName || collab.name || 'Teammate',
+                    playerAvatar: collabData.avatar || '🧙',
+                    guild: collabData.guild || null,
+                    status: 'approved',
+                    xpAwarded: xpEarned,
+                    xpSyncFailed: false,
+                    isCoOpCopy: true,
+                    parentSubmissionId: submissionId,
+                    coOpLeaderName: subData.playerName || 'Teammate',
+                    teacherFeedback: feedback
+                      ? `[Co-Op with ${subData.playerName}] ${feedback}`
+                      : `Approved Co-Op Mission with ${subData.playerName}!`,
+                    reviewedAt: new Date().toISOString()
+                  });
+                } catch (collabErr) {
+                  console.warn("Could not award Co-Op XP to collaborator:", collabId, collabErr);
+                }
+              }
+            }
+          } else if (status !== 'approved' && prevStatus === 'approved') {
+            // REJECTED OR REVOKED: Deduct previously awarded XP and rewards
+            const xpToDeduct = Number(subData.xpAwarded) || xpEarned;
+            const newXp = Math.max(0, currentXp - xpToDeduct);
+            const newGuildXp = Math.max(0, currentGuildXp - xpToDeduct);
+            const newTotalCompleted = Math.max(0, totalCompleted - 1);
+
+            const studentUpdates = {
+              xp: newXp,
+              guildXpContributed: newGuildXp,
+              totalActivitiesCompleted: newTotalCompleted
+            };
+
+            if (subData.isBoss) {
+              if (subData.activityId) {
+                studentUpdates.completedBossChallenges = arrayRemove(subData.activityId);
+              }
+            } else {
+              if (subData.activityId) {
+                studentUpdates.completedActivities = arrayRemove(subData.activityId);
+              }
+            }
+
+            await updateDoc(resolvedStudentRef, studentUpdates);
+            subUpdates.xpAwarded = 0;
+            subUpdates.xpSyncFailed = false;
           }
         } catch (syncErr) {
           console.warn("Could not sync student XP & completedActivities in reviewSubmission:", syncErr);
+          if (status === 'approved' && prevStatus !== 'approved') {
+            subUpdates.xpAwarded = 0;
+            subUpdates.xpSyncFailed = true;
+          }
         }
+      } else if (status === 'approved' && prevStatus !== 'approved') {
+        subUpdates.xpAwarded = 0;
+        subUpdates.xpSyncFailed = true;
       }
 
       await updateDoc(docRef, subUpdates);
@@ -1296,11 +1334,19 @@ export const realBackend = {
 
       const approvedSubs = subs.filter(s => s.status === 'approved');
       const approvedXpTotal = approvedSubs.reduce(
+        (sum, s) => sum + (Number(s.xpAwarded) || Number(s.xp) || (s.isBoss ? 300 : 100)),
+        0
+      );
+      const unsyncedSubs = approvedSubs.filter(s => s.xpSyncFailed === true);
+      const unsyncedXp = unsyncedSubs.reduce(
         (sum, s) => sum + (Number(s.xp) || (s.isBoss ? 300 : 100)),
         0
       );
 
-      const approvedActivityIds = approvedSubs.filter(s => !s.isBoss && s.activityId).map(s => s.activityId);
+      // Respect teacher/weekly activity reset when rebuilding active completedActivities
+      const approvedActivityIds = approvedSubs
+        .filter(s => !s.isBoss && s.activityId && isSubmissionAfterReset(s, studentData.lastActivityReset))
+        .map(s => s.activityId);
       const approvedBossIds = approvedSubs.filter(s => s.isBoss && s.activityId).map(s => s.activityId);
 
       const currentCompleted = Array.isArray(studentData.completedActivities) ? studentData.completedActivities : [];
@@ -1309,17 +1355,19 @@ export const realBackend = {
       const mergedBosses = Array.from(new Set([...currentCompletedBosses, ...approvedBossIds]));
 
       const currentXp = Number(studentData.xp) || 0;
+      const targetXp = Math.max(approvedXpTotal, currentXp + unsyncedXp);
       const updates = {};
       let updated = false;
 
-      if (currentXp < approvedXpTotal) {
-        updates.xp = approvedXpTotal;
-        const { bonusCoins } = calculateLevelAndBonusCoins(currentXp, approvedXpTotal);
+      if (currentXp < targetXp) {
+        updates.xp = targetXp;
+        const { bonusCoins } = calculateLevelAndBonusCoins(currentXp, targetXp);
         if (bonusCoins > 0) {
-          updates.coins = (Number(studentData.coins) || 100) + bonusCoins;
+          const baseCoins = (studentData.coins !== undefined && studentData.coins !== null) ? Number(studentData.coins) : 100;
+          updates.coins = baseCoins + bonusCoins;
         }
         if (studentData.guild) {
-          updates.guildXpContributed = Math.max(Number(studentData.guildXpContributed) || 0, approvedXpTotal);
+          updates.guildXpContributed = Math.max(Number(studentData.guildXpContributed) || 0, targetXp);
         }
         updated = true;
       }
@@ -1346,6 +1394,18 @@ export const realBackend = {
 
       if (updated) {
         await updateDoc(studentRef, updates);
+      }
+
+      for (const unsynced of unsyncedSubs) {
+        try {
+          const awardedVal = Number(unsynced.xp) || (unsynced.isBoss ? 300 : 100);
+          await updateDoc(doc(db, "submissions", unsynced.id), {
+            xpAwarded: awardedVal,
+            xpSyncFailed: false
+          });
+        } catch (subFixErr) {
+          console.warn("Could not clear xpSyncFailed on submission:", unsynced.id, subFixErr);
+        }
       }
 
       return {
@@ -1386,11 +1446,19 @@ export const realBackend = {
 
         const approvedSubs = stSubs.filter(s => s.status === 'approved');
         const approvedXpTotal = approvedSubs.reduce(
+          (sum, s) => sum + (Number(s.xpAwarded) || Number(s.xp) || (s.isBoss ? 300 : 100)),
+          0
+        );
+        const unsyncedSubs = approvedSubs.filter(s => s.xpSyncFailed === true);
+        const unsyncedXp = unsyncedSubs.reduce(
           (sum, s) => sum + (Number(s.xp) || (s.isBoss ? 300 : 100)),
           0
         );
 
-        const approvedActivityIds = approvedSubs.filter(s => !s.isBoss && s.activityId).map(s => s.activityId);
+        // Respect teacher/weekly activity reset when rebuilding active completedActivities
+        const approvedActivityIds = approvedSubs
+          .filter(s => !s.isBoss && s.activityId && isSubmissionAfterReset(s, student.lastActivityReset))
+          .map(s => s.activityId);
         const approvedBossIds = approvedSubs.filter(s => s.isBoss && s.activityId).map(s => s.activityId);
 
         const currentCompleted = Array.isArray(student.completedActivities) ? student.completedActivities : [];
@@ -1399,17 +1467,19 @@ export const realBackend = {
         const mergedBosses = Array.from(new Set([...currentCompletedBosses, ...approvedBossIds]));
 
         const currentXp = Number(student.xp) || 0;
+        const targetXp = Math.max(approvedXpTotal, currentXp + unsyncedXp);
         let needsUpdate = false;
         const updates = {};
 
-        if (currentXp < approvedXpTotal) {
-          updates.xp = approvedXpTotal;
-          const { bonusCoins } = calculateLevelAndBonusCoins(currentXp, approvedXpTotal);
+        if (currentXp < targetXp) {
+          updates.xp = targetXp;
+          const { bonusCoins } = calculateLevelAndBonusCoins(currentXp, targetXp);
           if (bonusCoins > 0) {
-            updates.coins = (Number(student.coins) || 100) + bonusCoins;
+            const baseCoins = (student.coins !== undefined && student.coins !== null) ? Number(student.coins) : 100;
+            updates.coins = baseCoins + bonusCoins;
           }
           if (student.guild) {
-            updates.guildXpContributed = Math.max(Number(student.guildXpContributed) || 0, approvedXpTotal);
+            updates.guildXpContributed = Math.max(Number(student.guildXpContributed) || 0, targetXp);
           }
           needsUpdate = true;
         }
@@ -1446,6 +1516,18 @@ export const realBackend = {
             approvedSubsCount: approvedSubs.length,
             talliedXp: approvedXpTotal
           });
+        }
+
+        for (const unsynced of unsyncedSubs) {
+          try {
+            const awardedVal = Number(unsynced.xp) || (unsynced.isBoss ? 300 : 100);
+            await updateDoc(doc(db, "submissions", unsynced.id), {
+              xpAwarded: awardedVal,
+              xpSyncFailed: false
+            });
+          } catch (subFixErr) {
+            console.warn("Could not clear xpSyncFailed on submission:", unsynced.id, subFixErr);
+          }
         }
       }
 

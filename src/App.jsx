@@ -12,7 +12,7 @@ import {
 } from './data/gameData';
 import { compressImageFile } from './utils/imageUtils';
 import { renderFormattedText } from './utils/textUtils';
-import { getLevelForXp, getMostRecentMonday7am } from './utils/gameUtils';
+import { getLevelForXp, getMostRecentMonday7am, getActiveCycleSubmissions } from './utils/gameUtils';
 import {
   calculatePathProgressStats,
   filterLearningPathsByChip,
@@ -2512,10 +2512,11 @@ function GameContent({ emulatedClassId } = {}) {
     refreshClassData();
   }, [refreshClassData]);
 
-  // Helper to extract submission status safely
-  const pendingActivities = submissions ? submissions.filter(s => s.status === 'pending' && !s.isBoss).map(s => s.activityId) : [];
-  const approvedActivities = submissions ? submissions.filter(s => s.status === 'approved' && !s.isBoss).map(s => s.activityId) : [];
-  const rejectedActivities = submissions ? submissions.filter(s => s.status === 'rejected' && !s.isBoss).map(s => s.activityId) : [];
+  // Helper to extract submission status safely (filtering approved/rejected board state by lastActivityReset)
+  const activeCycleSubmissions = getActiveCycleSubmissions(submissions, gameState.lastActivityReset);
+  const pendingActivities = activeCycleSubmissions.filter(s => s.status === 'pending' && !s.isBoss).map(s => s.activityId);
+  const approvedActivities = activeCycleSubmissions.filter(s => s.status === 'approved' && !s.isBoss).map(s => s.activityId);
+  const rejectedActivities = activeCycleSubmissions.filter(s => s.status === 'rejected' && !s.isBoss).map(s => s.activityId);
   const pendingBossIds = submissions ? submissions.filter(s => s.status === 'pending' && s.isBoss).map(s => s.activityId) : [];
   const myPendingCount = submissions ? submissions.filter(s => s.status === 'pending').length : 0;
   const myRejectedCount = submissions ? submissions.filter(s => s.status === 'rejected').length : 0;
@@ -2833,7 +2834,9 @@ function GameContent({ emulatedClassId } = {}) {
           dailyCompleted={gameState.dailyQuestCompleted}
           isPending={pendingActivities.includes(activeInstruction.id)}
           isCompleted={gameState.completedActivities.includes(activeInstruction.id) || approvedActivities.includes(activeInstruction.id)}
-          existingSubmission={submissions ? submissions.find(s => s.activityId === activeInstruction.id) : null}
+          existingSubmission={activeCycleSubmissions
+            .filter(s => s.activityId === activeInstruction.id)
+            .sort((a, b) => new Date(b.reviewedAt || b.submittedAt || 0) - new Date(a.reviewedAt || a.submittedAt || 0))[0] || null}
           classStudents={classStudents}
           currentUserId={user?.id}
           currentGuild={gameState.guild}

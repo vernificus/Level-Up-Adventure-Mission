@@ -11,7 +11,10 @@ import {
   calculateRewardState,
   calculateStreak,
   calculateGuildChallengeRewardState,
-  getDefaultGameState
+  getDefaultGameState,
+  areValuesEqual,
+  isSubmissionAfterReset,
+  mergeServerStudentIntoLocal
 } from '../utils/gameUtils.js';
 
 export const getDefaultState = () => ({
@@ -70,10 +73,17 @@ export function useGameState(overrideClassId) {
   const [showMysteryReward, setShowMysteryReward] = useState(null);
 
   const [dataLoaded, setDataLoaded] = useState(false);
+  const dataLoadedRef = useRef(false);
   const processedSubmissionIds = useRef(new Set());
+  const submissionsRef = useRef([]);
+  const lastSeenServerRef = useRef(null);
+  const lastSyncedStateRef = useRef(null);
+  const callbacksRef = useRef({ checkDailyQuestMatch: null, checkAchievements: null });
 
   // Load data from "Backend" on mount
   useEffect(() => {
+    dataLoadedRef.current = false;
+    setDataLoaded(false);
     if (user && user.role === 'student') {
       loadUserData();
       loadClassActivities();
@@ -145,6 +155,7 @@ export function useGameState(overrideClassId) {
 
       // Fetch student submissions right away
       const subs = (await backend.getStudentSubmissions(user.id)) || [];
+      submissionsRef.current = subs;
       setSubmissions(subs);
 
       if (studentData) {
@@ -152,6 +163,8 @@ export function useGameState(overrideClassId) {
         gameData.claimedGuildChallenges = Array.isArray(studentData.claimedGuildChallenges)
           ? studentData.claimedGuildChallenges
           : [];
+
+        const hadServerReset = Boolean(gameData.lastActivityReset);
 
         // Check for weekly auto-reset (Monday 7am)
         let wasAutoReset = false;
@@ -168,10 +181,10 @@ export function useGameState(overrideClassId) {
         }
 
         // RECONCILIATION:
-        // Ensure any activities approved by teacher are recognized in completedActivities
+        // Only restore approved activities from the current reset cycle so teacher/weekly resets stay respected
         const approvedNonBossSubs = subs.filter(s => s.status === 'approved' && !s.isBoss);
-        const validApprovedSubs = wasAutoReset
-          ? approvedNonBossSubs.filter(s => new Date(s.reviewedAt || s.submittedAt || 0) >= new Date(gameData.lastActivityReset))
+        const validApprovedSubs = (wasAutoReset || hadServerReset)
+          ? approvedNonBossSubs.filter(s => isSubmissionAfterReset(s, gameData.lastActivityReset))
           : approvedNonBossSubs;
 
         const approvedActivityIds = validApprovedSubs.map(s => s.activityId);
@@ -190,30 +203,37 @@ export function useGameState(overrideClassId) {
         ]));
         gameData.completedBossChallenges = mergedBosses;
 
-        // Tally all approved submissions XP
+        // Tally all approved submissions XP (including any flagged xpSyncFailed)
         const allApprovedSubs = subs.filter(s => s.status === 'approved');
         const approvedXpTotal = allApprovedSubs.reduce(
+          (sum, s) => sum + (Number(s.xpAwarded) || Number(s.xp) || (s.isBoss ? 300 : 100)),
+          0
+        );
+        const unsyncedSubs = allApprovedSubs.filter(s => s.xpSyncFailed === true);
+        const unsyncedXp = unsyncedSubs.reduce(
           (sum, s) => sum + (Number(s.xp) || (s.isBoss ? 300 : 100)),
           0
         );
 
+        const currentXpNum = Number(gameData.xp) || 0;
+        const targetXp = Math.max(approvedXpTotal, currentXpNum + unsyncedXp);
         let didReconcileXp = false;
-        if ((gameData.xp || 0) < approvedXpTotal) {
-          const oldXp = gameData.xp || 0;
-          gameData.xp = approvedXpTotal;
+        if (currentXpNum < targetXp) {
+          gameData.xp = targetXp;
           // Calculate bonus coins from levels gained
-          const { bonusCoins } = calculateLevelAndBonusCoins(oldXp, approvedXpTotal, LEVELS);
+          const { bonusCoins } = calculateLevelAndBonusCoins(currentXpNum, targetXp, LEVELS);
           if (bonusCoins > 0) {
-            gameData.coins = (gameData.coins || 100) + bonusCoins;
+            const baseCoins = (gameData.coins !== undefined && gameData.coins !== null) ? Number(gameData.coins) : 100;
+            gameData.coins = baseCoins + bonusCoins;
           }
           if (gameData.guild) {
-            gameData.guildXpContributed = Math.max(gameData.guildXpContributed || 0, approvedXpTotal);
+            gameData.guildXpContributed = Math.max(Number(gameData.guildXpContributed) || 0, targetXp);
           }
           didReconcileXp = true;
         }
 
         const expectedTotalActivities = Math.max(
-          gameData.totalActivitiesCompleted || 0,
+          Number(gameData.totalActivitiesCompleted) || 0,
           allApprovedSubs.length,
           mergedCompleted.length
         );
@@ -235,23 +255,42 @@ export function useGameState(overrideClassId) {
           }).catch(err => console.warn('Could not persist reconciled student XP:', err));
         }
 
+        const hydratedState = {
+          ...getDefaultState(),
+          ...gameData,
+          playerName: name || ''
+        };
+        lastSeenServerRef.current = { ...studentData, ...gameData };
+        lastSyncedStateRef.current = hydratedState;
+
         setGameState(prev => ({
           ...prev,
           ...gameData,
           playerName: name || prev.playerName
         }));
+        dataLoadedRef.current = true;
         setDataLoaded(true);
       }
     } catch (error) {
       console.error("Error loading user data:", error);
+      dataLoadedRef.current = false;
       setDataLoaded(false);
     }
   };
 
-  // Sync state to "Backend" whenever it changes
+  // Sync ONLY locally-changed fields to "Backend" so server XP/reset updates are never overwritten
   useEffect(() => {
     if (user && user.role === 'student' && dataLoaded) {
-      backend.updateStudent(user.id, gameState);
+      const prevSynced = lastSyncedStateRef.current || {};
+      const changedFields = {};
+      for (const key of Object.keys(gameState)) {
+        if (!areValuesEqual(gameState[key], prevSynced[key])) {
+          changedFields[key] = gameState[key];
+        }
+      }
+      if (Object.keys(changedFields).length === 0) return;
+      lastSyncedStateRef.current = { ...prevSynced, ...changedFields };
+      backend.updateStudent(user.id, changedFields);
     }
   }, [gameState, user, dataLoaded]);
 
@@ -370,20 +409,28 @@ export function useGameState(overrideClassId) {
     return newAchievements;
   }, [learningPaths]);
 
-  const checkAndSetAchievements = (updatedState) => {
-      const newAchievements = checkAchievements(updatedState);
+  // Keep latest callbacks available to the 3s polling interval without tearing down the timer
+  callbacksRef.current = { checkDailyQuestMatch, checkAchievements };
+
+  const checkAndSetAchievements = (updatedState, achievementsFn = checkAchievements) => {
+      const newAchievements = achievementsFn(updatedState);
       if (newAchievements.length > 0) {
         updatedState.unlockedAchievements = [...updatedState.unlockedAchievements, ...newAchievements.map(a => a.id)];
-        updatedState.xp += newAchievements.reduce((sum, a) => sum + a.xpReward, 0);
+        const achXp = newAchievements.reduce((sum, a) => sum + a.xpReward, 0);
+        updatedState.xp += achXp;
+        if (updatedState.guild) {
+          updatedState.guildXpContributed = (updatedState.guildXpContributed || 0) + achXp;
+        }
         setTimeout(() => setShowAchievement(newAchievements[0]), 500);
       }
   };
 
-  const checkLevelUp = (oldState, newState) => {
+  const checkLevelUp = (oldState, newState, coinsAlreadyAwarded = 0) => {
     const { oldLevel, newLevel: newLevelData, bonusCoins: totalCoins } = calculateLevelAndBonusCoins(oldState.xp, newState.xp, LEVELS);
     if (newLevelData.level > oldLevel.level) {
-      if (totalCoins > 0) {
-        newState.coins = (newState.coins || 0) + totalCoins;
+      const coinsToAdd = Math.max(0, totalCoins - coinsAlreadyAwarded);
+      if (coinsToAdd > 0) {
+        newState.coins = (newState.coins || 0) + coinsToAdd;
       }
       setTimeout(() => {
         setNewLevel({ ...newLevelData, coinsEarned: totalCoins });
@@ -426,7 +473,9 @@ export function useGameState(overrideClassId) {
         collaborators: Array.isArray(submissionData.collaborators) ? submissionData.collaborators : [],
       });
 
-      setSubmissions(prev => [...prev, newSubmission]);
+      const nextSubs = [...submissionsRef.current, newSubmission];
+      submissionsRef.current = nextSubs;
+      setSubmissions(nextSubs);
       setClassSubmissions(prev => [...prev, newSubmission]);
       return newSubmission;
     } catch (err) {
@@ -453,7 +502,7 @@ export function useGameState(overrideClassId) {
         activityTitle: boss.name,
         activityType: 'Boss Challenge',
         pathId: 'boss',
-        xp: boss.reward,
+        xp: boss.reward || boss.xpReward || 300,
         playerName: gameState.playerName,
         submissionType: submissionData.type,
         submissionContent: submissionData.content,
@@ -468,7 +517,9 @@ export function useGameState(overrideClassId) {
         collaborators: Array.isArray(submissionData.collaborators) ? submissionData.collaborators : [],
       });
 
-      setSubmissions(prev => [...prev, newSubmission]);
+      const nextSubs = [...submissionsRef.current, newSubmission];
+      submissionsRef.current = nextSubs;
+      setSubmissions(nextSubs);
       setClassSubmissions(prev => [...prev, newSubmission]);
       return newSubmission;
     } catch (err) {
@@ -477,10 +528,11 @@ export function useGameState(overrideClassId) {
     }
   }, [user, gameState.playerName, submissions]);
 
-  // Since approval happens in TeacherPortal now, the student just needs to poll or listen for updates.
+  // Poll backend every 3 seconds for submission reviews, teacher grants, and activity resets
   useEffect(() => {
     if (user && user.role === 'student') {
       const interval = setInterval(async () => {
+        if (!dataLoadedRef.current) return;
         try {
           const [subs, allClassSubs, freshStudent] = await Promise.all([
             backend.getStudentSubmissions(user.id),
@@ -491,71 +543,158 @@ export function useGameState(overrideClassId) {
             setClassSubmissions(allClassSubs);
           }
 
-          if (freshStudent) {
-            setGameState(prev => {
-              const serverAchievements = Array.isArray(freshStudent.unlockedAchievements) ? freshStudent.unlockedAchievements : [];
-              const serverClaimed = Array.isArray(freshStudent.claimedGuildChallenges) ? freshStudent.claimedGuildChallenges : [];
+          const currentSubs = submissionsRef.current || [];
+          let newlyApproved = [];
+          let newlyRevoked = [];
 
-              // Safely merge server-granted achievements and server-reset metrics:
-              const isAchievementDeducted = serverAchievements.length < (prev.unlockedAchievements || []).length;
-              const mergedAchievements = isAchievementDeducted
-                ? serverAchievements
-                : Array.from(new Set([...(prev.unlockedAchievements || []), ...serverAchievements]));
-
-              const isExploitReset = serverClaimed.length < (prev.claimedGuildChallenges || []).length;
-              const mergedClaimed = isExploitReset
-                ? serverClaimed
-                : Array.from(new Set([...(prev.claimedGuildChallenges || []), ...serverClaimed]));
-
-              const updates = {
-                unlockedAchievements: mergedAchievements,
-                claimedGuildChallenges: mergedClaimed
-              };
-
-              if (freshStudent.guild !== undefined && freshStudent.guild !== prev.guild) {
-                updates.guild = freshStudent.guild;
-              }
-              if (freshStudent.xp !== undefined && freshStudent.xp !== prev.xp) {
-                updates.xp = freshStudent.xp;
-              }
-              if (freshStudent.guildXpContributed !== undefined && freshStudent.guildXpContributed !== prev.guildXpContributed) {
-                updates.guildXpContributed = freshStudent.guildXpContributed;
-              }
-              if (freshStudent.coins !== undefined && freshStudent.coins !== prev.coins) {
-                updates.coins = freshStudent.coins;
-              }
-
-              return {
-                ...prev,
-                ...updates
-              };
-            });
-          }
-
-          if (!Array.isArray(subs)) {
-            console.warn('Invalid submissions data received');
-            return;
-          }
-
-          setSubmissions(currentSubs => {
-            // Process rewards for newly approved submissions
+          if (Array.isArray(subs)) {
             subs.forEach(serverSub => {
               const localSub = currentSubs.find(s => s.id === serverSub.id);
-              if (serverSub.status === 'approved' && (!localSub || localSub.status !== 'approved')) {
-                processReward(serverSub);
+              if (
+                serverSub.status === 'approved' &&
+                !processedSubmissionIds.current.has(serverSub.id) &&
+                (!localSub || localSub.status !== 'approved')
+              ) {
+                newlyApproved.push(serverSub);
+                processedSubmissionIds.current.add(serverSub.id);
               } else if (serverSub.status !== 'approved' && localSub && localSub.status === 'approved') {
-                reconcileRevokedSubmission(serverSub);
+                newlyRevoked.push(serverSub);
+                processedSubmissionIds.current.delete(serverSub.id);
               }
             });
 
-            // Merge: keep local pending submissions that might not be on server yet
             const serverIds = new Set(subs.map(s => s.id));
             const localOnlyPending = currentSubs.filter(
               s => s.status === 'pending' && !serverIds.has(s.id)
             );
+            const mergedSubs = [...subs, ...localOnlyPending];
+            submissionsRef.current = mergedSubs;
+            setSubmissions(mergedSubs);
+          } else {
+            console.warn('Invalid submissions data received');
+          }
 
-            return [...subs, ...localOnlyPending];
-          });
+          if (freshStudent || newlyApproved.length > 0 || newlyRevoked.length > 0) {
+            const prevSeenServer = lastSeenServerRef.current;
+            if (freshStudent) {
+              // Update lastSyncedStateRef with fields from freshStudent that changed on server so
+              // diff-sync useEffect won't overwrite server updates back with old values
+              const syncedSnapshot = { ...(lastSyncedStateRef.current || {}) };
+              const serverKeysToAdopt = [
+                'guild', 'xp', 'guildXpContributed', 'coins',
+                'unlockedAchievements', 'claimedGuildChallenges',
+                'lastActivityReset', 'completedActivities', 'completedBossChallenges',
+                'totalActivitiesCompleted', 'pendingMysteryBoxes', 'doubleXpActive'
+              ];
+              serverKeysToAdopt.forEach(k => {
+                if (freshStudent[k] !== undefined && (!prevSeenServer || !areValuesEqual(freshStudent[k], prevSeenServer[k]))) {
+                  syncedSnapshot[k] = freshStudent[k];
+                }
+              });
+              lastSyncedStateRef.current = syncedSnapshot;
+              lastSeenServerRef.current = freshStudent;
+            }
+
+            setGameState(prev => {
+              const prePollXp = Number(prev.xp) || 0;
+              const preDoubleXpActive = Boolean(prev.doubleXpActive);
+
+              let nextState = freshStudent
+                ? mergeServerStudentIntoLocal(prev, freshStudent, prevSeenServer)
+                : prev;
+
+              let serverBonusCoinsApplied = 0;
+              if (freshStudent && nextState.xp > prePollXp) {
+                const serverLevelRes = calculateLevelAndBonusCoins(prePollXp, nextState.xp, LEVELS);
+                serverBonusCoinsApplied = serverLevelRes.bonusCoins || 0;
+              }
+
+              // Reconcile any revoked submissions (server reviewSubmission deducts XP/activity;
+              // client deducts only pathCompletions or full state if server hadn't updated freshStudent)
+              for (const revokedSub of newlyRevoked) {
+                const serverAlreadyDeducted = Boolean(
+                  freshStudent &&
+                  prevSeenServer &&
+                  (freshStudent.xp < prevSeenServer.xp || !areValuesEqual(freshStudent.completedActivities, prevSeenServer.completedActivities))
+                );
+                const revokedState = reconcileRevocationState(nextState, revokedSub);
+                if (serverAlreadyDeducted) {
+                  nextState = {
+                    ...nextState,
+                    pathCompletions: revokedState.pathCompletions,
+                  };
+                } else {
+                  nextState = revokedState;
+                }
+              }
+
+              // Process newly approved submissions (applying Daily Quest, Double XP, Streak, Achievements, Level-Up)
+              const today = new Date().toDateString();
+              const checkDQ = callbacksRef.current.checkDailyQuestMatch || checkDailyQuestMatch;
+              const checkAch = callbacksRef.current.checkAchievements || checkAchievements;
+
+              for (const sub of newlyApproved) {
+                // Boss challenges still prevent duplicate awards for the same boss ID
+                if (sub.isBoss && prev.completedBossChallenges.includes(sub.activityId)) {
+                  continue;
+                }
+
+                const activity = { id: sub.activityId, type: sub.activityType, xp: sub.xp };
+                const isDailyQuestMatch = checkDQ(activity, sub.pathId);
+                const preSubState = {
+                  ...nextState,
+                  doubleXpActive: preDoubleXpActive || Boolean(sub.doubleXpApplied),
+                };
+                const rewardCalc = calculateRewardState(preSubState, sub, { today, isDailyQuestMatch });
+                const expectedGain = rewardCalc.xp - preSubState.xp;
+
+                // Determine how much XP the server already added in reviewSubmission (reflected in freshStudent)
+                const serverXpApplied = (freshStudent && Number(sub.xpAwarded) > 0)
+                  ? Number(sub.xpAwarded)
+                  : 0;
+                const remainingXpToAdd = Math.max(0, expectedGain - serverXpApplied);
+
+                if (serverXpApplied > 0 && freshStudent) {
+                  // Keep server's totalActivitiesCompleted & pendingMysteryBoxes, apply client streak/path/daily bonus XP
+                  nextState = {
+                    ...rewardCalc,
+                    xp: (Number(nextState.xp) || 0) + remainingXpToAdd,
+                    guildXpContributed: nextState.guild
+                      ? (Number(nextState.guildXpContributed) || 0) + remainingXpToAdd
+                      : nextState.guildXpContributed,
+                    totalActivitiesCompleted: Math.max(
+                      Number(nextState.totalActivitiesCompleted) || 0,
+                      Number(freshStudent.totalActivitiesCompleted) || 0
+                    ),
+                    pendingMysteryBoxes: Math.max(
+                      Number(nextState.pendingMysteryBoxes) || 0,
+                      Number(freshStudent.pendingMysteryBoxes) || 0
+                    ),
+                    doubleXpActive: false,
+                  };
+                } else {
+                  nextState = rewardCalc;
+                }
+              }
+
+              if (newlyApproved.length > 0) {
+                const mutableState = { ...nextState };
+                checkAndSetAchievements(mutableState, checkAch);
+                checkLevelUp({ ...prev, xp: prePollXp }, mutableState, serverBonusCoinsApplied);
+                nextState = mutableState;
+              } else if (freshStudent && nextState.xp > prePollXp) {
+                // Direct teacher XP grant or offline approval caught up via freshStudent: show Level-Up celebration if crossed
+                const mutableState = { ...nextState };
+                const teacherGrantLevels = calculateLevelAndBonusCoins(prePollXp, nextState.xp, LEVELS);
+                if (teacherGrantLevels.newLevel.level > teacherGrantLevels.oldLevel.level) {
+                  checkLevelUp({ ...prev, xp: prePollXp }, mutableState, serverBonusCoinsApplied);
+                }
+                nextState = mutableState;
+              }
+
+              return nextState;
+            });
+          }
         } catch (error) {
           console.error('Error polling submissions:', error);
         }
@@ -563,37 +702,6 @@ export function useGameState(overrideClassId) {
       return () => clearInterval(interval);
     }
   }, [user, effectiveClassId]);
-
-  const reconcileRevokedSubmission = (submission) => {
-    if (processedSubmissionIds.current.has(submission.id)) {
-      processedSubmissionIds.current.delete(submission.id);
-    }
-    setGameState(prev => reconcileRevocationState(prev, submission));
-  };
-
-  const processReward = (submission) => {
-    // Skip if we already processed this exact submission (prevents double-counting from polls)
-    if (processedSubmissionIds.current.has(submission.id)) return;
-    processedSubmissionIds.current.add(submission.id);
-
-    const today = new Date().toDateString();
-
-    setGameState(prev => {
-       // Boss challenges still use per-boss dedup (they reset weekly by rotation)
-       if (submission.isBoss && prev.completedBossChallenges.includes(submission.activityId)) {
-         return prev;
-       }
-
-       const activity = { id: submission.activityId, type: submission.activityType, xp: submission.xp };
-       const pathId = submission.pathId;
-       const isDailyQuestMatch = checkDailyQuestMatch(activity, pathId);
-
-       const updatedState = calculateRewardState(prev, submission, { today, isDailyQuestMatch });
-       checkAndSetAchievements(updatedState);
-       checkLevelUp(prev, updatedState);
-       return updatedState;
-    });
-  };
 
   // Re-export actions
   const joinGuild = useCallback((guildId) => {

@@ -397,4 +397,156 @@ export function calculateGuildChallengeRewardState(prev, challenge, optionsOrLev
   return updatedState;
 }
 
+/**
+ * Shallow-deep equality check for primitives, arrays, and plain objects.
+ * Used to avoid unnecessary Firestore syncs and React re-renders.
+ * @param {*} a
+ * @param {*} b
+ * @returns {boolean}
+ */
+export function areValuesEqual(a, b) {
+  if (Object.is(a, b)) return true;
+  if (a === null || b === null || typeof a !== typeof b) return false;
+  if (typeof a !== 'object') return false;
+  if (Array.isArray(a) || Array.isArray(b)) {
+    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (!areValuesEqual(a[i], b[i])) return false;
+    }
+    return true;
+  }
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+  for (const key of keysA) {
+    if (!Object.prototype.hasOwnProperty.call(b, key) || !areValuesEqual(a[key], b[key])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Checks whether a submission occurred on or after the student's lastActivityReset timestamp.
+ * @param {Object} submission
+ * @param {string|null|undefined} lastActivityReset
+ * @returns {boolean}
+ */
+export function isSubmissionAfterReset(submission, lastActivityReset) {
+  if (!submission) return false;
+  if (!lastActivityReset) return true;
+  const resetTime = new Date(lastActivityReset).getTime();
+  if (Number.isNaN(resetTime)) return true;
+  const subTimestamp = submission.reviewedAt || submission.submittedAt || 0;
+  const subTime = new Date(subTimestamp).getTime();
+  if (Number.isNaN(subTime)) return false;
+  return subTime >= resetTime;
+}
+
+/**
+ * Returns submissions belonging to the student's current activity cycle (since lastActivityReset),
+ * keeping any still-pending submissions and filtering out pre-reset approved/rejected cards.
+ * @param {Array} submissions
+ * @param {string|null|undefined} lastActivityReset
+ * @returns {Array}
+ */
+export function getActiveCycleSubmissions(submissions = [], lastActivityReset = null) {
+  if (!Array.isArray(submissions)) return [];
+  return submissions.filter(s => {
+    if (!s) return false;
+    if (s.status === 'pending') return true;
+    return isSubmissionAfterReset(s, lastActivityReset);
+  });
+}
+
+/**
+ * Merges a polled server student document into the local student gameState safely.
+ * Detects teacher/weekly activity resets via `lastActivityReset`, syncs XP/coins/guild updates
+ * only when the server actually changed relative to `lastSeenServer`, and preserves referential
+ * equality (`prev`) when nothing changed to avoid triggering redundant Firestore writes.
+ *
+ * @param {Object} prev - Local gameState
+ * @param {Object} freshStudent - Fresh Firestore student document
+ * @param {Object|null} [lastSeenServer=null] - Previous snapshot of freshStudent from last poll
+ * @returns {Object} Updated state or `prev` if unchanged
+ */
+export function mergeServerStudentIntoLocal(prev, freshStudent, lastSeenServer = null) {
+  if (!prev || !freshStudent) return prev;
+
+  const updates = {};
+
+  const serverAchievements = Array.isArray(freshStudent.unlockedAchievements) ? freshStudent.unlockedAchievements : [];
+  const prevAchievements = Array.isArray(prev.unlockedAchievements) ? prev.unlockedAchievements : [];
+  const serverAchChanged = !lastSeenServer || !areValuesEqual(serverAchievements, lastSeenServer.unlockedAchievements);
+  const isAchievementDeducted = serverAchChanged && serverAchievements.length < prevAchievements.length;
+  const mergedAchievements = isAchievementDeducted
+    ? serverAchievements
+    : Array.from(new Set([...prevAchievements, ...serverAchievements]));
+  if (!areValuesEqual(mergedAchievements, prevAchievements)) {
+    updates.unlockedAchievements = mergedAchievements;
+  }
+
+  const serverClaimed = Array.isArray(freshStudent.claimedGuildChallenges) ? freshStudent.claimedGuildChallenges : [];
+  const prevClaimed = Array.isArray(prev.claimedGuildChallenges) ? prev.claimedGuildChallenges : [];
+  const serverClaimedChanged = !lastSeenServer || !areValuesEqual(serverClaimed, lastSeenServer.claimedGuildChallenges);
+  const isExploitReset = serverClaimedChanged && serverClaimed.length < prevClaimed.length;
+  const mergedClaimed = isExploitReset
+    ? serverClaimed
+    : Array.from(new Set([...prevClaimed, ...serverClaimed]));
+  if (!areValuesEqual(mergedClaimed, prevClaimed)) {
+    updates.claimedGuildChallenges = mergedClaimed;
+  }
+
+  // Activity reset synchronization: when teacher or weekly reset updates lastActivityReset
+  const serverResetIso = freshStudent.lastActivityReset;
+  const prevResetTime = prev.lastActivityReset ? new Date(prev.lastActivityReset).getTime() : 0;
+  const serverResetTime = serverResetIso ? new Date(serverResetIso).getTime() : 0;
+  const isServerActivityReset = Boolean(
+    serverResetIso && !Number.isNaN(serverResetTime) && serverResetTime > prevResetTime
+  );
+
+  if (isServerActivityReset) {
+    updates.lastActivityReset = serverResetIso;
+    const resetCompleted = Array.isArray(freshStudent.completedActivities) ? freshStudent.completedActivities : [];
+    if (!areValuesEqual(resetCompleted, prev.completedActivities || [])) {
+      updates.completedActivities = resetCompleted;
+    }
+  } else if (Array.isArray(freshStudent.completedActivities)) {
+    const serverCompletedChanged = !lastSeenServer || !areValuesEqual(freshStudent.completedActivities, lastSeenServer.completedActivities);
+    if (serverCompletedChanged && !areValuesEqual(freshStudent.completedActivities, prev.completedActivities || [])) {
+      updates.completedActivities = freshStudent.completedActivities;
+    }
+  }
+
+  const serverControlledFields = [
+    'guild',
+    'xp',
+    'guildXpContributed',
+    'coins',
+    'completedBossChallenges',
+    'totalActivitiesCompleted',
+    'pendingMysteryBoxes',
+    'doubleXpActive',
+  ];
+
+  for (const field of serverControlledFields) {
+    if (freshStudent[field] !== undefined) {
+      const serverChanged = !lastSeenServer || !areValuesEqual(freshStudent[field], lastSeenServer[field]);
+      if (serverChanged && !areValuesEqual(freshStudent[field], prev[field])) {
+        updates[field] = freshStudent[field];
+      }
+    }
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return prev;
+  }
+
+  return {
+    ...prev,
+    ...updates,
+  };
+}
+
+
 

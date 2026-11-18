@@ -1,4 +1,4 @@
-import { LEVELS, LEARNING_PATHS as DEFAULT_PATHS, PATH_COLORS, AVATAR_ITEMS } from '../data/gameData.js';
+import { LEVELS, LEARNING_PATHS as DEFAULT_PATHS, PATH_COLORS, AVATAR_ITEMS, getGuildLevelInfo } from '../data/gameData.js';
 
 /**
  * Returns canonical initial game state for a student player.
@@ -626,6 +626,127 @@ export function applyAvatarItemRefund(prevState, itemId, overrideCost = null) {
     refundAmount,
     itemName: meta?.item?.name || itemId,
   };
+}
+
+/**
+ * Finds the coalition that includes a given guild ID.
+ *
+ * @param {Array} coalitions
+ * @param {string} guildId
+ * @returns {Object|null}
+ */
+export function findGuildCoalition(coalitions, guildId) {
+  if (!Array.isArray(coalitions) || !guildId) return null;
+  return coalitions.find(c => Array.isArray(c?.guildIds) && c.guildIds.includes(guildId)) || null;
+}
+
+/**
+ * Toggles a guild's membership in a target coalition while ensuring each guild
+ * belongs to at most one coalition at a time (without altering student guild assignments).
+ *
+ * @param {Array} coalitions
+ * @param {string} targetCoalitionId
+ * @param {string} guildId
+ * @returns {Array} Updated coalitions array
+ */
+export function assignGuildToCoalition(coalitions, targetCoalitionId, guildId) {
+  if (!Array.isArray(coalitions) || !targetCoalitionId || !guildId) return coalitions || [];
+  const target = coalitions.find(c => c?.id === targetCoalitionId);
+  if (!target) return coalitions;
+
+  const isCurrentlyInTarget = Array.isArray(target.guildIds) && target.guildIds.includes(guildId);
+
+  return coalitions.map(c => {
+    const existingIds = Array.isArray(c.guildIds) ? c.guildIds : [];
+    const withoutGuild = existingIds.filter(id => id !== guildId);
+    if (c.id === targetCoalitionId) {
+      return {
+        ...c,
+        guildIds: isCurrentlyInTarget ? withoutGuild : [...withoutGuild, guildId],
+      };
+    }
+    return {
+      ...c,
+      guildIds: withoutGuild,
+    };
+  });
+}
+
+/**
+ * Computes combined standings for coalitions by summing XP and members across
+ * their allied guilds while preserving each guild's independent identity.
+ *
+ * @param {Array} coalitions - Class coalitions config
+ * @param {Array} activeGuilds - Active class guild objects
+ * @param {Object|Array} guildStatsSource - Either { [guildId]: stats } map or array of guild stats
+ * @returns {Array} Sorted coalition standing objects (highest totalXp first)
+ */
+export function computeCoalitionStandings(coalitions, activeGuilds = [], guildStatsSource = {}) {
+  if (!Array.isArray(coalitions) || coalitions.length === 0) return [];
+
+  const guildMetaById = new Map();
+  if (Array.isArray(activeGuilds)) {
+    activeGuilds.forEach(g => {
+      if (g?.id) guildMetaById.set(g.id, g);
+    });
+  }
+
+  const statsById = new Map();
+  if (Array.isArray(guildStatsSource)) {
+    guildStatsSource.forEach(entry => {
+      if (entry?.id) statsById.set(entry.id, entry);
+    });
+  } else if (guildStatsSource && typeof guildStatsSource === 'object') {
+    Object.entries(guildStatsSource).forEach(([id, entry]) => {
+      if (id && entry) statsById.set(id, entry);
+    });
+  }
+
+  const standings = coalitions
+    .filter(c => c && c.id)
+    .map(c => {
+      const validIds = Array.from(new Set(
+        (Array.isArray(c.guildIds) ? c.guildIds : []).filter(id =>
+          guildMetaById.size === 0 || guildMetaById.has(id)
+        )
+      ));
+
+      const memberGuilds = validIds.map(gId => {
+        const meta = guildMetaById.get(gId) || {};
+        const stat = statsById.get(gId) || {};
+        const memberCount = typeof stat.memberCount === 'number'
+          ? stat.memberCount
+          : (Array.isArray(stat.members) ? stat.members.length : 0);
+        const totalXp = Number(stat.totalXp) || 0;
+        return {
+          ...meta,
+          id: gId,
+          name: meta.name || stat.name || gId,
+          emoji: meta.emoji || meta.icon || stat.emoji || stat.icon || '🛡️',
+          totalXp,
+          memberCount,
+        };
+      });
+
+      const totalXp = memberGuilds.reduce((sum, g) => sum + g.totalXp, 0);
+      const memberCount = memberGuilds.reduce((sum, g) => sum + g.memberCount, 0);
+
+      return {
+        ...c,
+        guildIds: validIds,
+        memberGuilds,
+        totalXp,
+        memberCount,
+        levelInfo: getGuildLevelInfo(totalXp),
+      };
+    });
+
+  standings.sort((a, b) => {
+    if (b.totalXp !== a.totalXp) return b.totalXp - a.totalXp;
+    return b.memberCount - a.memberCount;
+  });
+
+  return standings;
 }
 
 

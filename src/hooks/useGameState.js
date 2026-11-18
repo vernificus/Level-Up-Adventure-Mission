@@ -101,6 +101,7 @@ export function useGameState(overrideClassId) {
 
   const [categoriesPerRow, setCategoriesPerRow] = useState('auto');
   const [classGuilds, setClassGuilds] = useState(GUILDS);
+  const [classCoalitions, setClassCoalitions] = useState([]);
   const [highFiveLimit, setHighFiveLimit] = useState('daily');
   const [allowStudentGuildSelect, setAllowStudentGuildSelect] = useState(true);
   const [classStudents, setClassStudents] = useState([]);
@@ -134,6 +135,8 @@ export function useGameState(overrideClassId) {
       if (classDoc.guilds && Array.isArray(classDoc.guilds) && classDoc.guilds.length > 0) {
         setClassGuilds(classDoc.guilds);
       }
+
+      setClassCoalitions(Array.isArray(classDoc.coalitions) ? classDoc.coalitions : []);
 
       setLearningPaths(resolveClassLearningPaths(classDoc, DEFAULT_PATHS));
     } catch (e) {
@@ -879,6 +882,7 @@ export function useGameState(overrideClassId) {
     learningPaths, // Export this
     categoriesPerRow, // Export this
     classGuilds, // Export this (supports up to 15 guilds)
+    classCoalitions, // Guild alliances / coalitions for the class
     classStudents, // Export class roster for Co-Op Submissions
     classSubmissions, // Export class submissions for Shared Boss HP bar
     highFiveLimit, // High-five cooldown frequency limit ('daily' | 'weekly' | 'disabled')

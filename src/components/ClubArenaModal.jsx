@@ -4,7 +4,7 @@ import {
   Maximize2, Minimize2, Sparkles, CheckCircle2, Users, Zap, RefreshCw, Flame
 } from 'lucide-react';
 import { DEFAULT_15_GUILDS, GUILD_LEVELS, BOSS_CHALLENGES } from '../data/gameData';
-import { getMostRecentMonday7am } from '../utils/gameUtils';
+import { getMostRecentMonday7am, computeCoalitionStandings, findGuildCoalition } from '../utils/gameUtils';
 import { getStemOrderStatus } from '../utils/portalUtils';
 
 // Synthesize an arcade/makerspace chime using Web Audio API (no external audio file needed)
@@ -133,6 +133,8 @@ export default function ClubArenaModal({
   const guildsWithMembers = activeGuildList.filter(g => g.members.length > 0);
   const displayedGuilds = guildsWithMembers.length > 0 ? guildsWithMembers : activeGuildList.slice(0, 6);
   const maxGuildXp = Math.max(500, ...displayedGuilds.map(g => g.totalXp));
+  const arenaCoalitions = Array.isArray(classData?.coalitions) ? classData.coalitions : [];
+  const coalitionStandings = computeCoalitionStandings(arenaCoalitions, activeGuildList, guildStatsMap);
 
   const getGuildLevelInfo = (xp) => {
     let current = GUILD_LEVELS[0];
@@ -264,11 +266,29 @@ export default function ClubArenaModal({
               </span>
             </div>
 
+            {coalitionStandings.length > 0 && (
+              <div className="mb-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {coalitionStandings.slice(0, 4).map((c, cIdx) => (
+                  <div key={c.id} className="px-3 py-2 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-between gap-2 dark:bg-indigo-950/40 dark:border-indigo-500/40">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-sm">{cIdx === 0 ? '🥇' : cIdx === 1 ? '🥈' : cIdx === 2 ? '🥉' : `#${cIdx + 1}`}</span>
+                      <span className="text-base">{c.emoji || '🤝'}</span>
+                      <span className="text-xs font-bold text-indigo-950 truncate dark:text-indigo-200">{c.name} Coalition</span>
+                    </div>
+                    <span className="text-xs font-display font-bold text-indigo-700 flex-shrink-0 dark:text-indigo-300">
+                      {c.totalXp.toLocaleString()} XP
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 flex-1 content-start overflow-y-auto pr-1">
               {displayedGuilds.map((guild, idx) => {
                 const lvlInfo = getGuildLevelInfo(guild.totalXp);
                 const barWidth = Math.max(6, Math.min(100, Math.round((guild.totalXp / maxGuildXp) * 100)));
                 const isFirst = idx === 0 && guild.totalXp > 0;
+                const gCoalition = findGuildCoalition(arenaCoalitions, guild.id);
 
                 return (
                   <div
@@ -283,9 +303,14 @@ export default function ClubArenaModal({
                       <div className="flex items-center gap-2.5 min-w-0">
                         <span className="text-2xl flex-shrink-0">{guild.icon || '🛡️'}</span>
                         <div className="min-w-0">
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-xs font-bold text-yellow-800 dark:text-yellow-400">#{idx + 1}</span>
                             <h4 className="font-bold text-slate-900 truncate text-sm sm:text-base dark:text-white">{guild.name}</h4>
+                            {gCoalition && (
+                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-indigo-100 text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-300">
+                                {gCoalition.emoji || '🤝'} {gCoalition.name}
+                              </span>
+                            )}
                           </div>
                           <p className="text-[11px] text-slate-600 font-semibold dark:text-slate-400">
                             Lv.{lvlInfo.level} {lvlInfo.title} • {guild.members.length} {guild.members.length === 1 ? 'member' : 'members'}

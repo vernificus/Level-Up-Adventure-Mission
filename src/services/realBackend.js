@@ -2875,6 +2875,18 @@ export const realBackend = {
     }
   },
 
+  async updateClassCoalitions(classId, coalitions = []) {
+    try {
+      const classRef = doc(db, "classes", classId);
+      const cleanCoalitions = Array.isArray(coalitions) ? coalitions : [];
+      await updateDoc(classRef, { coalitions: cleanCoalitions, updatedAt: serverTimestamp() });
+      return { success: true, coalitions: cleanCoalitions };
+    } catch (error) {
+      console.error("Error updating class coalitions:", error);
+      throw error;
+    }
+  },
+
   async updateGuildBotPicture(classId, guildId, botPictureUrl) {
     try {
       const classDoc = await this.getClass(classId);

@@ -15,7 +15,8 @@ const suites = [
   './costZeroStorage.test.js',
   './theme.test.js',
   './guildStoreRewards.test.js',
-  './xpAndActivityReset.test.js'
+  './xpAndActivityReset.test.js',
+  './guildCoalitions.test.js'
 ];
 
 try {

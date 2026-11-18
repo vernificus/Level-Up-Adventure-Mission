@@ -2530,6 +2530,7 @@ function GameContent({ emulatedClassId } = {}) {
     learningPaths,
     categoriesPerRow,
     classGuilds,
+    classCoalitions,
     classStudents,
     classSubmissions,
     highFiveLimit,
@@ -2804,6 +2805,7 @@ function GameContent({ emulatedClassId } = {}) {
           onRecordHighFive={recordHighFive}
           onClaimGuildChallenge={claimGuildChallenge}
           guilds={classGuilds}
+          coalitions={classCoalitions}
           spendCoins={spendCoins}
           refundCoins={refundCoins}
           highFiveLimit={highFiveLimit}

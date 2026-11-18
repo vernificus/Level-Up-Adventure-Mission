@@ -37,6 +37,7 @@ import {
   getStemOrderBadge
 } from '../utils/portalUtils';
 import { calculateClassStorageUsage } from '../utils/storageUtils';
+import { computeCoalitionStandings, assignGuildToCoalition, findGuildCoalition } from '../utils/gameUtils';
 
 
 export default function TeacherPortal({
@@ -3295,6 +3296,12 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
   const [savingGuilds, setSavingGuilds] = useState(false);
   const [showAddGuildModal, setShowAddGuildModal] = useState(false);
 
+  // Guild Coalitions State (Alliances combining multiple guilds without changing student guild membership)
+  const [coalitions, setCoalitions] = useState(
+    Array.isArray(selectedClass?.coalitions) ? selectedClass.coalitions : []
+  );
+  const [savingCoalitions, setSavingCoalitions] = useState(false);
+
   // STEM Supplies Audit State
   const [stemPurchases, setStemPurchases] = useState([]);
   const [stemFilter, setStemFilter] = useState('all'); // 'all', 'pending', 'refund_requested', 'fulfilled', 'refunded'
@@ -3345,6 +3352,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
     }
     setHighFiveLimit(selectedClass?.highFiveLimit || 'daily');
     setAllowStudentGuildSelect(selectedClass?.allowStudentGuildSelect !== false);
+    setCoalitions(Array.isArray(selectedClass?.coalitions) ? selectedClass.coalitions : []);
   }, [selectedClass]);
 
   useEffect(() => {
@@ -3593,6 +3601,60 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
     if (!window.confirm(confirmMsg)) return;
 
     setActiveGuilds(prev => prev.filter(g => g.id !== guildId));
+    setCoalitions(prev => prev.map(c => ({
+      ...c,
+      guildIds: (c.guildIds || []).filter(id => id !== guildId),
+    })));
+  };
+
+  // Coalition Management Handlers
+  const handleAddCoalition = () => {
+    const newCoalition = {
+      id: `coalition_${Date.now()}`,
+      name: `Coalition ${coalitions.length + 1}`,
+      emoji: '🤝',
+      motto: 'Stronger together!',
+      guildIds: [],
+      createdAt: new Date().toISOString(),
+    };
+    setCoalitions(prev => [...prev, newCoalition]);
+  };
+
+  const handleUpdateCoalitionField = (coalitionId, field, value) => {
+    setCoalitions(prev => prev.map(c => c.id === coalitionId ? { ...c, [field]: value } : c));
+  };
+
+  const handleToggleGuildInCoalition = (coalitionId, guildId) => {
+    setCoalitions(prev => assignGuildToCoalition(prev, coalitionId, guildId));
+  };
+
+  const handleRemoveCoalition = (coalitionId, coalitionName) => {
+    if (!window.confirm(`Disband coalition "${coalitionName}"?\n\nStudents and their individual guilds will remain unchanged.`)) return;
+    setCoalitions(prev => prev.filter(c => c.id !== coalitionId));
+  };
+
+  const handleSaveCoalitions = async () => {
+    setSavingCoalitions(true);
+    try {
+      const cleaned = coalitions.map(c => ({
+        ...c,
+        name: (c.name || '').trim() || 'Guild Coalition',
+        emoji: (c.emoji || '🤝').trim() || '🤝',
+        motto: (c.motto || '').trim(),
+        guildIds: (c.guildIds || []).filter(id => activeGuilds.some(g => g.id === id)),
+      }));
+      await backend.updateClassCoalitions(classId, cleaned);
+      setCoalitions(cleaned);
+      if (onClassUpdated) {
+        onClassUpdated({ ...selectedClass, coalitions: cleaned });
+      }
+      alert('Guild coalitions saved successfully!');
+      loadGuildData();
+    } catch (err) {
+      alert('Error saving coalitions: ' + err.message);
+    } finally {
+      setSavingCoalitions(false);
+    }
   };
 
   const handleAddPresetGuild = (preset) => {
@@ -3778,6 +3840,8 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
     return sortStudentsList(filtered);
   };
 
+  const coalitionStandings = computeCoalitionStandings(coalitions, activeGuilds, guildData);
+
   // Filter STEM purchases
   const stemCounts = {
     all: stemPurchases.length,
@@ -3838,6 +3902,15 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
           }`}
         >
           <Settings className="w-4 h-4" /> Guild Customizer ({activeGuilds.length}/15)
+        </button>
+
+        <button
+          onClick={() => setSubTab('coalitions')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all min-h-[44px] ${
+            subTab === 'coalitions' ? 'bg-cyan-600 text-white font-bold shadow' : 'bg-white text-slate-700 hover:text-slate-900 dark:bg-slate-800 dark:text-slate-300 dark:hover:text-white'
+          }`}
+        >
+          <ShieldCheck className="w-4 h-4" /> Coalitions ({coalitions.length})
         </button>
 
         <button
@@ -4336,12 +4409,59 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
           {loading ? (
             <p className="text-slate-600 text-center py-4 dark:text-slate-500" role="status">Loading guild data...</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
+              {coalitionStandings.length > 0 && (
+                <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200 space-y-3 dark:bg-indigo-950/25 dark:border-indigo-500/30">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <h4 className="text-sm font-bold text-indigo-950 flex items-center gap-2 dark:text-indigo-200">
+                      <ShieldCheck className="w-4 h-4 text-indigo-700 dark:text-indigo-400" /> Coalition Standings ({coalitionStandings.length})
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => setSubTab('coalitions')}
+                      className="text-xs font-bold text-indigo-700 hover:underline dark:text-indigo-300"
+                    >
+                      Manage Coalitions
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {coalitionStandings.map((c, cIdx) => (
+                      <div key={c.id} className="p-3.5 rounded-xl bg-white border border-indigo-200 shadow-sm dark:bg-slate-800 dark:border-indigo-500/30">
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-lg">{cIdx === 0 ? '🥇' : cIdx === 1 ? '🥈' : cIdx === 2 ? '🥉' : `#${cIdx + 1}`}</span>
+                            <span className="text-xl">{c.emoji || '🤝'}</span>
+                            <div className="min-w-0">
+                              <p className="font-bold text-sm text-slate-900 truncate dark:text-white">{c.name}</p>
+                              <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                                {c.memberGuilds.length} {c.memberGuilds.length === 1 ? 'Guild' : 'Guilds'} • {c.memberCount} Members
+                              </p>
+                            </div>
+                          </div>
+                          <span className="text-sm font-display font-bold text-indigo-700 dark:text-indigo-300">
+                            {c.totalXp.toLocaleString()} XP
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {c.memberGuilds.map(mg => (
+                            <span key={mg.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-200">
+                              {mg.emoji} {mg.name} ({mg.totalXp.toLocaleString()})
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-3">
               {sortedGuilds.map((guild, idx) => {
                 const stats = guildData[guild.id];
                 const hallTrophies = guildHalls[guild.id]?.trophies || [];
                 const levelInfo = getGuildLevelInfo(stats?.totalXp || 0);
                 const botPic = guild.botPictureUrl || guildHalls[guild.id]?.botPictureUrl || null;
+                const guildCoalition = findGuildCoalition(coalitions, guild.id);
 
                 return (
                   <div
@@ -4407,6 +4527,11 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                           <span className="text-[11px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-500/30 dark:bg-yellow-500/20 dark:text-yellow-300">
                             Level {levelInfo.level} • {levelInfo.name}
                           </span>
+                          {guildCoalition && (
+                            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-300 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/40">
+                              {guildCoalition.emoji || '🤝'} {guildCoalition.name}
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs text-slate-600 mt-0.5 dark:text-slate-400">Perk: <span className="text-slate-700 font-semibold dark:text-slate-300">{levelInfo.perk}</span></p>
                       </div>
@@ -4527,6 +4652,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                   </div>
                 );
               })}
+              </div>
             </div>
           )}
 
@@ -4851,6 +4977,166 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                   </button>
                 </div>
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SUB-TAB 2B: GUILD COALITIONS BUILDER */}
+      {subTab === 'coalitions' && (
+        <div className="bg-white p-6 rounded-xl border border-slate-200 space-y-6 dark:bg-slate-800 dark:border-slate-700">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-xl font-display font-bold text-slate-900 flex items-center gap-2 dark:text-white">
+                  <ShieldCheck className="w-6 h-6 text-indigo-700 dark:text-indigo-400" /> Guild Coalitions
+                </h3>
+                <span className="text-xs font-bold uppercase px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-300 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/40">
+                  {coalitions.length} {coalitions.length === 1 ? 'Coalition' : 'Coalitions'}
+                </span>
+              </div>
+              <p className="text-slate-600 text-xs mt-1 dark:text-slate-400">
+                Band guilds together into shared coalitions to pool their XP and rankings, while students remain in their own respective guilds.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={handleAddCoalition}
+                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow transition-colors min-h-[44px]"
+              >
+                <Plus className="w-4 h-4" /> New Coalition
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveCoalitions}
+                disabled={savingCoalitions}
+                className="px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow transition-colors disabled:opacity-50 min-h-[44px]"
+              >
+                <Save className="w-4 h-4" /> {savingCoalitions ? 'Saving Coalitions...' : 'Save Coalitions'}
+              </button>
+            </div>
+          </div>
+
+          {coalitions.length === 0 ? (
+            <div className="p-8 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 dark:bg-slate-900/50 dark:border-slate-700">
+              <ShieldCheck className="w-10 h-10 text-indigo-600 mx-auto mb-2 opacity-60 dark:text-indigo-400" />
+              <p className="text-sm font-bold text-slate-800 dark:text-slate-200">No coalitions created yet</p>
+              <p className="text-xs text-slate-600 mt-1 max-w-md mx-auto dark:text-slate-400">
+                Click "New Coalition" to group multiple guilds into a shared alliance (for example, pairing smaller guilds together for friendly class competitions).
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {coalitions.map((coalition, cIdx) => {
+                const standing = coalitionStandings.find(s => s.id === coalition.id);
+                const selectedIds = Array.isArray(coalition.guildIds) ? coalition.guildIds : [];
+
+                return (
+                  <div
+                    key={coalition.id}
+                    className="bg-slate-50 rounded-2xl border border-indigo-200 p-4 space-y-4 shadow-md dark:bg-slate-900/90 dark:border-indigo-500/40"
+                  >
+                    <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-800 text-xs font-bold flex items-center justify-center flex-shrink-0 dark:bg-indigo-500/20 dark:text-indigo-300">
+                          {cIdx + 1}
+                        </span>
+                        <input
+                          type="text"
+                          value={coalition.emoji || '🤝'}
+                          onChange={e => handleUpdateCoalitionField(coalition.id, 'emoji', e.target.value)}
+                          className="w-10 text-center py-1 bg-white border border-slate-200 rounded-lg text-lg outline-none focus:border-indigo-500 dark:bg-slate-800 dark:border-slate-700"
+                          title="Coalition Emoji"
+                          aria-label="Coalition emoji"
+                          maxLength={4}
+                        />
+                        <input
+                          type="text"
+                          value={coalition.name || ''}
+                          onChange={e => handleUpdateCoalitionField(coalition.id, 'name', e.target.value)}
+                          placeholder="Coalition Name"
+                          aria-label="Coalition name"
+                          className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-slate-900 font-bold text-sm outline-none focus:border-indigo-500 flex-1 min-w-[130px] dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveCoalition(coalition.id, coalition.name)}
+                        className="p-1.5 text-slate-600 hover:text-red-700 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center dark:text-slate-400 dark:hover:text-red-400"
+                        title="Disband coalition"
+                        aria-label={`Disband coalition ${coalition.name}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1 dark:text-slate-400">Alliance Motto</label>
+                        <input
+                          type="text"
+                          value={coalition.motto || ''}
+                          onChange={e => handleUpdateCoalitionField(coalition.id, 'motto', e.target.value)}
+                          placeholder="e.g. Stronger together!"
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-900 text-xs outline-none focus:border-indigo-500 min-h-[36px] dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                        />
+                      </div>
+                      <div className="bg-white rounded-lg border border-slate-200 px-3 py-2 flex items-center justify-between dark:bg-slate-800 dark:border-slate-700">
+                        <div>
+                          <span className="text-[10px] font-bold uppercase text-slate-500 block dark:text-slate-400">Combined Total</span>
+                          <span className="text-sm font-display font-bold text-indigo-700 dark:text-indigo-300">
+                            {(standing?.totalXp || 0).toLocaleString()} XP
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs font-bold text-slate-800 block dark:text-slate-200">{selectedIds.length} Guilds</span>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400">{standing?.memberCount || 0} Members</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="block text-[11px] font-bold text-slate-600 uppercase mb-2 dark:text-slate-400">
+                        Select Allied Guilds (tap to add/remove):
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {activeGuilds.map(g => {
+                          const isSelected = selectedIds.includes(g.id);
+                          const otherCoalition = !isSelected ? findGuildCoalition(coalitions, g.id) : null;
+                          const gXp = guildData[g.id]?.totalXp || 0;
+                          return (
+                            <button
+                              key={g.id}
+                              type="button"
+                              onClick={() => handleToggleGuildInCoalition(coalition.id, g.id)}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 min-h-[36px] ${
+                                isSelected
+                                  ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm'
+                                  : otherCoalition
+                                  ? 'bg-amber-50 text-amber-800 border-amber-300 hover:border-indigo-400 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/40'
+                                  : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-400 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+                              }`}
+                              title={otherCoalition ? `Currently in ${otherCoalition.name} — click to move here` : `Toggle ${g.name}`}
+                            >
+                              <span>{g.emoji || '🛡️'}</span>
+                              <span>{g.name}</span>
+                              <span className={`text-[10px] font-mono ${isSelected ? 'text-indigo-100' : 'text-slate-500 dark:text-slate-400'}`}>
+                                {gXp.toLocaleString()} XP
+                              </span>
+                              {otherCoalition && (
+                                <span className="text-[10px] opacity-80">({otherCoalition.name})</span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

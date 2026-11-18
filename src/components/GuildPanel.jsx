@@ -20,6 +20,7 @@ import {
   getStemOrderBadge,
   isRecordOwnedByStudent,
 } from '../utils/portalUtils';
+import { computeCoalitionStandings, findGuildCoalition } from '../utils/gameUtils';
 
 export default function GuildPanel({
   currentGuild,
@@ -30,6 +31,7 @@ export default function GuildPanel({
   onStateUpdate,
   onRecordHighFive,
   guilds = GUILDS,
+  coalitions = [],
   spendCoins,
   refundCoins,
   highFiveLimit = 'daily',
@@ -44,6 +46,7 @@ export default function GuildPanel({
   const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'quests', 'stem_depot', 'members', 'trophies', 'standings'
   
   const [guildLeaderboard, setGuildLeaderboard] = useState({});
+  const [liveCoalitions, setLiveCoalitions] = useState(Array.isArray(coalitions) ? coalitions : []);
   const [guildHall, setGuildHall] = useState(null);
   const [loadingGuild, setLoadingGuild] = useState(false);
   const [editingHall, setEditingHall] = useState(false);
@@ -63,6 +66,10 @@ export default function GuildPanel({
     return map;
   });
   const [claimingChallengeId, setClaimingChallengeId] = useState(null);
+
+  useEffect(() => {
+    setLiveCoalitions(Array.isArray(coalitions) ? coalitions : []);
+  }, [coalitions]);
 
   useEffect(() => {
     const map = {};
@@ -115,13 +122,17 @@ export default function GuildPanel({
         setNoticeText(hall?.notice?.text || '');
       }
 
-      // Load STEM shop items, STEM purchases, teacher custom rewards, and student redemptions
-      const [items, purchases, rewardsData, allRedemptions] = await Promise.all([
+      // Load STEM shop items, STEM purchases, teacher custom rewards, student redemptions, and class coalitions
+      const [items, purchases, rewardsData, allRedemptions, classDoc] = await Promise.all([
         backend.getStemShopItems(classId).catch(() => []),
         backend.getStemPurchases(classId).catch(() => []),
         backend.getCustomRewards(classId).catch(() => []),
-        backend.getRedemptions(classId).catch(() => [])
+        backend.getRedemptions(classId).catch(() => []),
+        backend.getClass(classId).catch(() => null),
       ]);
+      if (classDoc && Array.isArray(classDoc.coalitions)) {
+        setLiveCoalitions(classDoc.coalitions);
+      }
       if (items && items.length > 0) setStemItems(items);
       setStemPurchases(purchases || []);
 
@@ -464,6 +475,8 @@ export default function GuildPanel({
   const myGuildData = currentGuild && guildLeaderboard[currentGuild] ? guildLeaderboard[currentGuild] : null;
   const guildTotalXp = myGuildData?.totalXp || guildXp || 0;
   const levelInfo = getGuildLevelInfo(guildTotalXp);
+  const coalitionStandings = computeCoalitionStandings(liveCoalitions, availableGuilds, guildLeaderboard);
+  const myCoalition = coalitionStandings.find(c => c.guildIds.includes(currentGuild)) || findGuildCoalition(liveCoalitions, currentGuild);
 
   // Background banner gradients
   const bannerGradients = {
@@ -646,6 +659,11 @@ export default function GuildPanel({
                 <span className="text-[11px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-black/30 border border-white/30">
                   Level {levelInfo.level} • {levelInfo.name}
                 </span>
+                {myCoalition && (
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-950/60 text-indigo-100 border border-indigo-300/40 flex items-center gap-1">
+                    {myCoalition.emoji || '🤝'} {myCoalition.name} Coalition
+                  </span>
+                )}
               </div>
               <p className="text-xs italic mt-0.5">"{guild?.motto || ''}"</p>
             </div>
@@ -971,6 +989,53 @@ export default function GuildPanel({
                       </div>
                     </div>
                   </div>
+
+                  {/* Coalition Alliance Card */}
+                  {myCoalition && (
+                    <div className="p-5 rounded-2xl bg-gradient-to-r from-indigo-50 via-purple-50 to-white border border-indigo-300 shadow-lg dark:from-indigo-950/40 dark:via-purple-950/30 dark:to-slate-800 dark:border-indigo-500/40">
+                      <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-3xl">{myCoalition.emoji || '🤝'}</span>
+                          <div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">Coalition Alliance</span>
+                            <h4 className="text-lg font-display font-bold text-slate-900 dark:text-white">{myCoalition.name}</h4>
+                            {myCoalition.motto && (
+                              <p className="text-xs italic text-slate-600 dark:text-slate-400">"{myCoalition.motto}"</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs text-slate-600 font-bold block dark:text-slate-400">Combined Coalition XP</span>
+                          <span className="text-lg font-display font-bold text-indigo-700 dark:text-indigo-300">{(myCoalition.totalXp || 0).toLocaleString()} XP</span>
+                          <span className="text-[11px] text-slate-600 block dark:text-slate-400">
+                            {myCoalition.memberGuilds?.length || 0} Allied Guilds • {myCoalition.memberCount || 0} Total Members
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {(myCoalition.memberGuilds || []).map(mg => {
+                          const isOwn = mg.id === currentGuild;
+                          return (
+                            <span
+                              key={mg.id}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${
+                                isOwn
+                                  ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm'
+                                  : 'bg-white text-slate-800 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700'
+                              }`}
+                            >
+                              <span>{mg.emoji || '🛡️'}</span>
+                              <span>{mg.name}</span>
+                              {isOwn && <span className="text-[10px] opacity-90">(Your Guild)</span>}
+                              <span className={`text-[11px] font-mono ${isOwn ? 'text-indigo-100' : 'text-slate-500 dark:text-slate-400'}`}>
+                                • {mg.totalXp.toLocaleString()} XP
+                              </span>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   {/* 10-Level Roadmap */}
                   <div>
@@ -1698,43 +1763,107 @@ export default function GuildPanel({
 
               {/* TAB 6: STANDINGS */}
               {activeTab === 'standings' && (
-                <div className="space-y-4">
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">Class Guild Rankings ({availableGuilds.length} Guilds)</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {[...availableGuilds]
-                      .filter(Boolean)
-                      .sort((a, b) => (guildLeaderboard?.[b?.id]?.totalXp || 0) - (guildLeaderboard?.[a?.id]?.totalXp || 0))
-                      .map((g, idx) => {
-                        const stats = guildLeaderboard?.[g.id];
-                        const gLevel = getGuildLevelInfo(stats?.totalXp || 0);
-                        const isMyGuild = g.id === currentGuild;
-                        return (
-                          <div
-                            key={g.id || idx}
-                            className={`text-white p-4 rounded-2xl border-2 transition-all ${
-                              isMyGuild
-                                ? `${g.color || 'bg-slate-700'} bg-opacity-30 border-yellow-400 shadow-lg`
-                                : 'bg-white border-slate-200 dark:bg-slate-800/80 dark:border-slate-700'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xl">{idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}</span>
-                                <span className="text-2xl">{g.emoji || '🛡️'}</span>
-                                <div>
-                                  <h5 className="font-bold text-white text-sm">{g.name || 'Guild'}</h5>
-                                  <span className="text-[10px] font-bold text-slate-400">Level {gLevel.level} • {gLevel.name}</span>
+                <div className="space-y-6">
+                  {coalitionStandings.length > 0 && (
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2 dark:text-white">
+                        🤝 Coalition Rankings ({coalitionStandings.length} {coalitionStandings.length === 1 ? 'Coalition' : 'Coalitions'})
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {coalitionStandings.map((c, idx) => {
+                          const isMyCoalition = c.guildIds.includes(currentGuild);
+                          return (
+                            <div
+                              key={c.id}
+                              className={`p-4 rounded-2xl border-2 transition-all ${
+                                isMyCoalition
+                                  ? 'bg-indigo-50 border-indigo-500 shadow-lg dark:bg-indigo-950/40 dark:border-indigo-400'
+                                  : 'bg-white border-slate-200 dark:bg-slate-800/80 dark:border-slate-700'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-2 gap-2">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className="text-xl flex-shrink-0">{idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}</span>
+                                  <span className="text-2xl flex-shrink-0">{c.emoji || '🤝'}</span>
+                                  <div className="min-w-0">
+                                    <h5 className="font-bold text-slate-900 text-sm truncate dark:text-white">
+                                      {c.name} {isMyCoalition && <span className="text-[10px] text-indigo-700 dark:text-indigo-300">(Yours)</span>}
+                                    </h5>
+                                    <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400">
+                                      {c.memberGuilds.length} {c.memberGuilds.length === 1 ? 'Guild' : 'Guilds'} • {c.memberCount} Members
+                                    </span>
+                                  </div>
                                 </div>
+                                <span className="text-sm font-bold text-indigo-700 flex-shrink-0 dark:text-indigo-300">
+                                  {c.totalXp.toLocaleString()} XP
+                                </span>
                               </div>
-                              <span className="text-sm font-bold text-yellow-400">{(stats?.totalXp || 0).toLocaleString()} XP</span>
+                              <div className="flex flex-wrap gap-1.5 pt-2 border-t border-slate-200 dark:border-slate-700">
+                                {c.memberGuilds.map(mg => (
+                                  <span key={mg.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-200">
+                                    {mg.emoji} {mg.name}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
-                            <div className="flex justify-between text-xs text-slate-400 pt-2 border-t border-white/10">
-                              <span>{stats?.memberCount || 0} Members</span>
-                              <span>Perk: {gLevel.perk}</span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Class Guild Rankings ({availableGuilds.length} Guilds)</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {[...availableGuilds]
+                        .filter(Boolean)
+                        .sort((a, b) => (guildLeaderboard?.[b?.id]?.totalXp || 0) - (guildLeaderboard?.[a?.id]?.totalXp || 0))
+                        .map((g, idx) => {
+                          const stats = guildLeaderboard?.[g.id];
+                          const gLevel = getGuildLevelInfo(stats?.totalXp || 0);
+                          const isMyGuild = g.id === currentGuild;
+                          const gCoalition = findGuildCoalition(liveCoalitions, g.id);
+                          return (
+                            <div
+                              key={g.id || idx}
+                              className={`p-4 rounded-2xl border-2 transition-all ${
+                                isMyGuild
+                                  ? `${g.color || 'bg-slate-700'} text-white border-yellow-400 shadow-lg`
+                                  : 'bg-white text-slate-900 border-slate-200 dark:bg-slate-800/80 dark:text-white dark:border-slate-700'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className="text-xl flex-shrink-0">{idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}</span>
+                                  <span className="text-2xl flex-shrink-0">{g.emoji || '🛡️'}</span>
+                                  <div className="min-w-0">
+                                    <h5 className={`font-bold text-sm truncate ${isMyGuild ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{g.name || 'Guild'}</h5>
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className={`text-[10px] font-bold ${isMyGuild ? 'text-white/80' : 'text-slate-600 dark:text-slate-400'}`}>
+                                        Level {gLevel.level} • {gLevel.name}
+                                      </span>
+                                      {gCoalition && (
+                                        <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
+                                          isMyGuild ? 'bg-black/30 text-white' : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-300'
+                                        }`}>
+                                          {gCoalition.emoji || '🤝'} {gCoalition.name}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                <span className={`text-sm font-bold flex-shrink-0 ${isMyGuild ? 'text-yellow-300' : 'text-yellow-800 dark:text-yellow-400'}`}>
+                                  {(stats?.totalXp || 0).toLocaleString()} XP
+                                </span>
+                              </div>
+                              <div className={`flex justify-between text-xs pt-2 border-t ${isMyGuild ? 'text-white/80 border-white/20' : 'text-slate-600 border-slate-200 dark:text-slate-400 dark:border-slate-700'}`}>
+                                <span>{stats?.memberCount || 0} Members</span>
+                                <span>Perk: {gLevel.perk}</span>
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                    </div>
                   </div>
                 </div>
               )}

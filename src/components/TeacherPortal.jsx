@@ -2034,7 +2034,10 @@ export default function TeacherPortal({
 
                 {activeTab === 'rewards' && (
                   <div role="tabpanel" id="tabpanel-rewards" aria-labelledby="tab-rewards">
-                    <RewardsManager classId={selectedClass.id} />
+                    <RewardsManager
+                      classId={selectedClass.id}
+                      onStudentsUpdated={() => backend.getStudents(selectedClass.id).then(setStudents)}
+                    />
                   </div>
                 )}
 
@@ -3660,7 +3663,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
       setStemRefundModal(null);
       setStemRefundReason('');
       await loadStemData();
-      if (onRefreshClass) onRefreshClass();
+      if (onStudentsUpdated) onStudentsUpdated();
     } catch (err) {
       alert('Error processing STEM order refund: ' + err.message);
     } finally {
@@ -5571,7 +5574,7 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
 }
 
 // ============== REWARDS MANAGER (TEACHER) ==============
-function RewardsManager({ classId }) {
+function RewardsManager({ classId, onStudentsUpdated }) {
   const [rewards, setRewards] = useState([]);
   const [redemptions, setRedemptions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -5678,6 +5681,8 @@ function RewardsManager({ classId }) {
       const res = await backend.cancelOrRejectRedemption(classId, rejectingRedemption.id, payload);
       if (res?.alreadyProcessed) {
         alert('This redemption was already processed or cancelled.');
+      } else if (rejectActionMode !== 'deny_refund' && onStudentsUpdated) {
+        onStudentsUpdated();
       }
       setRejectingRedemption(null);
       setRejectReason('');

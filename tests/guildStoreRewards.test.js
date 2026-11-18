@@ -287,6 +287,8 @@ console.log('✔ Test 13: Cancelled and rejected redemption status badges verifi
   assert(realBackendSrc.includes("action === 'request_refund'"), 'realBackend.js must support student refund requests');
   assert(guildPanelSrc.includes('handleStemOrderAction') && guildPanelSrc.includes('Request Refund'), 'GuildPanel.jsx must allow STEM cancel/refund requests and fulfilled reward refund requests');
   assert(teacherPortalSrc.includes('handleConfirmStemRefundAction') && teacherPortalSrc.includes('Issue Refund'), 'TeacherPortal.jsx must allow teachers to issue or approve refunds on STEM orders and fulfilled rewards');
+  assert(!teacherPortalSrc.includes('onRefreshClass'), 'TeacherPortal.jsx must not reference undefined onRefreshClass');
+  assert(teacherPortalSrc.includes('if (onStudentsUpdated) onStudentsUpdated()'), 'GuildManagement must refresh students via onStudentsUpdated after STEM refunds');
   assert(appSrc.includes('handleRefundAvatarItem') && useGameStateSrc.includes('refundAvatarItem'), 'App.jsx & useGameState.js must support student Avatar item coin refunds');
   assert(rosterManagerSrc.includes('findAvatarShopItem') && rosterManagerSrc.includes('handleRemoveOwnedItem(itemId, true)'), 'RosterManager.jsx must let teachers refund paid Avatar items');
   console.log('✔ Test 19: Universal refund wiring verified across Guild Store STEM orders, Custom Rewards, Avatar Shop, and Teacher Inspector');

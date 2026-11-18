@@ -2242,7 +2242,46 @@ export const realBackend = {
     }
   },
 
-  async cancelOrRejectRedemption(classId, redemptionIdOrObj, { status = 'cancelled', cancelledBy = 'student', reason = '' } = {}) {
+  async _refundStudentCoins(classId, studentId, studentName, refundAmount) {
+    const amount = Math.max(0, Number(refundAmount) || 0);
+    let newCoins = null;
+    let resolvedStudentId = studentId || null;
+
+    if (amount <= 0) {
+      return { newCoins, resolvedStudentId };
+    }
+
+    try {
+      let studentRef = resolvedStudentId ? doc(db, "students", resolvedStudentId) : null;
+      let studentSnap = studentRef ? await getDoc(studentRef) : null;
+
+      // Fallback name lookup within class if studentId doc wasn't matched
+      if ((!studentSnap || !studentSnap.exists()) && studentName && classId) {
+        const qStudents = query(collection(db, "students"), where("classId", "==", classId));
+        const studentsSnap = await getDocs(qStudents);
+        const normName = studentName.trim().toLowerCase();
+        const matched = studentsSnap.docs.find(d => (d.data().name || '').trim().toLowerCase() === normName);
+        if (matched) {
+          resolvedStudentId = matched.id;
+          studentRef = doc(db, "students", matched.id);
+          studentSnap = matched;
+        }
+      }
+
+      if (studentRef && studentSnap && studentSnap.exists()) {
+        const sData = studentSnap.data();
+        const currentCoins = (sData.coins !== undefined && sData.coins !== null) ? Number(sData.coins) : 100;
+        newCoins = currentCoins + amount;
+        await updateDoc(studentRef, { coins: newCoins });
+      }
+    } catch (refundErr) {
+      console.warn("Could not refund student coins automatically:", refundErr);
+    }
+
+    return { newCoins, resolvedStudentId };
+  },
+
+  async cancelOrRejectRedemption(classId, redemptionIdOrObj, { action = '', status = 'cancelled', cancelledBy = 'student', reason = '' } = {}) {
     try {
       const redemptionId = typeof redemptionIdOrObj === 'string' ? redemptionIdOrObj : redemptionIdOrObj?.id;
       if (!classId || !redemptionId) throw new Error("Missing classId or redemptionId");
@@ -2254,11 +2293,55 @@ export const realBackend = {
       }
 
       const data = snap.data();
-      if (data.status !== 'pending' || data.refunded === true) {
+
+      // 1. Student refund request on an already fulfilled reward
+      if (action === 'request_refund' || status === 'refund_requested') {
+        if (data.refunded === true || ['cancelled', 'rejected', 'refunded', 'refund_requested'].includes(data.status)) {
+          return { alreadyProcessed: true, status: data.status };
+        }
+        if (data.status !== 'fulfilled' && data.status !== 'refund_denied') {
+          return { alreadyProcessed: true, status: data.status };
+        }
+        const requestUpdates = {
+          status: 'refund_requested',
+          refundRequestedBy: 'student',
+          refundRequestedAt: new Date().toISOString(),
+          updatedAt: serverTimestamp(),
+        };
+        if (reason) requestUpdates.refundReason = reason;
+        await updateDoc(docRef, requestUpdates);
+        return { success: true, status: 'refund_requested' };
+      }
+
+      // 2. Teacher denies a student's refund request on a fulfilled reward
+      if (action === 'deny_refund') {
+        if (data.status !== 'refund_requested' || data.refunded === true) {
+          return { alreadyProcessed: true, status: data.status };
+        }
+        const denyUpdates = {
+          status: 'fulfilled',
+          refundDenied: true,
+          updatedAt: serverTimestamp(),
+        };
+        if (reason) denyUpdates.refundDeniedReason = reason;
+        await updateDoc(docRef, denyUpdates);
+        return { success: true, status: 'fulfilled' };
+      }
+
+      // 3. Cancel / Reject / Issue Refund (idempotent against double-refund)
+      if (data.refunded === true || ['cancelled', 'rejected', 'refunded'].includes(data.status)) {
+        return { alreadyProcessed: true, status: data.status };
+      }
+      if (cancelledBy === 'student' && data.status && data.status !== 'pending') {
         return { alreadyProcessed: true, status: data.status };
       }
 
-      const targetStatus = status === 'rejected' ? 'rejected' : 'cancelled';
+      const targetStatus = cancelledBy === 'student'
+        ? 'cancelled'
+        : (data.status === 'fulfilled' || data.status === 'refund_requested')
+          ? 'refunded'
+          : (status === 'refunded' ? 'refunded' : 'rejected');
+
       const redemptionUpdates = {
         status: targetStatus,
         cancelledBy,
@@ -2266,45 +2349,19 @@ export const realBackend = {
         cancelledAt: new Date().toISOString(),
         updatedAt: serverTimestamp(),
       };
-      if (reason && targetStatus === 'rejected') {
+      if (reason && cancelledBy === 'teacher') {
         redemptionUpdates.rejectionReason = reason;
       }
 
       await updateDoc(docRef, redemptionUpdates);
 
-      // Refund coins back to the student
       const refundAmount = Math.max(0, Number(data.cost) || 0);
-      let newCoins = null;
-      let resolvedStudentId = data.studentId || null;
-
-      if (refundAmount > 0) {
-        try {
-          let studentRef = resolvedStudentId ? doc(db, "students", resolvedStudentId) : null;
-          let studentSnap = studentRef ? await getDoc(studentRef) : null;
-
-          // Fallback name lookup within class if studentId doc wasn't matched
-          if ((!studentSnap || !studentSnap.exists()) && data.studentName) {
-            const qStudents = query(collection(db, "students"), where("classId", "==", classId));
-            const studentsSnap = await getDocs(qStudents);
-            const normName = data.studentName.trim().toLowerCase();
-            const matched = studentsSnap.docs.find(d => (d.data().name || '').trim().toLowerCase() === normName);
-            if (matched) {
-              resolvedStudentId = matched.id;
-              studentRef = doc(db, "students", matched.id);
-              studentSnap = matched;
-            }
-          }
-
-          if (studentRef && studentSnap && studentSnap.exists()) {
-            const sData = studentSnap.data();
-            const currentCoins = (sData.coins !== undefined && sData.coins !== null) ? Number(sData.coins) : 100;
-            newCoins = currentCoins + refundAmount;
-            await updateDoc(studentRef, { coins: newCoins });
-          }
-        } catch (refundErr) {
-          console.warn("Could not refund student coins automatically:", refundErr);
-        }
-      }
+      const { newCoins, resolvedStudentId } = await this._refundStudentCoins(
+        classId,
+        data.studentId,
+        data.studentName,
+        refundAmount
+      );
 
       return {
         success: true,
@@ -2965,6 +3022,101 @@ export const realBackend = {
       }
     } catch (error) {
       console.error("Error deleting STEM purchase:", error);
+      throw error;
+    }
+  },
+
+  async cancelOrRefundStemPurchase(classId, purchaseIdOrObj, { action = '', actor = 'student', reason = '' } = {}) {
+    try {
+      const purchaseId = typeof purchaseIdOrObj === 'string' ? purchaseIdOrObj : purchaseIdOrObj?.id;
+      if (!purchaseId) throw new Error("Missing STEM purchase ID");
+
+      const ref = doc(db, "stem_purchases", purchaseId);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) {
+        throw new Error("STEM order record not found");
+      }
+
+      const data = snap.data();
+      const resolvedClassId = data.classId || classId;
+
+      // 1. Student requests refund on a delivered STEM order
+      if (action === 'request_refund') {
+        if (data.refunded === true || ['cancelled', 'rejected', 'refunded', 'refund_requested'].includes(data.status)) {
+          return { alreadyProcessed: true, status: data.status };
+        }
+        if (!data.fulfilled) {
+          return { alreadyProcessed: true, status: data.status || 'pending' };
+        }
+        const requestUpdates = {
+          status: 'refund_requested',
+          refundRequestedBy: 'student',
+          refundRequestedAt: new Date().toISOString(),
+          updatedAt: serverTimestamp(),
+        };
+        if (reason) requestUpdates.refundReason = reason;
+        await updateDoc(ref, requestUpdates);
+        return { success: true, status: 'refund_requested' };
+      }
+
+      // 2. Teacher denies a refund request on a delivered STEM order
+      if (action === 'deny_refund') {
+        if (data.status !== 'refund_requested' || data.refunded === true) {
+          return { alreadyProcessed: true, status: data.status };
+        }
+        const denyUpdates = {
+          status: 'refund_denied',
+          updatedAt: serverTimestamp(),
+        };
+        if (reason) denyUpdates.refundDeniedReason = reason;
+        await updateDoc(ref, denyUpdates);
+        return { success: true, status: 'refund_denied' };
+      }
+
+      // 3. Cancel pending order (student) or Refund/Reject any non-refunded order (teacher)
+      if (data.refunded === true || ['cancelled', 'rejected', 'refunded'].includes(data.status)) {
+        return { alreadyProcessed: true, status: data.status };
+      }
+      if (actor === 'student' && data.fulfilled) {
+        return { alreadyProcessed: true, status: data.status || 'delivered' };
+      }
+
+      const targetStatus = actor === 'student'
+        ? 'cancelled'
+        : (data.status === 'refund_requested' || data.fulfilled)
+          ? 'refunded'
+          : 'rejected';
+
+      const updates = {
+        status: targetStatus,
+        cancelledBy: actor,
+        refunded: true,
+        cancelledAt: new Date().toISOString(),
+        updatedAt: serverTimestamp(),
+      };
+      if (reason && actor === 'teacher') {
+        updates.rejectionReason = reason;
+      }
+
+      await updateDoc(ref, updates);
+
+      const refundAmount = Math.max(0, Number(data.costCoins) || 0);
+      const { newCoins, resolvedStudentId } = await this._refundStudentCoins(
+        resolvedClassId,
+        data.studentId,
+        data.studentName,
+        refundAmount
+      );
+
+      return {
+        success: true,
+        status: targetStatus,
+        refundedAmount: refundAmount,
+        newCoins,
+        studentId: resolvedStudentId,
+      };
+    } catch (error) {
+      console.error("Error cancelling/refunding STEM purchase:", error);
       throw error;
     }
   },

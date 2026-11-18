@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { realBackend as backend } from '../services/realBackend';
 import { UserPlus, Lock, Trash2, Save, Edit, X, Check, RotateCcw, Gift, Star, Zap, Trophy, Eye, EyeOff, Sparkles, User, ShieldCheck, FileText, Shield, Search, ArrowRightLeft, AlertTriangle } from 'lucide-react';
 import { ACHIEVEMENTS, LEVELS, AVATAR_ITEMS, GUILDS } from '../data/gameData';
+import { findAvatarShopItem } from '../utils/gameUtils';
 import { parseRosterLines } from '../utils/textUtils';
 import Avatar3D, { AvatarColorSwatch } from './Avatar3D';
 import StudentSubmissionsModal from './StudentSubmissionsModal';
@@ -100,7 +101,7 @@ export default function RosterManager({
     setSavingAvatar(false);
   };
 
-  const handleRemoveOwnedItem = (itemId) => {
+  const handleRemoveOwnedItem = (itemId, refundCoinsBack = false) => {
     const defaultBasics = ['default', 'none', 'happy'];
     if (defaultBasics.includes(itemId)) {
       alert('Default basic items cannot be removed.');
@@ -116,6 +117,13 @@ export default function RosterManager({
       if (next.face === itemId) next.face = 'happy';
       return next;
     });
+    if (refundCoinsBack) {
+      const meta = findAvatarShopItem(itemId);
+      const refundAmount = Math.max(0, Number(meta?.item?.cost) || 0);
+      if (refundAmount > 0) {
+        setInspectCoins(prev => (parseInt(prev) || 0) + refundAmount);
+      }
+    }
   };
 
   const handleResetCosmetics = () => {
@@ -965,18 +973,31 @@ export default function RosterManager({
                     <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto pr-1">
                       {inspectOwnedItems.map(itemId => {
                         const isDefault = ['default', 'none', 'happy'].includes(itemId);
+                        const itemMeta = !isDefault ? findAvatarShopItem(itemId) : null;
+                        const itemCost = Number(itemMeta?.item?.cost) || 0;
                         return (
                           <span
                             key={itemId}
                             className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 rounded-md text-[10px] text-slate-700 font-mono dark:bg-slate-700 dark:text-slate-300"
                           >
-                            {itemId}
+                            {itemMeta?.item?.name || itemId}
+                            {!isDefault && itemCost > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveOwnedItem(itemId, true)}
+                                className="text-emerald-700 hover:text-emerald-900 font-sans font-bold ml-0.5 dark:text-emerald-400 dark:hover:text-emerald-300"
+                                title={`Remove & refund +${itemCost} coins`}
+                                aria-label={`Refund ${itemMeta?.item?.name || itemId} (+${itemCost} coins)`}
+                              >
+                                ↩️+{itemCost}🪙
+                              </button>
+                            )}
                             {!isDefault && (
                               <button
                                 type="button"
-                                onClick={() => handleRemoveOwnedItem(itemId)}
+                                onClick={() => handleRemoveOwnedItem(itemId, false)}
                                 className="text-slate-600 hover:text-red-700 ml-0.5 dark:text-slate-400 dark:hover:text-red-400"
-                                title={`Remove ${itemId}`}
+                                title={`Remove ${itemId} without refund`}
                               >
                                 <X className="w-3 h-3" />
                               </button>

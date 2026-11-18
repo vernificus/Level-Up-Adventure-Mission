@@ -13,7 +13,13 @@ import {
 } from 'lucide-react';
 import Avatar3D from './Avatar3D';
 import { compressImageFile, isValidImageUrl } from '../utils/imageUtils';
-import { filterAndSortRedemptions } from '../utils/portalUtils';
+import {
+  filterAndSortRedemptions,
+  getRedemptionStatusBadge,
+  getStemOrderStatus,
+  getStemOrderBadge,
+  isRecordOwnedByStudent,
+} from '../utils/portalUtils';
 
 export default function GuildPanel({
   currentGuild,
@@ -87,6 +93,7 @@ export default function GuildPanel({
   const [redeemingReward, setRedeemingReward] = useState(null);
   const [redeemProcess, setRedeemProcess] = useState(false);
   const [cancellingRedemptionId, setCancellingRedemptionId] = useState(null);
+  const [refundingStemId, setRefundingStemId] = useState(null);
   const [storeCategoryFilter, setStoreCategoryFilter] = useState('all'); // 'all' | 'rewards' | 'stem' | 'history'
 
   const showToast = (msg) => {
@@ -379,6 +386,77 @@ export default function GuildPanel({
       alert('Error cancelling reward request: ' + err.message);
     } finally {
       setCancellingRedemptionId(null);
+    }
+  };
+
+  const handleRequestRedemptionRefund = async (redemption) => {
+    if (!classId || !redemption?.id) return;
+    const reasonInput = window.prompt(
+      `Request a ${redemption.cost} 🪙 coin refund for "${redemption.itemName}"?\n\nOptional note for your teacher (or leave blank and press OK):`,
+      ''
+    );
+    if (reasonInput === null) return;
+    setCancellingRedemptionId(redemption.id);
+    try {
+      const res = await backend.cancelOrRejectRedemption(classId, redemption.id, {
+        action: 'request_refund',
+        cancelledBy: 'student',
+        reason: reasonInput.trim(),
+      });
+      if (res?.alreadyProcessed) {
+        showToast('A refund has already been requested or processed for this reward.');
+      } else {
+        showToast(`↩️ Refund requested for "${redemption.itemName}"! Your teacher will review it.`);
+      }
+      if (onStateUpdate) onStateUpdate();
+      loadGuildData();
+    } catch (err) {
+      alert('Error requesting refund: ' + err.message);
+    } finally {
+      setCancellingRedemptionId(null);
+    }
+  };
+
+  const handleStemOrderAction = async (purchase) => {
+    if (!classId || !purchase?.id) return;
+    const orderStatus = getStemOrderStatus(purchase);
+    const isPendingOrder = orderStatus === 'pending';
+
+    let reason = '';
+    if (isPendingOrder) {
+      if (!window.confirm(`Change your mind on "${purchase.itemName}"?\n\nYour ${purchase.costCoins} 🪙 coins will be refunded.`)) return;
+    } else {
+      const promptResult = window.prompt(
+        `Request a ${purchase.costCoins} 🪙 coin refund for "${purchase.itemName}"?\n\nOptional note for your teacher (or leave blank and press OK):`,
+        ''
+      );
+      if (promptResult === null) return;
+      reason = promptResult.trim();
+    }
+
+    setRefundingStemId(purchase.id);
+    try {
+      const res = await backend.cancelOrRefundStemPurchase(classId, purchase.id, {
+        action: isPendingOrder ? 'student_cancel' : 'request_refund',
+        actor: 'student',
+        reason,
+      });
+      if (res?.alreadyProcessed) {
+        showToast('This STEM order was already updated by your teacher.');
+      } else if (isPendingOrder) {
+        if (refundCoins) {
+          refundCoins(purchase.costCoins, res?.newCoins);
+        }
+        showToast(`↩️ Cancelled "${purchase.itemName}" & refunded ${purchase.costCoins} coins!`);
+      } else {
+        showToast(`↩️ Refund requested for "${purchase.itemName}"! Your teacher will review it.`);
+      }
+      if (onStateUpdate) onStateUpdate();
+      loadGuildData();
+    } catch (err) {
+      alert('Error updating STEM order: ' + err.message);
+    } finally {
+      setRefundingStemId(null);
     }
   };
 
@@ -1249,9 +1327,11 @@ export default function GuildPanel({
                         ) : (
                           <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                             {myRedemptions.map(r => {
-                              const isCancelledOrRejected = r.status === 'cancelled' || r.status === 'rejected';
+                              const isCancelledOrRejected = r.status === 'cancelled' || r.status === 'rejected' || r.status === 'refunded';
                               const isFulfilled = r.status === 'fulfilled';
-                              const isPending = !isCancelledOrRejected && !isFulfilled;
+                              const isRefundRequested = r.status === 'refund_requested';
+                              const isPending = !isCancelledOrRejected && !isFulfilled && !isRefundRequested;
+                              const badge = getRedemptionStatusBadge(r.status);
                               return (
                               <div
                                 key={r.id}
@@ -1273,39 +1353,27 @@ export default function GuildPanel({
                                         Directions: {r.directions}
                                       </p>
                                     )}
+                                    {isRefundRequested && (
+                                      <p className="text-[11px] text-indigo-700 italic mt-0.5 dark:text-indigo-300">
+                                        Waiting for teacher review{r.refundReason ? `: "${r.refundReason}"` : ''}
+                                      </p>
+                                    )}
                                     {r.rejectionReason && isCancelledOrRejected && (
                                       <p className="text-[11px] text-rose-700 italic mt-0.5 dark:text-rose-300">
                                         Teacher note: "{r.rejectionReason}"
+                                      </p>
+                                    )}
+                                    {r.refundDeniedReason && isFulfilled && (
+                                      <p className="text-[11px] text-amber-700 italic mt-0.5 dark:text-amber-300">
+                                        Refund denied: "{r.refundDeniedReason}"
                                       </p>
                                     )}
                                   </div>
                                 </div>
 
                                 <div className="flex items-center gap-2 flex-shrink-0">
-                                  <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase flex items-center gap-1 ${
-                                    isFulfilled
-                                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-300'
-                                      : isCancelledOrRejected
-                                      ? 'bg-rose-100 text-rose-800 border border-rose-500/30 dark:bg-rose-500/20 dark:text-rose-300'
-                                      : 'bg-amber-100 text-amber-800 border border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-300'
-                                  }`}>
-                                    {isFulfilled ? (
-                                      <>
-                                        <CheckCircle2 className="w-3 h-3 text-emerald-700 dark:text-emerald-400" /> Fulfilled
-                                      </>
-                                    ) : r.status === 'rejected' ? (
-                                      <>
-                                        <X className="w-3 h-3 text-rose-700 dark:text-rose-400" /> Rejected
-                                      </>
-                                    ) : r.status === 'cancelled' ? (
-                                      <>
-                                        <X className="w-3 h-3 text-rose-700 dark:text-rose-400" /> Cancelled
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Clock className="w-3 h-3 text-amber-700 dark:text-amber-400" /> Pending Teacher
-                                      </>
-                                    )}
+                                  <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase flex items-center gap-1 ${badge.className}`}>
+                                    {badge.label}
                                   </span>
 
                                   {isPending && (
@@ -1318,6 +1386,19 @@ export default function GuildPanel({
                                       aria-label={`Nevermind on ${r.itemName}, refund ${r.cost} coins`}
                                     >
                                       {cancellingRedemptionId === r.id ? 'Cancelling...' : 'Nevermind'}
+                                    </button>
+                                  )}
+
+                                  {isFulfilled && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRequestRedemptionRefund(r)}
+                                      disabled={cancellingRedemptionId === r.id}
+                                      className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-indigo-100 hover:bg-indigo-200 text-indigo-800 border border-indigo-300 transition-colors disabled:opacity-50 min-h-[30px] dark:bg-indigo-500/20 dark:hover:bg-indigo-500/30 dark:text-indigo-300 dark:border-indigo-500/40"
+                                      title="Request a coin refund from your teacher"
+                                      aria-label={`Request refund on ${r.itemName} (${r.cost} coins)`}
+                                    >
+                                      {cancellingRedemptionId === r.id ? 'Sending...' : 'Request Refund'}
                                     </button>
                                   )}
                                 </div>
@@ -1343,41 +1424,91 @@ export default function GuildPanel({
                           </p>
                         ) : (
                           <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                            {guildPurchases.map(p => (
+                            {guildPurchases.map(p => {
+                              const status = getStemOrderStatus(p);
+                              const badge = getStemOrderBadge(p);
+                              const isOwnOrder = isRecordOwnedByStudent(
+                                p,
+                                gameState?.id || userId,
+                                gameState?.playerName || gameState?.name
+                              );
+                              const canCancel = isOwnOrder && status === 'pending';
+                              const canRequestRefund = isOwnOrder && (status === 'delivered' || status === 'refund_denied');
+                              const isRefunded = status === 'cancelled' || status === 'rejected' || status === 'refunded';
+
+                              return (
                               <div
                                 key={p.id}
                                 className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs flex-wrap gap-2 dark:bg-slate-900 dark:border-slate-700"
                               >
-                                <div className="flex items-center gap-2.5">
-                                  <span className="text-xl">{p.icon || '⚙️'}</span>
-                                  <div>
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <span className="text-xl flex-shrink-0">{p.icon || '⚙️'}</span>
+                                  <div className="min-w-0">
                                     <p className="font-bold text-slate-900 dark:text-white">{p.itemName}</p>
                                     <p className="text-[11px] text-slate-500 dark:text-slate-400">
                                       Contributed by <span className="text-yellow-700 font-semibold dark:text-yellow-400">{p.studentName}</span> • {new Date(p.timestamp).toLocaleDateString()}
+                                      {isRefunded && p.refunded && (
+                                        <span className="text-emerald-700 font-semibold dark:text-emerald-400"> • Refunded</span>
+                                      )}
                                     </p>
+                                    {status === 'refund_requested' && (
+                                      <p className="text-[11px] text-indigo-700 italic mt-0.5 dark:text-indigo-300">
+                                        Waiting for teacher review{p.refundReason ? `: "${p.refundReason}"` : ''}
+                                      </p>
+                                    )}
+                                    {p.rejectionReason && isRefunded && (
+                                      <p className="text-[11px] text-rose-700 italic mt-0.5 dark:text-rose-300">
+                                        Teacher note: "{p.rejectionReason}"
+                                      </p>
+                                    )}
+                                    {p.refundDeniedReason && status === 'refund_denied' && (
+                                      <p className="text-[11px] text-amber-700 italic mt-0.5 dark:text-amber-300">
+                                        Teacher note: "{p.refundDeniedReason}"
+                                      </p>
+                                    )}
                                   </div>
                                 </div>
 
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
                                   <span className="text-yellow-700 font-bold dark:text-yellow-400">🪙 {p.costCoins}</span>
-                                  <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase flex items-center gap-1 ${
-                                    p.fulfilled
-                                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-300'
-                                      : 'bg-amber-100 text-amber-800 border border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-300'
-                                  }`}>
-                                    {p.fulfilled ? (
-                                      <>
-                                        <CheckCircle2 className="w-3 h-3 text-emerald-700 dark:text-emerald-400" /> Delivered
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Clock className="w-3 h-3 text-amber-700 dark:text-amber-400" /> Order Placed
-                                      </>
-                                    )}
+                                  <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase flex items-center gap-1 ${badge.className}`}>
+                                    {status === 'delivered' ? (
+                                      <CheckCircle2 className="w-3 h-3 text-emerald-700 dark:text-emerald-400" />
+                                    ) : status === 'pending' ? (
+                                      <Clock className="w-3 h-3 text-amber-700 dark:text-amber-400" />
+                                    ) : null}
+                                    {badge.label}
                                   </span>
+
+                                  {canCancel && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleStemOrderAction(p)}
+                                      disabled={refundingStemId === p.id}
+                                      className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 transition-colors disabled:opacity-50 min-h-[30px] dark:bg-rose-500/20 dark:hover:bg-rose-500/30 dark:text-rose-300 dark:border-rose-500/40"
+                                      title="Cancel order and refund coins"
+                                      aria-label={`Nevermind on ${p.itemName}, refund ${p.costCoins} coins`}
+                                    >
+                                      {refundingStemId === p.id ? 'Cancelling...' : 'Nevermind'}
+                                    </button>
+                                  )}
+
+                                  {canRequestRefund && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleStemOrderAction(p)}
+                                      disabled={refundingStemId === p.id}
+                                      className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-indigo-100 hover:bg-indigo-200 text-indigo-800 border border-indigo-300 transition-colors disabled:opacity-50 min-h-[30px] dark:bg-indigo-500/20 dark:hover:bg-indigo-500/30 dark:text-indigo-300 dark:border-indigo-500/40"
+                                      title="Request teacher approval to refund coins"
+                                      aria-label={`Request refund for ${p.itemName} (${p.costCoins} coins)`}
+                                    >
+                                      {refundingStemId === p.id ? 'Sending...' : 'Request Refund'}
+                                    </button>
+                                  )}
                                 </div>
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                       </div>

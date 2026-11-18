@@ -32,7 +32,9 @@ import {
   toggleSelectAllPending,
   pruneSelectedSubmissionIds,
   resolveRevisionFeedback,
-  QUICK_REVISION_CHIPS
+  QUICK_REVISION_CHIPS,
+  getStemOrderStatus,
+  getStemOrderBadge
 } from '../utils/portalUtils';
 import { calculateClassStorageUsage } from '../utils/storageUtils';
 
@@ -3292,11 +3294,14 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
 
   // STEM Supplies Audit State
   const [stemPurchases, setStemPurchases] = useState([]);
-  const [stemFilter, setStemFilter] = useState('all'); // 'all', 'pending', 'fulfilled'
+  const [stemFilter, setStemFilter] = useState('all'); // 'all', 'pending', 'refund_requested', 'fulfilled', 'refunded'
   const [loadingPurchases, setLoadingPurchases] = useState(false);
   const [stemCatalog, setStemCatalog] = useState(DEFAULT_STEM_SUPPLIES);
   const [showCatalogEditor, setShowCatalogEditor] = useState(false);
   const [savingCatalog, setSavingCatalog] = useState(false);
+  const [stemRefundModal, setStemRefundModal] = useState(null); // { purchase, mode: 'refund' | 'deny' }
+  const [stemRefundReason, setStemRefundReason] = useState('');
+  const [processingStemRefund, setProcessingStemRefund] = useState(false);
 
   // Boss Battle State
   const [activeBossInfo, setActiveBossInfo] = useState(null);
@@ -3638,6 +3643,31 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
     }
   };
 
+  const handleConfirmStemRefundAction = async () => {
+    if (!stemRefundModal?.purchase) return;
+    const { purchase, mode } = stemRefundModal;
+    setProcessingStemRefund(true);
+    try {
+      const action = mode === 'deny' ? 'deny_refund' : 'teacher_refund';
+      const res = await backend.cancelOrRefundStemPurchase(classId, purchase.id, {
+        action,
+        actor: 'teacher',
+        reason: stemRefundReason.trim(),
+      });
+      if (res?.alreadyProcessed) {
+        alert('This STEM order was already updated or refunded.');
+      }
+      setStemRefundModal(null);
+      setStemRefundReason('');
+      await loadStemData();
+      if (onRefreshClass) onRefreshClass();
+    } catch (err) {
+      alert('Error processing STEM order refund: ' + err.message);
+    } finally {
+      setProcessingStemRefund(false);
+    }
+  };
+
   const handleSaveStemCatalog = async () => {
     setSavingCatalog(true);
     try {
@@ -3746,11 +3776,30 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
   };
 
   // Filter STEM purchases
+  const stemCounts = {
+    all: stemPurchases.length,
+    pending: stemPurchases.filter(p => getStemOrderStatus(p) === 'pending').length,
+    refund_requested: stemPurchases.filter(p => getStemOrderStatus(p) === 'refund_requested').length,
+    fulfilled: stemPurchases.filter(p => {
+      const s = getStemOrderStatus(p);
+      return s === 'delivered' || s === 'refund_denied';
+    }).length,
+    refunded: stemPurchases.filter(p => ['cancelled', 'rejected', 'refunded'].includes(getStemOrderStatus(p))).length,
+  };
+  const stemAttentionCount = stemCounts.pending + stemCounts.refund_requested;
+
   const filteredStemPurchases = stemFilter === 'all'
     ? stemPurchases
     : stemFilter === 'pending'
-    ? stemPurchases.filter(p => !p.fulfilled)
-    : stemPurchases.filter(p => p.fulfilled);
+    ? stemPurchases.filter(p => getStemOrderStatus(p) === 'pending')
+    : stemFilter === 'refund_requested'
+    ? stemPurchases.filter(p => getStemOrderStatus(p) === 'refund_requested')
+    : stemFilter === 'refunded'
+    ? stemPurchases.filter(p => ['cancelled', 'rejected', 'refunded'].includes(getStemOrderStatus(p)))
+    : stemPurchases.filter(p => {
+        const s = getStemOrderStatus(p);
+        return s === 'delivered' || s === 'refund_denied';
+      });
 
   return (
     <div className="space-y-6">
@@ -3795,9 +3844,9 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
           }`}
         >
           <Package className="w-4 h-4" /> STEM Supplies Audit
-          {stemPurchases.filter(p => !p.fulfilled).length > 0 && (
+          {stemAttentionCount > 0 && (
             <span className="bg-amber-400 text-slate-950 text-[10px] font-bold px-1.5 py-0.2 rounded-full">
-              {stemPurchases.filter(p => !p.fulfilled).length}
+              {stemAttentionCount}
             </span>
           )}
         </button>
@@ -4891,12 +4940,14 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
 
           {/* Filter Pills */}
           <div className="flex items-center justify-between flex-wrap gap-3 pb-2 border-b border-slate-200 dark:border-slate-700">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-bold text-slate-600 dark:text-slate-400">Filter Status:</span>
               {[
-                { id: 'all', label: `All (${stemPurchases.length})` },
-                { id: 'pending', label: `Pending (${stemPurchases.filter(p => !p.fulfilled).length})` },
-                { id: 'fulfilled', label: `Delivered (${stemPurchases.filter(p => p.fulfilled).length})` },
+                { id: 'all', label: `All (${stemCounts.all})` },
+                { id: 'pending', label: `Pending (${stemCounts.pending})` },
+                { id: 'refund_requested', label: `Refund Requests (${stemCounts.refund_requested})`, highlight: stemCounts.refund_requested > 0 },
+                { id: 'fulfilled', label: `Delivered (${stemCounts.fulfilled})` },
+                { id: 'refunded', label: `Refunded (${stemCounts.refunded})` },
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -4904,6 +4955,8 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[36px] ${
                     stemFilter === tab.id
                       ? 'bg-emerald-500 text-slate-950 font-bold shadow'
+                      : tab.highlight
+                      ? 'bg-indigo-100 text-indigo-800 border border-indigo-400 hover:bg-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/50'
                       : 'bg-slate-100 text-slate-700 hover:text-slate-900 dark:bg-slate-700 dark:text-slate-300 dark:hover:text-white'
                   }`}
                 >
@@ -4932,58 +4985,212 @@ function GuildManagement({ classId, selectedClass, onClassUpdated, students, onS
             </div>
           ) : (
             <div className="space-y-2">
-              {filteredStemPurchases.map(p => (
+              {filteredStemPurchases.map(p => {
+                const status = getStemOrderStatus(p);
+                const badge = getStemOrderBadge(p);
+                const isRefundedOrCancelled = status === 'cancelled' || status === 'rejected' || status === 'refunded';
+                const isRefundRequested = status === 'refund_requested';
+                const isDelivered = status === 'delivered' || status === 'refund_denied';
+                const isPendingOrder = status === 'pending';
+
+                return (
                 <div
                   key={p.id}
-                  className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between gap-4 flex-wrap dark:bg-slate-900/80 dark:border-slate-700"
+                  className={`p-4 rounded-2xl border flex items-center justify-between gap-4 flex-wrap ${
+                    isRefundRequested
+                      ? 'bg-indigo-50/70 border-indigo-300 dark:bg-indigo-950/30 dark:border-indigo-500/50'
+                      : 'bg-slate-50 border-slate-200 dark:bg-slate-900/80 dark:border-slate-700'
+                  }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="text-3xl p-2 bg-white rounded-xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">{p.icon || '⚙️'}</span>
-                    <div>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-3xl p-2 bg-white rounded-xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700 flex-shrink-0">{p.icon || '⚙️'}</span>
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-bold text-slate-900 text-sm dark:text-white">{p.itemName}</span>
                         <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-300">
                           Tier {p.tier || 1}
                         </span>
                         <span className="text-xs font-bold text-yellow-800 dark:text-yellow-400">🪙 {p.costCoins}</span>
+                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${badge.className}`}>
+                          {badge.label}
+                        </span>
                       </div>
                       <p className="text-xs text-slate-600 mt-0.5 dark:text-slate-400">
                         Purchased by <strong className="text-slate-900 dark:text-white">{p.studentName}</strong> for <strong className="text-yellow-800 dark:text-yellow-300">{p.guildEmoji} {p.guildName}</strong>
                       </p>
-                      <p className="text-[11px] text-slate-600 dark:text-slate-500">{new Date(p.timestamp).toLocaleString()}</p>
+                      <p className="text-[11px] text-slate-600 dark:text-slate-500">
+                        {new Date(p.timestamp).toLocaleString()}
+                        {isRefundedOrCancelled && p.refunded && (
+                          <span className="text-emerald-700 font-semibold dark:text-emerald-400"> • {p.costCoins} 🪙 refunded</span>
+                        )}
+                      </p>
+                      {isRefundRequested && (
+                        <p className="text-xs text-indigo-800 font-semibold mt-1 dark:text-indigo-300">
+                          ↩️ {p.studentName} requested a coin refund{p.refundReason ? `: "${p.refundReason}"` : ''}
+                        </p>
+                      )}
+                      {p.rejectionReason && isRefundedOrCancelled && (
+                        <p className="text-xs text-rose-700 italic mt-0.5 dark:text-rose-300">
+                          Note: "{p.rejectionReason}"
+                        </p>
+                      )}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => handleToggleFulfill(p.id, p.fulfilled)}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow min-h-[44px] ${
-                        p.fulfilled
-                          ? 'bg-white hover:bg-amber-100 text-emerald-800 hover:text-amber-800 border border-emerald-500/40 dark:bg-slate-800 dark:hover:bg-amber-500/20 dark:text-emerald-400 dark:hover:text-amber-400'
-                          : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 active:scale-95'
-                      }`}
-                    >
-                      {p.fulfilled ? (
-                        <>
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Delivered (Tap to Undo)
-                        </>
-                      ) : (
-                        <>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {isPendingOrder && (
+                      <>
+                        <button
+                          onClick={() => handleToggleFulfill(p.id, p.fulfilled)}
+                          className="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow min-h-[44px] bg-emerald-500 hover:bg-emerald-400 text-slate-950 active:scale-95"
+                        >
                           <Check className="w-4 h-4" /> Mark Delivered to Guild
-                        </>
-                      )}
-                    </button>
+                        </button>
+                        <button
+                          onClick={() => { setStemRefundModal({ purchase: p, mode: 'refund' }); setStemRefundReason(''); }}
+                          className="px-3.5 py-2 rounded-xl text-xs font-bold transition-colors min-h-[44px] bg-rose-100 text-rose-800 border border-rose-300 hover:bg-rose-200 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/40 dark:hover:bg-rose-500/30"
+                          aria-label={`Reject and refund ${p.itemName} for ${p.studentName}`}
+                        >
+                          Reject & Refund
+                        </button>
+                      </>
+                    )}
+
+                    {isDelivered && (
+                      <>
+                        <button
+                          onClick={() => handleToggleFulfill(p.id, p.fulfilled)}
+                          className="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow min-h-[44px] bg-white hover:bg-amber-100 text-emerald-800 hover:text-amber-800 border border-emerald-500/40 dark:bg-slate-800 dark:hover:bg-amber-500/20 dark:text-emerald-400 dark:hover:text-amber-400"
+                        >
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Delivered (Tap to Undo)
+                        </button>
+                        <button
+                          onClick={() => { setStemRefundModal({ purchase: p, mode: 'refund' }); setStemRefundReason(''); }}
+                          className="px-3.5 py-2 rounded-xl text-xs font-bold transition-colors min-h-[44px] bg-indigo-100 text-indigo-800 border border-indigo-300 hover:bg-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/40 dark:hover:bg-indigo-500/30"
+                          aria-label={`Issue refund for ${p.itemName} to ${p.studentName}`}
+                        >
+                          Issue Refund
+                        </button>
+                      </>
+                    )}
+
+                    {isRefundRequested && (
+                      <>
+                        <button
+                          onClick={() => { setStemRefundModal({ purchase: p, mode: 'refund' }); setStemRefundReason(''); }}
+                          className="px-3.5 py-2 rounded-xl text-xs font-bold transition-colors min-h-[44px] bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow"
+                          aria-label={`Approve refund of ${p.costCoins} coins for ${p.itemName}`}
+                        >
+                          Approve & Refund {p.costCoins} 🪙
+                        </button>
+                        <button
+                          onClick={() => { setStemRefundModal({ purchase: p, mode: 'deny' }); setStemRefundReason(''); }}
+                          className="px-3.5 py-2 rounded-xl text-xs font-bold transition-colors min-h-[44px] bg-slate-200 hover:bg-slate-300 text-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200"
+                          aria-label={`Deny refund for ${p.itemName}`}
+                        >
+                          Deny Refund
+                        </button>
+                      </>
+                    )}
+
                     <button
                       onClick={() => handleDeleteStemPurchase(p.id, p.itemName, p.studentName)}
                       className="p-2.5 text-slate-600 hover:text-red-700 hover:bg-red-100 rounded-xl border border-slate-200 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center dark:text-slate-400 dark:hover:text-red-400 dark:hover:bg-red-500/10 dark:border-slate-700"
-                      title="Delete / Cancel order (Exploit Removal)"
+                      title="Delete order without refund"
                       aria-label={`Delete order ${p.itemName}`}
                     >
                       <Trash2 className="w-4 h-4 text-red-700 dark:text-red-400" />
                     </button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
+            </div>
+          )}
+
+          {/* Teacher STEM Refund / Deny Modal */}
+          {stemRefundModal?.purchase && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm dark:bg-slate-950/80"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="stem-refund-modal-title"
+              onClick={() => !processingStemRefund && setStemRefundModal(null)}
+            >
+              <div
+                className={`bg-white border-2 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 dark:bg-slate-800 ${
+                  stemRefundModal.mode === 'deny' ? 'border-slate-300 dark:border-slate-600' : 'border-rose-300 dark:border-rose-500/60'
+                }`}
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between">
+                  <h4 id="stem-refund-modal-title" className="text-lg font-bold text-slate-900 flex items-center gap-2 dark:text-white">
+                    {stemRefundModal.mode === 'deny' ? 'Deny STEM Order Refund' : 'Refund STEM Order Coins'}
+                  </h4>
+                  <button
+                    type="button"
+                    disabled={processingStemRefund}
+                    onClick={() => setStemRefundModal(null)}
+                    className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
+                    aria-label="Close"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className={`p-3.5 border rounded-xl text-sm ${
+                  stemRefundModal.mode === 'deny'
+                    ? 'bg-slate-50 border-slate-200 text-slate-800 dark:bg-slate-900/50 dark:border-slate-700 dark:text-slate-200'
+                    : 'bg-rose-50 border-rose-200 text-rose-900 dark:bg-rose-950/30 dark:border-rose-500/30 dark:text-rose-200'
+                }`}>
+                  <p className="font-bold">{stemRefundModal.purchase.studentName} — {stemRefundModal.purchase.itemName}</p>
+                  <p className="text-xs mt-1">
+                    {stemRefundModal.mode === 'deny'
+                      ? `Denying keeps this order marked as delivered without refunding ${stemRefundModal.purchase.costCoins} 🪙 coins.`
+                      : `This will refund ${stemRefundModal.purchase.costCoins} 🪙 coins back to ${stemRefundModal.purchase.studentName}.`}
+                  </p>
+                </div>
+
+                <div>
+                  <label htmlFor="stem-refund-reason" className="block text-xs font-bold text-slate-600 mb-1 dark:text-slate-400">
+                    Optional Note to Student
+                  </label>
+                  <input
+                    id="stem-refund-reason"
+                    type="text"
+                    value={stemRefundReason}
+                    onChange={e => setStemRefundReason(e.target.value)}
+                    placeholder={stemRefundModal.mode === 'deny' ? 'e.g. Supplies already opened and used' : 'e.g. Supplies returned / order cancelled'}
+                    maxLength={140}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-900 outline-none focus:border-indigo-500 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+                  <button
+                    type="button"
+                    disabled={processingStemRefund}
+                    onClick={() => setStemRefundModal(null)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-xs min-h-[40px] dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={processingStemRefund}
+                    onClick={handleConfirmStemRefundAction}
+                    className={`px-4 py-2 text-white font-bold rounded-lg text-xs min-h-[40px] shadow ${
+                      stemRefundModal.mode === 'deny' ? 'bg-slate-700 hover:bg-slate-600' : 'bg-rose-600 hover:bg-rose-500'
+                    }`}
+                  >
+                    {processingStemRefund
+                      ? 'Saving...'
+                      : stemRefundModal.mode === 'deny'
+                      ? 'Deny Refund'
+                      : `Refund ${stemRefundModal.purchase.costCoins} 🪙`}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -5372,6 +5579,7 @@ function RewardsManager({ classId }) {
   const [editingReward, setEditingReward] = useState(null);
   const [form, setForm] = useState({ name: '', description: '', cost: '', directions: '' });
   const [rejectingRedemption, setRejectingRedemption] = useState(null);
+  const [rejectActionMode, setRejectActionMode] = useState('reject'); // 'reject' | 'refund' | 'deny_refund'
   const [rejectReason, setRejectReason] = useState('');
   const [processingReject, setProcessingReject] = useState(false);
 
@@ -5450,25 +5658,31 @@ function RewardsManager({ classId }) {
   };
 
   const pendingRedemptions = redemptions.filter(r => r.status === 'pending');
-  const fulfilledRedemptions = redemptions.filter(r => r.status === 'fulfilled');
-  const cancelledRedemptions = redemptions.filter(r => r.status === 'cancelled' || r.status === 'rejected');
+  const refundRequestedRedemptions = redemptions.filter(r => r.status === 'refund_requested');
+  const fulfilledRedemptions = redemptions.filter(r => r.status === 'fulfilled' || r.status === 'refund_denied');
+  const cancelledRedemptions = redemptions.filter(r => r.status === 'cancelled' || r.status === 'rejected' || r.status === 'refunded');
 
   const handleConfirmRejectRedemption = async () => {
     if (!rejectingRedemption) return;
     setProcessingReject(true);
     try {
-      const res = await backend.cancelOrRejectRedemption(classId, rejectingRedemption.id, {
-        status: 'rejected',
-        cancelledBy: 'teacher',
-        reason: rejectReason.trim(),
-      });
+      const payload = rejectActionMode === 'deny_refund'
+        ? { action: 'deny_refund', cancelledBy: 'teacher', reason: rejectReason.trim() }
+        : {
+            status: (rejectingRedemption.status === 'fulfilled' || rejectingRedemption.status === 'refund_requested' || rejectActionMode === 'refund')
+              ? 'refunded'
+              : 'rejected',
+            cancelledBy: 'teacher',
+            reason: rejectReason.trim(),
+          };
+      const res = await backend.cancelOrRejectRedemption(classId, rejectingRedemption.id, payload);
       if (res?.alreadyProcessed) {
-        alert('This redemption was already processed or cancelled by the student.');
+        alert('This redemption was already processed or cancelled.');
       }
       setRejectingRedemption(null);
       setRejectReason('');
     } catch (error) {
-      alert('Error rejecting redemption: ' + error.message);
+      alert('Error updating redemption: ' + error.message);
     } finally {
       setProcessingReject(false);
     }
@@ -5478,6 +5692,49 @@ function RewardsManager({ classId }) {
 
   return (
     <div className="space-y-6">
+      {/* Refund Requests Alert */}
+      {refundRequestedRedemptions.length > 0 && (
+        <div className="bg-indigo-50 border-2 border-indigo-400 rounded-xl p-4 dark:bg-indigo-950/30 dark:border-indigo-500/50">
+          <h3 className="text-lg font-bold text-indigo-900 mb-2 flex items-center gap-2 dark:text-indigo-300">
+            <RotateCcw className="w-5 h-5" aria-hidden="true" /> Reward Refund Requests ({refundRequestedRedemptions.length})
+          </h3>
+          <p className="text-sm text-slate-600 mb-4 dark:text-slate-400">
+            Students requested a coin refund for rewards they previously received. Approve to refund coins or deny if already used.
+          </p>
+          <div className="space-y-3">
+            {refundRequestedRedemptions.map(r => (
+              <div key={r.id} className="bg-white rounded-lg p-4 border border-indigo-200 flex flex-wrap items-center gap-4 dark:bg-slate-800 dark:border-indigo-500/30">
+                <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 border-2 border-indigo-400 rounded-lg flex items-center justify-center text-xl dark:bg-indigo-500/20">
+                  ↩️
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-slate-900 dark:text-white">{r.studentName} requested refund for <span className="text-indigo-700 dark:text-indigo-300">{r.itemName}</span></p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">Refund amount: {r.cost} 🪙 coins</p>
+                  {r.refundReason && (
+                    <p className="text-xs text-indigo-800 italic mt-1 dark:text-indigo-300">Student note: "{r.refundReason}"</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+                  <button
+                    onClick={() => { setRejectingRedemption(r); setRejectActionMode('refund'); setRejectReason(''); }}
+                    className="px-4 py-2 bg-emerald-500 text-slate-950 rounded-lg font-bold text-sm hover:bg-emerald-400 min-h-[40px]"
+                    aria-label={`Approve refund of ${r.cost} coins for ${r.studentName}`}
+                  >
+                    Approve & Refund {r.cost} 🪙
+                  </button>
+                  <button
+                    onClick={() => { setRejectingRedemption(r); setRejectActionMode('deny_refund'); setRejectReason(''); }}
+                    className="px-3.5 py-2 bg-slate-200 text-slate-800 rounded-lg font-bold text-sm hover:bg-slate-300 min-h-[40px] dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
+                    aria-label={`Deny refund for ${r.studentName}`}
+                  >
+                    Deny
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {/* Pending Redemptions Alert */}
       {pendingRedemptions.length > 0 && (
         <div className="bg-green-50 border-2 border-green-500/50 rounded-xl p-4 dark:bg-green-900/30">
@@ -5507,7 +5764,7 @@ function RewardsManager({ classId }) {
                     Mark Fulfilled
                   </button>
                   <button
-                    onClick={() => { setRejectingRedemption(r); setRejectReason(''); }}
+                    onClick={() => { setRejectingRedemption(r); setRejectActionMode('reject'); setRejectReason(''); }}
                     className="px-3.5 py-2 bg-rose-100 text-rose-800 border border-rose-300 rounded-lg font-bold text-sm hover:bg-rose-200 transition-colors min-h-[40px] dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/40 dark:hover:bg-rose-500/30"
                     aria-label={`Reject ${r.itemName} for ${r.studentName}`}
                   >
@@ -5660,27 +5917,36 @@ function RewardsManager({ classId }) {
           <h3 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2 dark:text-white">
             <CheckCircle2 className="w-5 h-5 text-green-800 dark:text-green-400" aria-hidden="true" /> Fulfilled Redemptions ({fulfilledRedemptions.length})
           </h3>
-          <div className="space-y-2 max-h-48 overflow-y-auto">
+          <div className="space-y-2 max-h-56 overflow-y-auto">
             {fulfilledRedemptions.map(r => (
-              <div key={r.id} className="flex items-center gap-3 p-3 bg-slate-100 rounded-lg text-sm dark:bg-slate-700/30">
+              <div key={r.id} className="flex flex-wrap items-center gap-2.5 p-3 bg-slate-100 rounded-lg text-sm dark:bg-slate-700/30">
                 <span className="text-green-800 dark:text-green-400">✓</span>
                 <span className="text-slate-900 font-bold dark:text-white">{r.studentName}</span>
                 <span className="text-slate-600 dark:text-slate-400">redeemed</span>
-                <span className="text-green-800 dark:text-green-400">{r.itemName}</span>
+                <span className="text-green-800 font-semibold dark:text-green-400">{r.itemName}</span>
+                <span className="text-xs text-yellow-800 font-semibold dark:text-yellow-400">({r.cost} 🪙)</span>
                 <span className="text-slate-600 ml-auto text-xs dark:text-slate-500">
                   {r.updatedAt?.toDate ? new Date(r.updatedAt.toDate()).toLocaleDateString() : ''}
                 </span>
+                <button
+                  type="button"
+                  onClick={() => { setRejectingRedemption(r); setRejectActionMode('refund'); setRejectReason(''); }}
+                  className="px-2.5 py-1 bg-indigo-100 hover:bg-indigo-200 text-indigo-800 border border-indigo-300 rounded-lg text-xs font-bold transition-colors dark:bg-indigo-500/20 dark:hover:bg-indigo-500/30 dark:text-indigo-300 dark:border-indigo-500/40"
+                  aria-label={`Issue refund for ${r.itemName} to ${r.studentName}`}
+                >
+                  Issue Refund
+                </button>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Cancelled & Rejected History */}
+      {/* Cancelled, Rejected & Refunded History */}
       {cancelledRedemptions.length > 0 && (
         <div className="bg-white p-6 rounded-xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
           <h3 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2 dark:text-white">
-            <X className="w-5 h-5 text-rose-700 dark:text-rose-400" aria-hidden="true" /> Cancelled & Rejected Redemptions ({cancelledRedemptions.length})
+            <X className="w-5 h-5 text-rose-700 dark:text-rose-400" aria-hidden="true" /> Cancelled, Rejected & Refunded ({cancelledRedemptions.length})
           </h3>
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {cancelledRedemptions.map(r => (
@@ -5689,7 +5955,7 @@ function RewardsManager({ classId }) {
                 <span className="text-slate-900 font-bold dark:text-white">{r.studentName}</span>
                 <span className="text-slate-600 dark:text-slate-400">— {r.itemName}</span>
                 <span className="text-[11px] font-bold uppercase px-2 py-0.5 rounded bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-300">
-                  {r.status === 'rejected' ? 'Rejected by Teacher' : 'Student Cancelled (Nevermind)'}
+                  {r.status === 'refunded' ? 'Refunded by Teacher' : r.status === 'rejected' ? 'Rejected by Teacher' : 'Student Cancelled (Nevermind)'}
                 </span>
                 {r.refunded && (
                   <span className="text-xs text-emerald-700 font-semibold dark:text-emerald-400">• {r.cost} 🪙 refunded</span>
@@ -5703,7 +5969,7 @@ function RewardsManager({ classId }) {
         </div>
       )}
 
-      {/* Reject Redemption Confirmation Modal */}
+      {/* Reject / Refund Redemption Confirmation Modal */}
       {rejectingRedemption && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm dark:bg-slate-950/80"
@@ -5718,7 +5984,12 @@ function RewardsManager({ classId }) {
           >
             <div className="flex items-center justify-between">
               <h4 id="reject-redemption-title" className="text-lg font-bold text-slate-900 flex items-center gap-2 dark:text-white">
-                <X className="w-5 h-5 text-rose-600 dark:text-rose-400" /> Reject Reward & Refund Coins
+                <X className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+                {rejectActionMode === 'deny_refund'
+                  ? 'Deny Reward Refund'
+                  : rejectActionMode === 'refund'
+                  ? 'Refund Reward Coins'
+                  : 'Reject Reward & Refund Coins'}
               </h4>
               <button
                 type="button"
@@ -5733,7 +6004,11 @@ function RewardsManager({ classId }) {
 
             <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-sm text-rose-900 dark:bg-rose-950/30 dark:border-rose-500/30 dark:text-rose-200">
               <p className="font-bold">{rejectingRedemption.studentName} — {rejectingRedemption.itemName}</p>
-              <p className="text-xs mt-1">Rejecting will cancel this reward request and automatically refund <strong>{rejectingRedemption.cost} 🪙 coins</strong> back to {rejectingRedemption.studentName}.</p>
+              <p className="text-xs mt-1">
+                {rejectActionMode === 'deny_refund'
+                  ? `Denying keeps this reward fulfilled without refunding ${rejectingRedemption.cost} 🪙 coins.`
+                  : `This will cancel/refund this reward and automatically return ${rejectingRedemption.cost} 🪙 coins to ${rejectingRedemption.studentName}.`}
+              </p>
             </div>
 
             <div>
@@ -5745,7 +6020,7 @@ function RewardsManager({ classId }) {
                 type="text"
                 value={rejectReason}
                 onChange={e => setRejectReason(e.target.value)}
-                placeholder="e.g. Student changed mind, reward unavailable today"
+                placeholder={rejectActionMode === 'deny_refund' ? 'e.g. Reward already used in class' : 'e.g. Student changed mind, reward unavailable today'}
                 maxLength={140}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-900 outline-none focus:border-rose-500 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
               />
@@ -5764,9 +6039,17 @@ function RewardsManager({ classId }) {
                 type="button"
                 disabled={processingReject}
                 onClick={handleConfirmRejectRedemption}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg text-xs min-h-[40px] shadow"
+                className={`px-4 py-2 text-white font-bold rounded-lg text-xs min-h-[40px] shadow ${
+                  rejectActionMode === 'deny_refund' ? 'bg-slate-700 hover:bg-slate-600' : 'bg-rose-600 hover:bg-rose-500'
+                }`}
               >
-                {processingReject ? 'Refunding...' : `Reject & Refund ${rejectingRedemption.cost} 🪙`}
+                {processingReject
+                  ? 'Saving...'
+                  : rejectActionMode === 'deny_refund'
+                  ? 'Deny Refund'
+                  : rejectActionMode === 'refund'
+                  ? `Refund ${rejectingRedemption.cost} 🪙`
+                  : `Reject & Refund ${rejectingRedemption.cost} 🪙`}
               </button>
             </div>
           </div>

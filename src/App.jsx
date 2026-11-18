@@ -1701,7 +1701,7 @@ function TrophyCase({ achievements, learningPaths = [], onClose }) {
 }
 
 // ============== AVATAR BUILDER ==============
-function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onRefundCoins, onEquip, onClose, onSetName, classId, userId }) {
+function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onRefundCoins, onRefundAvatarItem, onEquip, onClose, onSetName, classId, userId }) {
   const [activeTab, setActiveTab] = useState('colors');
   const [editingName, setEditingName] = useState(false);
   const [tempName, setTempName] = useState(gameState.playerName);
@@ -1817,6 +1817,42 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onRefundCoins, onEqu
       alert('Error cancelling reward: ' + error.message);
     } finally {
       setCancellingRedemptionId(null);
+    }
+  };
+
+  const handleRequestHistoryRefund = async (item) => {
+    if (!classId || !item?.id) return;
+    const reasonInput = window.prompt(
+      `Request a ${item.cost} 🪙 coin refund for "${item.itemName}"?\n\nOptional note for your teacher (or leave blank and press OK):`,
+      ''
+    );
+    if (reasonInput === null) return;
+    setCancellingRedemptionId(item.id);
+    try {
+      const res = await backend.cancelOrRejectRedemption(classId, item.id, {
+        action: 'request_refund',
+        cancelledBy: 'student',
+        reason: reasonInput.trim(),
+      });
+      if (res?.alreadyProcessed) {
+        alert('A refund has already been requested or processed for this reward.');
+      } else {
+        alert(`Refund requested for "${item.itemName}"! Your teacher will review it.`);
+      }
+      loadRedeemedHistory();
+    } catch (error) {
+      alert('Error requesting refund: ' + error.message);
+    } finally {
+      setCancellingRedemptionId(null);
+    }
+  };
+
+  const handleRefundAvatarItem = (item) => {
+    if (!onRefundAvatarItem || !item || item.cost <= 0) return;
+    if (!window.confirm(`Refund "${item.name}" and return ${item.cost} 🪙 coins?\n\nThis will remove the item from your avatar inventory.`)) return;
+    const ok = onRefundAvatarItem(item.id, item.cost);
+    if (ok) {
+      alert(`Refunded "${item.name}" for ${item.cost} coins!`);
     }
   };
 
@@ -2019,8 +2055,10 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onRefundCoins, onEqu
                   redeemedHistory.map(item => {
                     const dateStr = formatRedemptionDate(item);
                     const badge = getRedemptionStatusBadge(item.status);
-                    const isPending = !item.status || item.status === 'pending';
-                    const isCancelledOrRejected = item.status === 'cancelled' || item.status === 'rejected';
+                    const isCancelledOrRejected = item.status === 'cancelled' || item.status === 'rejected' || item.status === 'refunded';
+                    const isFulfilled = item.status === 'fulfilled' || item.status === 'refund_denied';
+                    const isRefundRequested = item.status === 'refund_requested';
+                    const isPending = !isCancelledOrRejected && !isFulfilled && !isRefundRequested;
                     return (
                       <div key={item.id} className="bg-slate-100 rounded-xl p-3.5 border border-slate-300 flex flex-col gap-2 dark:bg-slate-700/80 dark:border-slate-600">
                         <div className="flex items-start justify-between gap-2 flex-wrap">
@@ -2052,12 +2090,30 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onRefundCoins, onEqu
                                 {cancellingRedemptionId === item.id ? 'Cancelling...' : 'Nevermind'}
                               </button>
                             )}
+                            {isFulfilled && (
+                              <button
+                                type="button"
+                                onClick={() => handleRequestHistoryRefund(item)}
+                                disabled={cancellingRedemptionId === item.id}
+                                className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-indigo-100 hover:bg-indigo-200 text-indigo-800 border border-indigo-300 transition-colors disabled:opacity-50 dark:bg-indigo-500/20 dark:hover:bg-indigo-500/30 dark:text-indigo-300 dark:border-indigo-500/40"
+                                title="Request a coin refund from your teacher"
+                                aria-label={`Request refund on ${item.itemName} (${item.cost} coins)`}
+                              >
+                                {cancellingRedemptionId === item.id ? 'Sending...' : 'Request Refund'}
+                              </button>
+                            )}
                           </div>
                         </div>
                         {item.directions && isPending && (
                           <div className="bg-white rounded-lg p-2 text-xs border border-slate-300 dark:bg-slate-800/80 dark:border-slate-600/50">
                             <span className="text-yellow-800 font-semibold dark:text-yellow-400">How to claim: </span>
                             <span className="text-slate-700 dark:text-slate-300">{item.directions}</span>
+                          </div>
+                        )}
+                        {isRefundRequested && (
+                          <div className="bg-indigo-50 rounded-lg p-2 text-xs border border-indigo-200 text-indigo-800 dark:bg-indigo-950/30 dark:border-indigo-500/30 dark:text-indigo-200">
+                            <span className="font-semibold">Waiting for teacher review</span>
+                            {item.refundReason ? `: "${item.refundReason}"` : ''}
                           </div>
                         )}
                         {item.rejectionReason && isCancelledOrRejected && (
@@ -2084,43 +2140,57 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onRefundCoins, onEqu
             {items.map(item => {
               const owned = gameState.ownedItems.includes(item.id);
               const equipped = currentAvatarNormalized[slotKey] === item.id;
+              const canRefund = owned && item.cost > 0 && Boolean(onRefundAvatarItem);
 
               return (
-                <button
-                  key={item.id}
-                  onClick={() => owned ? onEquip(slotKey, item.id) : gameState.coins >= item.cost && onBuy(item.id, item.cost)}
-                  onMouseEnter={() => setHoveredItem({ [slotKey]: item.id })}
-                  onMouseLeave={() => setHoveredItem(null)}
-                  disabled={!owned && gameState.coins < item.cost}
-                  className={`p-2.5 rounded-xl border-2 flex flex-col items-center gap-1 transition-all ${
-                    equipped ? 'border-yellow-500 bg-yellow-100 ring-2 ring-yellow-500/30 dark:bg-yellow-500/20' :
-                    owned ? 'border-green-500/60 bg-green-100 dark:bg-green-500/10' :
-                    gameState.coins >= item.cost ? 'border-slate-300 bg-slate-100 hover:border-slate-400 hover:scale-105 dark:border-slate-600 dark:bg-slate-700' :
-                    'border-dashed border-slate-300 bg-slate-50 grayscale dark:border-slate-700 dark:bg-slate-800'
-                  }`}
-                  aria-label={`${item.name}${equipped ? ' (equipped)' : owned ? ' (owned)' : item.cost > 0 ? ` - ${item.cost} coins` : ''}`}
-                >
-                  {/* Preview */}
-                  <div className="flex items-center justify-center" aria-hidden="true">
-                    {activeTab === 'colors' ? (
-                      <AvatarColorSwatch colorId={item.id} size={36} />
-                    ) : (
-                      <AvatarPreviewHead avatar={currentAvatarNormalized} overrides={{ [slotKey]: item.id }} size={44} />
+                <div key={item.id} className="flex flex-col gap-1">
+                  <button
+                    type="button"
+                    onClick={() => owned ? onEquip(slotKey, item.id) : gameState.coins >= item.cost && onBuy(item.id, item.cost)}
+                    onMouseEnter={() => setHoveredItem({ [slotKey]: item.id })}
+                    onMouseLeave={() => setHoveredItem(null)}
+                    disabled={!owned && gameState.coins < item.cost}
+                    className={`p-2.5 rounded-xl border-2 flex flex-col items-center gap-1 transition-all w-full flex-1 ${
+                      equipped ? 'border-yellow-500 bg-yellow-100 ring-2 ring-yellow-500/30 dark:bg-yellow-500/20' :
+                      owned ? 'border-green-500/60 bg-green-100 dark:bg-green-500/10' :
+                      gameState.coins >= item.cost ? 'border-slate-300 bg-slate-100 hover:border-slate-400 hover:scale-105 dark:border-slate-600 dark:bg-slate-700' :
+                      'border-dashed border-slate-300 bg-slate-50 grayscale dark:border-slate-700 dark:bg-slate-800'
+                    }`}
+                    aria-label={`${item.name}${equipped ? ' (equipped)' : owned ? ' (owned)' : item.cost > 0 ? ` - ${item.cost} coins` : ''}`}
+                  >
+                    {/* Preview */}
+                    <div className="flex items-center justify-center" aria-hidden="true">
+                      {activeTab === 'colors' ? (
+                        <AvatarColorSwatch colorId={item.id} size={36} />
+                      ) : (
+                        <AvatarPreviewHead avatar={currentAvatarNormalized} overrides={{ [slotKey]: item.id }} size={44} />
+                      )}
+                    </div>
+                    <p className="text-xs font-bold truncate w-full text-center">{item.name}</p>
+                    {!owned && item.cost > 0 && (
+                      <p className="text-xs text-yellow-800 font-bold flex items-center gap-0.5 dark:text-yellow-400">
+                        <Star className="w-3 h-3 fill-yellow-400" aria-hidden="true" />{item.cost}
+                      </p>
                     )}
-                  </div>
-                  <p className="text-xs font-bold truncate w-full text-center">{item.name}</p>
-                  {!owned && item.cost > 0 && (
-                    <p className="text-xs text-yellow-800 font-bold flex items-center gap-0.5 dark:text-yellow-400">
-                      <Star className="w-3 h-3 fill-yellow-400" aria-hidden="true" />{item.cost}
-                    </p>
+                    {equipped && (
+                      <p className="text-[10px] text-yellow-800 font-bold uppercase bg-yellow-100 px-1.5 rounded dark:text-yellow-400 dark:bg-yellow-400/10">Equipped</p>
+                    )}
+                    {owned && !equipped && (
+                      <p className="text-[10px] text-green-800 font-bold uppercase dark:text-green-400">Owned</p>
+                    )}
+                  </button>
+                  {canRefund && (
+                    <button
+                      type="button"
+                      onClick={() => handleRefundAvatarItem(item)}
+                      className="w-full py-1 px-1.5 rounded-lg text-[10px] font-bold bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 transition-colors dark:bg-rose-500/20 dark:hover:bg-rose-500/30 dark:text-rose-300 dark:border-rose-500/40"
+                      title={`Refund ${item.name} for ${item.cost} coins`}
+                      aria-label={`Refund ${item.name} for ${item.cost} coins`}
+                    >
+                      ↩️ Refund {item.cost} 🪙
+                    </button>
                   )}
-                  {equipped && (
-                    <p className="text-[10px] text-yellow-800 font-bold uppercase bg-yellow-100 px-1.5 rounded dark:text-yellow-400 dark:bg-yellow-400/10">Equipped</p>
-                  )}
-                  {owned && !equipped && (
-                    <p className="text-[10px] text-green-800 font-bold uppercase dark:text-green-400">Owned</p>
-                  )}
-                </button>
+                </div>
               );
             })}
           </div>
@@ -2473,6 +2543,7 @@ function GameContent({ emulatedClassId } = {}) {
     joinGuild,
     openMysteryBox,
     buyAvatarItem,
+    refundAvatarItem,
     equipAvatarItem,
     setPlayerName,
     showLevelUp,
@@ -2907,7 +2978,7 @@ function GameContent({ emulatedClassId } = {}) {
         />
       )}
       {showTrophyCase && <TrophyCase achievements={gameState.unlockedAchievements} learningPaths={learningPaths} onClose={() => setShowTrophyCase(false)} />}
-      {showAvatarBuilder && <AvatarBuilder gameState={gameState} getCurrentLevel={getCurrentLevel} onBuy={buyAvatarItem} onRefundCoins={refundCoins} onEquip={equipAvatarItem} onClose={() => setShowAvatarBuilder(false)} onSetName={setPlayerName} classId={effectiveClassId} userId={user?.id} />}
+      {showAvatarBuilder && <AvatarBuilder gameState={gameState} getCurrentLevel={getCurrentLevel} onBuy={buyAvatarItem} onRefundCoins={refundCoins} onRefundAvatarItem={refundAvatarItem} onEquip={equipAvatarItem} onClose={() => setShowAvatarBuilder(false)} onSetName={setPlayerName} classId={effectiveClassId} userId={user?.id} />}
       {showMySubmissions && (
         <MySubmissions
           submissions={submissions}

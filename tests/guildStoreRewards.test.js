@@ -1,7 +1,14 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
-import { filterAndSortRedemptions, getRedemptionStatusBadge } from '../src/utils/portalUtils.js';
+import {
+  filterAndSortRedemptions,
+  getRedemptionStatusBadge,
+  getStemOrderStatus,
+  getStemOrderBadge,
+  isRecordOwnedByStudent,
+} from '../src/utils/portalUtils.js';
+import { applyAvatarItemRefund, findAvatarShopItem } from '../src/utils/gameUtils.js';
 
 console.log('Testing Guild Store & Teacher Rewards Integration...');
 
@@ -147,14 +154,15 @@ const firestoreRulesSrc = fs.readFileSync(path.resolve('./firestore.rules'), 'ut
 const firestoreRulesNorm = firestoreRulesSrc.replace(/\s+/g, ' ');
 assert(
   firestoreRulesSrc.includes('match /stem_purchases/{purchaseId}') &&
-  firestoreRulesSrc.includes('allow update, delete: if isAuthenticated();'),
-  'firestore.rules must allow authenticated teachers & admins to update and delete stem_purchases'
+  firestoreRulesSrc.includes('allow update: if isAuthenticated() || isValidStudentStemAction();') &&
+  firestoreRulesSrc.includes('allow delete: if isAuthenticated();'),
+  'firestore.rules must allow authenticated teachers & admins to update/delete stem_purchases and students to cancel pending or request refunds'
 );
 assert(
   firestoreRulesNorm.includes('match /classes/{classId}/redemptions/{redemptionId}') &&
-  firestoreRulesNorm.includes('allow update: if (isAuthenticated() && isTeacherOfClass(classId)) || isValidStudentRedemptionCancellation();') &&
+  firestoreRulesNorm.includes('allow update: if (isAuthenticated() && isTeacherOfClass(classId)) || isValidStudentRedemptionCancellation() || isValidStudentRedemptionRefundRequest();') &&
   firestoreRulesNorm.includes('allow delete: if isAuthenticated() && isTeacherOfClass(classId);'),
-  'firestore.rules must allow teachers to update/delete and students to strictly cancel pending redemptions'
+  'firestore.rules must allow teachers to update/delete and students to cancel pending or request refunds on fulfilled redemptions'
 );
 assert(
   firestoreRulesSrc.includes('isValidStudentRedemptionCancellation()') &&
@@ -211,6 +219,77 @@ console.log('✔ Test 13: Cancelled and rejected redemption status badges verifi
   assert(appSrc.includes('Nevermind') && appSrc.includes('handleCancelHistoryRedemption'), 'App.jsx AvatarBuilder history must expose Nevermind button');
   assert(teacherPortalSrc.includes('Reject & Refund') && teacherPortalSrc.includes('handleConfirmRejectRedemption'), 'TeacherPortal.jsx RewardsManager must expose Reject & Refund button and modal');
   console.log('✔ Test 15: Nevermind and Reject & Refund UI wiring verified across all components');
+}
+
+// Test 16: STEM Order Status & Badge Helpers + Ownership Check
+{
+  assert.strictEqual(getStemOrderStatus({ fulfilled: false }), 'pending');
+  assert.strictEqual(getStemOrderStatus({ fulfilled: true }), 'delivered');
+  assert.strictEqual(getStemOrderStatus({ fulfilled: true, status: 'refund_requested' }), 'refund_requested');
+  assert.strictEqual(getStemOrderStatus({ fulfilled: true, status: 'refunded', refunded: true }), 'refunded');
+  assert.strictEqual(getStemOrderStatus({ fulfilled: false, status: 'cancelled', refunded: true }), 'cancelled');
+  assert.strictEqual(getStemOrderBadge({ fulfilled: false }).label, 'Order Placed');
+  assert.strictEqual(getStemOrderBadge({ fulfilled: true }).label, 'Delivered');
+  assert.strictEqual(getStemOrderBadge({ fulfilled: true, status: 'refund_requested' }).label, 'Refund Requested');
+  assert.strictEqual(getStemOrderBadge({ fulfilled: true, status: 'refunded', refunded: true }).label, 'Refunded');
+
+  assert.strictEqual(isRecordOwnedByStudent({ studentId: 's1', studentName: 'Demo' }, 's1', 'Demo'), true);
+  assert.strictEqual(isRecordOwnedByStudent({ studentId: 's2', studentName: 'Other' }, 's1', 'Demo'), false);
+  assert.strictEqual(isRecordOwnedByStudent({ studentName: 'Demo' }, '', 'demo'), true);
+  console.log('✔ Test 16: STEM order lifecycle status, badges, and ownership guards verified');
+}
+
+// Test 17: Redemption Refund Request & Refunded Status Badges
+{
+  const reqBadge = getRedemptionStatusBadge('refund_requested');
+  const refBadge = getRedemptionStatusBadge('refunded');
+  assert(reqBadge.label.includes('Refund Requested'), 'refund_requested badge must display Refund Requested');
+  assert(refBadge.label.includes('Refunded'), 'refunded badge must display Refunded');
+  console.log('✔ Test 17: Redemption refund_requested and refunded badges verified');
+}
+
+// Test 18: Avatar Shop Item Refund Logic (applyAvatarItemRefund & findAvatarShopItem)
+{
+  const crownMeta = findAvatarShopItem('crown');
+  assert(crownMeta && crownMeta.item.cost === 150, 'crown should cost 150 coins in AVATAR_ITEMS');
+
+  const initialState = {
+    coins: 70,
+    ownedItems: ['default', 'none', 'happy', 'crown', 'cool'],
+    avatar: { color: 'default', hat: 'crown', accessory: 'none', face: 'cool' },
+  };
+
+  // Refund equipped Royal Crown (150 coins) -> removes from ownedItems, unequips to 'none', coins 70 -> 220
+  const crownRefund = applyAvatarItemRefund(initialState, 'crown');
+  assert.strictEqual(crownRefund.refunded, true);
+  assert.strictEqual(crownRefund.refundAmount, 150);
+  assert.strictEqual(crownRefund.nextState.coins, 220);
+  assert.strictEqual(crownRefund.nextState.avatar.hat, 'none', 'Refunding equipped hat must reset slot to none');
+  assert(!crownRefund.nextState.ownedItems.includes('crown'), 'Refunded item must be removed from ownedItems');
+
+  // Cannot double-refund an already refunded item or free defaults
+  const dupRefund = applyAvatarItemRefund(crownRefund.nextState, 'crown');
+  assert.strictEqual(dupRefund.refunded, false);
+  assert.strictEqual(dupRefund.nextState.coins, 220);
+
+  const defaultRefund = applyAvatarItemRefund(crownRefund.nextState, 'default');
+  assert.strictEqual(defaultRefund.refunded, false);
+  console.log('✔ Test 18: Avatar shop item refund unequips slot cleanly and credits coins without double-refunds');
+}
+
+// Test 19: Universal Refund UI Wiring (STEM Orders, Fulfilled Rewards, Avatar Items, Teacher Inspector)
+{
+  const teacherPortalSrc = fs.readFileSync(path.resolve('./src/components/TeacherPortal.jsx'), 'utf8');
+  const rosterManagerSrc = fs.readFileSync(path.resolve('./src/components/RosterManager.jsx'), 'utf8');
+  const useGameStateSrc = fs.readFileSync(path.resolve('./src/hooks/useGameState.js'), 'utf8');
+
+  assert(realBackendSrc.includes('async cancelOrRefundStemPurchase('), 'realBackend.js must implement cancelOrRefundStemPurchase');
+  assert(realBackendSrc.includes("action === 'request_refund'"), 'realBackend.js must support student refund requests');
+  assert(guildPanelSrc.includes('handleStemOrderAction') && guildPanelSrc.includes('Request Refund'), 'GuildPanel.jsx must allow STEM cancel/refund requests and fulfilled reward refund requests');
+  assert(teacherPortalSrc.includes('handleConfirmStemRefundAction') && teacherPortalSrc.includes('Issue Refund'), 'TeacherPortal.jsx must allow teachers to issue or approve refunds on STEM orders and fulfilled rewards');
+  assert(appSrc.includes('handleRefundAvatarItem') && useGameStateSrc.includes('refundAvatarItem'), 'App.jsx & useGameState.js must support student Avatar item coin refunds');
+  assert(rosterManagerSrc.includes('findAvatarShopItem') && rosterManagerSrc.includes('handleRemoveOwnedItem(itemId, true)'), 'RosterManager.jsx must let teachers refund paid Avatar items');
+  console.log('✔ Test 19: Universal refund wiring verified across Guild Store STEM orders, Custom Rewards, Avatar Shop, and Teacher Inspector');
 }
 
 console.log('\n✔ All Guild Store & Teacher Rewards tests passed successfully!\n');

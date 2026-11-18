@@ -383,6 +383,18 @@ export function getRedemptionStatusBadge(status) {
       className: 'bg-green-100 text-green-800 border border-green-500/40 dark:bg-green-500/20 dark:text-green-400'
     };
   }
+  if (status === 'refund_requested') {
+    return {
+      label: '↩ Refund Requested',
+      className: 'bg-indigo-100 text-indigo-800 border border-indigo-500/40 dark:bg-indigo-500/20 dark:text-indigo-300'
+    };
+  }
+  if (status === 'refunded') {
+    return {
+      label: '↩ Refunded',
+      className: 'bg-emerald-100 text-emerald-800 border border-emerald-500/40 dark:bg-emerald-500/20 dark:text-emerald-300'
+    };
+  }
   if (status === 'cancelled') {
     return {
       label: '✕ Cancelled',
@@ -399,6 +411,95 @@ export function getRedemptionStatusBadge(status) {
     label: '⏳ Waiting for Teacher',
     className: 'bg-yellow-100 text-yellow-800 border border-yellow-500/40 dark:bg-yellow-500/20 dark:text-yellow-300'
   };
+}
+
+/**
+ * Derives the canonical lifecycle status for a Guild STEM purchase record.
+ *
+ * @param {Object} purchase - STEM purchase document
+ * @returns {'pending'|'delivered'|'refund_requested'|'refund_denied'|'refunded'|'rejected'|'cancelled'}
+ */
+export function getStemOrderStatus(purchase) {
+  if (!purchase) return 'pending';
+  const s = purchase.status;
+  if (s === 'cancelled' || s === 'rejected' || s === 'refunded' || s === 'refund_requested' || s === 'refund_denied') {
+    return s;
+  }
+  if (purchase.refunded === true) return 'refunded';
+  return purchase.fulfilled ? 'delivered' : 'pending';
+}
+
+/**
+ * Maps a STEM purchase lifecycle status to an accessible UI badge descriptor.
+ *
+ * @param {Object} purchase
+ * @returns {{ status: string, label: string, className: string }}
+ */
+export function getStemOrderBadge(purchase) {
+  const status = getStemOrderStatus(purchase);
+  switch (status) {
+    case 'delivered':
+      return {
+        status,
+        label: 'Delivered',
+        className: 'bg-emerald-100 text-emerald-800 border border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-300'
+      };
+    case 'refund_requested':
+      return {
+        status,
+        label: 'Refund Requested',
+        className: 'bg-indigo-100 text-indigo-800 border border-indigo-500/40 dark:bg-indigo-500/20 dark:text-indigo-300'
+      };
+    case 'refund_denied':
+      return {
+        status,
+        label: 'Delivered (Refund Denied)',
+        className: 'bg-amber-100 text-amber-800 border border-amber-500/40 dark:bg-amber-500/20 dark:text-amber-300'
+      };
+    case 'refunded':
+      return {
+        status,
+        label: 'Refunded',
+        className: 'bg-emerald-100 text-emerald-800 border border-emerald-500/40 dark:bg-emerald-500/20 dark:text-emerald-300'
+      };
+    case 'rejected':
+      return {
+        status,
+        label: 'Rejected & Refunded',
+        className: 'bg-rose-100 text-rose-800 border border-rose-500/40 dark:bg-rose-500/20 dark:text-rose-300'
+      };
+    case 'cancelled':
+      return {
+        status,
+        label: 'Cancelled & Refunded',
+        className: 'bg-rose-100 text-rose-800 border border-rose-500/40 dark:bg-rose-500/20 dark:text-rose-300'
+      };
+    default:
+      return {
+        status: 'pending',
+        label: 'Order Placed',
+        className: 'bg-amber-100 text-amber-800 border border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-300'
+      };
+  }
+}
+
+/**
+ * Checks whether a purchase/redemption record belongs to the given student.
+ *
+ * @param {Object} record
+ * @param {string} [studentId]
+ * @param {string} [studentName]
+ * @returns {boolean}
+ */
+export function isRecordOwnedByStudent(record, studentId, studentName) {
+  if (!record) return false;
+  if (studentId && record.studentId && record.studentId === studentId) return true;
+  const normalizedName = (studentName || '').trim().toLowerCase();
+  if (normalizedName && record.studentName && record.studentName.trim().toLowerCase() === normalizedName) {
+    // Only fall back to name if record lacks studentId or studentId isn't provided
+    return !record.studentId || !studentId;
+  }
+  return false;
 }
 
 /**

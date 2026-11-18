@@ -49,11 +49,14 @@ service cloud.firestore {
     //   - itemName: string (required, 1..200 chars, immutable)
     //   - cost: number (required, >= 0 and <= 1000000, immutable)
     //   - directions: string|null (optional, <= 1000 chars, immutable)
-    //   - status: string (required: 'pending' on create; 'fulfilled', 'rejected', or 'cancelled' on update)
+    //   - status: string (required: 'pending' on create; 'fulfilled', 'rejected', 'cancelled', 'refund_requested', or 'refund_denied' on update)
     //   - redeemedAt: timestamp (optional/serverTimestamp, immutable)
     //   - cancelledAt: string|timestamp (optional, set on cancel/reject)
     //   - cancelledBy: string (optional: 'student' or 'teacher')
     //   - refunded: bool (optional, true when refunded)
+    //   - refundRequestedBy: string (optional: 'student')
+    //   - refundRequestedAt: string|timestamp (optional, set on student refund request)
+    //   - refundReason: string (optional, <= 200 chars)
     //   - rejectionReason: string (optional, teacher-only)
     //   - updatedAt: timestamp (optional/serverTimestamp)
     function isValidRedemptionCreate() {
@@ -83,6 +86,72 @@ service cloud.firestore {
                request.resource.data.cancelledAt is timestamp ||
                (request.resource.data.cancelledAt is string && request.resource.data.cancelledAt.size() <= 64)) &&
              (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp);
+    }
+
+    function isValidStudentRefundRequestUpdate() {
+      return request.resource.data.status == 'refund_requested' &&
+             (!('refunded' in request.resource.data) || request.resource.data.refunded == false) &&
+             request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+               'status', 'refundRequestedBy', 'refundRequestedAt', 'refundReason', 'updatedAt'
+             ]) &&
+             (!('refundRequestedBy' in request.resource.data) || request.resource.data.refundRequestedBy == 'student') &&
+             (!('refundReason' in request.resource.data) ||
+               (request.resource.data.refundReason is string && request.resource.data.refundReason.size() <= 200)) &&
+             (!('refundRequestedAt' in request.resource.data) ||
+               request.resource.data.refundRequestedAt is timestamp ||
+               (request.resource.data.refundRequestedAt is string && request.resource.data.refundRequestedAt.size() <= 64)) &&
+             (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp);
+    }
+
+    function isValidStudentRedemptionRefundRequest() {
+      return (resource.data.get('status', '') == 'fulfilled' ||
+              resource.data.get('status', '') == 'refund_denied') &&
+             (!('refunded' in resource.data) || resource.data.refunded != true) &&
+             request.resource.data.get('studentId', null) == resource.data.get('studentId', null) &&
+             request.resource.data.get('studentName', null) == resource.data.get('studentName', null) &&
+             request.resource.data.get('itemName', null) == resource.data.get('itemName', null) &&
+             request.resource.data.get('cost', null) == resource.data.get('cost', null) &&
+             request.resource.data.get('rewardId', null) == resource.data.get('rewardId', null) &&
+             request.resource.data.get('redeemedAt', null) == resource.data.get('redeemedAt', null) &&
+             isValidStudentRefundRequestUpdate();
+    }
+
+    // Assumed Data Model for student update transitions on /stem_purchases/{purchaseId}:
+    //   - fulfilled: bool (false for pending cancel; true for delivered refund request)
+    //   - status: string ('pending', 'fulfilled', 'delivered', 'refund_denied', 'cancelled', 'refund_requested', 'deleted')
+    //   - refunded: bool (true on cancel; false/absent on refund_requested)
+    //   - cancelledBy / refundRequestedBy: string ('student')
+    //   - cancelledAt / refundRequestedAt: string (<= 64 chars) | timestamp
+    //   - refundReason: string (<= 200 chars)
+    //   - updatedAt: timestamp
+    function isValidStudentStemCancellation() {
+      return resource.data.get('deleted', false) != true &&
+             resource.data.get('fulfilled', false) == false &&
+             (!('status' in resource.data) || resource.data.status == 'pending') &&
+             (!('refunded' in resource.data) || resource.data.refunded != true) &&
+             request.resource.data.status == 'cancelled' &&
+             request.resource.data.refunded == true &&
+             (!('cancelledBy' in request.resource.data) || request.resource.data.cancelledBy == 'student') &&
+             request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+               'status', 'cancelledBy', 'refunded', 'cancelledAt', 'updatedAt'
+             ]) &&
+             (!('cancelledAt' in request.resource.data) ||
+               request.resource.data.cancelledAt is timestamp ||
+               (request.resource.data.cancelledAt is string && request.resource.data.cancelledAt.size() <= 64)) &&
+             (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp);
+    }
+
+    function isValidStudentStemRefundRequest() {
+      return resource.data.get('deleted', false) != true &&
+             resource.data.get('fulfilled', false) == true &&
+             (!('status' in resource.data) ||
+              resource.data.status in ['fulfilled', 'delivered', 'pending', 'refund_denied']) &&
+             (!('refunded' in resource.data) || resource.data.refunded != true) &&
+             isValidStudentRefundRequestUpdate();
+    }
+
+    function isValidStudentStemAction() {
+      return isValidStudentStemCancellation() || isValidStudentStemRefundRequest();
     }
 
     // =========================================================
@@ -155,7 +224,8 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isValidRedemptionCreate(); // Students (unauthenticated) can redeem pending rewards
       allow update: if (isAuthenticated() && isTeacherOfClass(classId)) ||
-                       isValidStudentRedemptionCancellation();
+                       isValidStudentRedemptionCancellation() ||
+                       isValidStudentRedemptionRefundRequest();
       allow delete: if isAuthenticated() && isTeacherOfClass(classId);
     }
 
@@ -170,7 +240,8 @@ service cloud.firestore {
     match /stem_purchases/{purchaseId} {
       allow read: if true;
       allow create: if true; // Students purchase items
-      allow update, delete: if isAuthenticated(); // Teachers and admins fulfill or remove purchases
+      allow update: if isAuthenticated() || isValidStudentStemAction();
+      allow delete: if isAuthenticated(); // Teachers and admins fulfill or remove purchases
     }
 
     // ACTIVITY LIBRARY

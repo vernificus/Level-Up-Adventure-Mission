@@ -1,4 +1,4 @@
-import { LEVELS, LEARNING_PATHS as DEFAULT_PATHS, PATH_COLORS } from '../data/gameData.js';
+import { LEVELS, LEARNING_PATHS as DEFAULT_PATHS, PATH_COLORS, AVATAR_ITEMS } from '../data/gameData.js';
 
 /**
  * Returns canonical initial game state for a student player.
@@ -523,6 +523,8 @@ export function mergeServerStudentIntoLocal(prev, freshStudent, lastSeenServer =
     'xp',
     'guildXpContributed',
     'coins',
+    'ownedItems',
+    'avatar',
     'completedBossChallenges',
     'totalActivitiesCompleted',
     'pendingMysteryBoxes',
@@ -545,6 +547,84 @@ export function mergeServerStudentIntoLocal(prev, freshStudent, lastSeenServer =
   return {
     ...prev,
     ...updates,
+  };
+}
+
+const AVATAR_CATEGORY_META = {
+  colors: { slot: 'color', defaultId: 'default' },
+  hats: { slot: 'hat', defaultId: 'none' },
+  accessories: { slot: 'accessory', defaultId: 'none' },
+  faces: { slot: 'face', defaultId: 'happy' },
+};
+
+/**
+ * Looks up an avatar shop item by ID across all categories.
+ *
+ * @param {string} itemId
+ * @returns {{ item: Object, category: string, slot: string, defaultId: string } | null}
+ */
+export function findAvatarShopItem(itemId) {
+  if (!itemId) return null;
+  for (const [category, list] of Object.entries(AVATAR_ITEMS || {})) {
+    const found = (list || []).find(i => i.id === itemId);
+    if (found) {
+      const meta = AVATAR_CATEGORY_META[category] || { slot: category.slice(0, -1), defaultId: 'none' };
+      return { item: found, category, slot: meta.slot, defaultId: meta.defaultId };
+    }
+  }
+  return null;
+}
+
+/**
+ * Pure helper to refund a coin-purchased avatar item from student state.
+ * Removes the item from ownedItems, resets any equipped slot using it back to default,
+ * and adds its coin cost back to coins.
+ *
+ * @param {Object} prevState - Student state { coins, ownedItems, avatar }
+ * @param {string} itemId - ID of the avatar item to refund
+ * @param {number|null} [overrideCost] - Optional explicit coin cost
+ * @returns {{ nextState: Object, refunded: boolean, refundAmount: number, itemName: string }}
+ */
+export function applyAvatarItemRefund(prevState, itemId, overrideCost = null) {
+  if (!prevState || !itemId) {
+    return { nextState: prevState, refunded: false, refundAmount: 0, itemName: '' };
+  }
+  const defaults = ['default', 'none', 'happy'];
+  if (defaults.includes(itemId)) {
+    return { nextState: prevState, refunded: false, refundAmount: 0, itemName: '' };
+  }
+
+  const ownedItems = Array.isArray(prevState.ownedItems) ? prevState.ownedItems : defaults;
+  if (!ownedItems.includes(itemId)) {
+    return { nextState: prevState, refunded: false, refundAmount: 0, itemName: '' };
+  }
+
+  const meta = findAvatarShopItem(itemId);
+  const refundAmount = Math.max(0, Number(overrideCost !== null ? overrideCost : meta?.item?.cost) || 0);
+  if (refundAmount <= 0) {
+    return { nextState: prevState, refunded: false, refundAmount: 0, itemName: meta?.item?.name || itemId };
+  }
+
+  const nextOwned = ownedItems.filter(id => id !== itemId);
+  const currentAvatar = prevState.avatar || { color: 'default', hat: 'none', accessory: 'none', face: 'happy' };
+  const nextAvatar = { ...currentAvatar };
+
+  if (nextAvatar.color === itemId) nextAvatar.color = 'default';
+  if (nextAvatar.hat === itemId) nextAvatar.hat = 'none';
+  if (nextAvatar.accessory === itemId) nextAvatar.accessory = 'none';
+  if (nextAvatar.accessorie === itemId) delete nextAvatar.accessorie;
+  if (nextAvatar.face === itemId) nextAvatar.face = 'happy';
+
+  return {
+    nextState: {
+      ...prevState,
+      coins: (prevState.coins || 0) + refundAmount,
+      ownedItems: nextOwned,
+      avatar: nextAvatar,
+    },
+    refunded: true,
+    refundAmount,
+    itemName: meta?.item?.name || itemId,
   };
 }
 

@@ -14,7 +14,8 @@ import {
   getDefaultGameState,
   areValuesEqual,
   isSubmissionAfterReset,
-  mergeServerStudentIntoLocal
+  mergeServerStudentIntoLocal,
+  applyAvatarItemRefund
 } from '../utils/gameUtils.js';
 
 export const getDefaultState = () => ({
@@ -774,6 +775,16 @@ export function useGameState(overrideClassId) {
     });
   }, []);
 
+  const refundAvatarItem = useCallback((itemId, overrideCost = null) => {
+    let refundedResult = false;
+    setGameState(prev => {
+      const { nextState, refunded } = applyAvatarItemRefund(prev, itemId, overrideCost);
+      refundedResult = refunded;
+      return nextState;
+    });
+    return refundedResult;
+  }, []);
+
   const equipAvatarItem = useCallback((category, itemId) => {
       setGameState(prev => ({ ...prev, avatar: { ...prev.avatar, [category]: itemId } }));
   }, []);
@@ -883,6 +894,7 @@ export function useGameState(overrideClassId) {
     joinGuild,
     openMysteryBox,
     buyAvatarItem,
+    refundAvatarItem,
     equipAvatarItem,
     setPlayerName,
 

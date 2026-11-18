@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { realBackend as backend } from '../services/realBackend';
 import { UserPlus, Lock, Trash2, Save, Edit, X, Check, RotateCcw, Gift, Star, Zap, Trophy, Eye, EyeOff, Sparkles, User, ShieldCheck, FileText, Shield, Search, ArrowRightLeft, AlertTriangle } from 'lucide-react';
 import { ACHIEVEMENTS, LEVELS, AVATAR_ITEMS, GUILDS } from '../data/gameData';
-import { findAvatarShopItem } from '../utils/gameUtils';
+import { findAvatarShopItem, getLevelForXp } from '../utils/gameUtils';
 import { parseRosterLines } from '../utils/textUtils';
 import Avatar3D, { AvatarColorSwatch } from './Avatar3D';
 import StudentSubmissionsModal from './StudentSubmissionsModal';
@@ -567,7 +567,7 @@ export default function RosterManager({
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex items-center gap-3">
                         {(() => {
-                          const studentLevel = LEVELS.reduce((acc, l) => (student.xp || 0) >= l.xpRequired ? l : acc, LEVELS[0]);
+                          const studentLevel = getLevelForXp(student.xp || 0, LEVELS);
                           return (
                             <button
                               type="button"
@@ -643,7 +643,7 @@ export default function RosterManager({
                        </div>
                        <div>
                          <span className="text-slate-600 text-xs uppercase font-bold block dark:text-slate-400">Level</span>
-                         <p className="font-mono text-blue-700 font-bold dark:text-blue-400">{Math.floor((student.xp || 0)/500)+1}</p>
+                         <p className="font-mono text-blue-700 font-bold dark:text-blue-400">{getLevelForXp(student.xp || 0, LEVELS).level}</p>
                        </div>
                        <button
                          type="button"
@@ -897,7 +897,7 @@ export default function RosterManager({
               <div className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-2xl border border-slate-200 dark:bg-slate-900/60 dark:border-slate-700">
                 <Avatar3D
                   avatar={inspectAvatar}
-                  level={LEVELS.reduce((acc, l) => (inspectStudent.xp || 0) >= l.xpRequired ? l : acc, LEVELS[0]).level}
+                  level={getLevelForXp(inspectStudent.xp || 0, LEVELS).level}
                   size="lg"
                   animate={true}
                 />

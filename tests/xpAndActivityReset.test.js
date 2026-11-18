@@ -7,6 +7,7 @@ import {
   getActiveCycleSubmissions,
   mergeServerStudentIntoLocal,
   calculateRewardState,
+  getLevelForXp,
 } from '../src/utils/gameUtils.js';
 
 console.log('Testing XP Awarding Reliability & Teacher Activity Reset...');
@@ -205,6 +206,19 @@ console.log('Testing XP Awarding Reliability & Teacher Activity Reset...');
   assert(realBackendSrc.includes('xpSyncFailed'), 'realBackend must flag xpSyncFailed if student update fails during reviewSubmission');
 
   console.log('✔ Test 6: Production wiring verified across useGameState.js, App.jsx, and realBackend.js');
+}
+
+// ---------------------------------------------------------------------------
+// 7. Teacher Roster & Student Level Parity
+// ---------------------------------------------------------------------------
+{
+  const rosterSrc = fs.readFileSync(path.resolve('./src/components/RosterManager.jsx'), 'utf8');
+  assert(!rosterSrc.includes('/500)+1') && !rosterSrc.includes('/ 500) + 1'), 'RosterManager must not use hardcoded 500 XP linear formula');
+  assert(rosterSrc.includes('getLevelForXp(student.xp || 0, LEVELS).level'), 'RosterManager card must use canonical getLevelForXp');
+  assert.strictEqual(getLevelForXp(6000).level, 9, '6,000 XP maps to Level 9 in canonical LEVELS curve');
+  assert.strictEqual(getLevelForXp(6499).level, 9, '6,499 XP remains Level 9 until 6,500 XP threshold');
+  assert.strictEqual(getLevelForXp(6500).level, 10, '6,500 XP advances to Level 10');
+  console.log('✔ Test 7: Teacher RosterManager and student view use identical LEVELS progression');
 }
 
 console.log('\n✔ All XP Awarding & Activity Reset tests passed successfully!\n');

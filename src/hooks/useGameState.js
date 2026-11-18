@@ -583,6 +583,7 @@ export function useGameState(overrideClassId) {
               const syncedSnapshot = { ...(lastSyncedStateRef.current || {}) };
               const serverKeysToAdopt = [
                 'guild', 'xp', 'guildXpContributed', 'coins',
+                'ownedItems', 'avatar',
                 'unlockedAchievements', 'claimedGuildChallenges',
                 'lastActivityReset', 'completedActivities', 'completedBossChallenges',
                 'totalActivitiesCompleted', 'pendingMysteryBoxes', 'doubleXpActive'

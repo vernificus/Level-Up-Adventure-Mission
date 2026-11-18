@@ -52,7 +52,10 @@ function PlayerStats({
 }) {
   const currentLevel = getCurrentLevel();
   const nextLevelXp = getNextLevelXp();
-  const progress = ((gameState.xp - currentLevel.xpRequired) / (nextLevelXp - currentLevel.xpRequired)) * 100;
+  const levelSpan = nextLevelXp - currentLevel.xpRequired;
+  const progress = levelSpan > 0
+    ? ((gameState.xp - currentLevel.xpRequired) / levelSpan) * 100
+    : 100;
   const { logout } = useAuth();
 
   return (

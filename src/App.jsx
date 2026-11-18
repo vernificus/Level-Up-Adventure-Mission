@@ -1701,7 +1701,7 @@ function TrophyCase({ achievements, learningPaths = [], onClose }) {
 }
 
 // ============== AVATAR BUILDER ==============
-function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, onSetName, classId, userId }) {
+function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onRefundCoins, onEquip, onClose, onSetName, classId, userId }) {
   const [activeTab, setActiveTab] = useState('colors');
   const [editingName, setEditingName] = useState(false);
   const [tempName, setTempName] = useState(gameState.playerName);
@@ -1712,6 +1712,7 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
   const [rewardSubTab, setRewardSubTab] = useState('available');
   const [redeemedHistory, setRedeemedHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [cancellingRedemptionId, setCancellingRedemptionId] = useState(null);
   const currentLevel = getCurrentLevel ? getCurrentLevel() : { level: 1 };
 
   const loadRedeemedHistory = useCallback(async () => {
@@ -1791,6 +1792,31 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
       alert('Reward redeemed! Your teacher will be notified. Follow the directions to claim your reward.');
     } catch (error) {
       alert('Error redeeming reward: ' + error.message);
+    }
+  };
+
+  const handleCancelHistoryRedemption = async (item) => {
+    if (!classId || !item?.id) return;
+    if (!window.confirm(`Change your mind on "${item.itemName}"?\n\nYour ${item.cost} 🪙 coins will be refunded.`)) return;
+    setCancellingRedemptionId(item.id);
+    try {
+      const res = await backend.cancelOrRejectRedemption(classId, item.id, {
+        status: 'cancelled',
+        cancelledBy: 'student',
+      });
+      if (res?.alreadyProcessed) {
+        alert('This reward request has already been processed by your teacher.');
+      } else {
+        if (onRefundCoins) {
+          onRefundCoins(item.cost, res?.newCoins);
+        }
+        alert(`Cancelled "${item.itemName}" and refunded ${item.cost} coins!`);
+      }
+      loadRedeemedHistory();
+    } catch (error) {
+      alert('Error cancelling reward: ' + error.message);
+    } finally {
+      setCancellingRedemptionId(null);
     }
   };
 
@@ -1993,24 +2019,50 @@ function AvatarBuilder({ gameState, getCurrentLevel, onBuy, onEquip, onClose, on
                   redeemedHistory.map(item => {
                     const dateStr = formatRedemptionDate(item);
                     const badge = getRedemptionStatusBadge(item.status);
+                    const isPending = !item.status || item.status === 'pending';
+                    const isCancelledOrRejected = item.status === 'cancelled' || item.status === 'rejected';
                     return (
                       <div key={item.id} className="bg-slate-100 rounded-xl p-3.5 border border-slate-300 flex flex-col gap-2 dark:bg-slate-700/80 dark:border-slate-600">
-                        <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start justify-between gap-2 flex-wrap">
                           <div className="flex items-center gap-2">
                             <span className="text-xl">🎁</span>
                             <div>
                               <p className="font-bold text-slate-900 text-sm dark:text-white">{item.itemName}</p>
-                              <p className="text-xs text-slate-600 dark:text-slate-400">Redeemed: {dateStr} • {item.cost} coins</p>
+                              <p className="text-xs text-slate-600 dark:text-slate-400">
+                                Redeemed: {dateStr} • {item.cost} coins
+                                {isCancelledOrRejected && item.refunded && (
+                                  <span className="text-emerald-700 font-semibold dark:text-emerald-400"> • Refunded</span>
+                                )}
+                              </p>
                             </div>
                           </div>
-                          <span className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider ${badge.className}`}>
-                            {badge.label}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider ${badge.className}`}>
+                              {badge.label}
+                            </span>
+                            {isPending && (
+                              <button
+                                type="button"
+                                onClick={() => handleCancelHistoryRedemption(item)}
+                                disabled={cancellingRedemptionId === item.id}
+                                className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 transition-colors disabled:opacity-50 dark:bg-rose-500/20 dark:hover:bg-rose-500/30 dark:text-rose-300 dark:border-rose-500/40"
+                                title="Change your mind and get coins refunded"
+                                aria-label={`Nevermind on ${item.itemName}, refund ${item.cost} coins`}
+                              >
+                                {cancellingRedemptionId === item.id ? 'Cancelling...' : 'Nevermind'}
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        {item.directions && (
+                        {item.directions && isPending && (
                           <div className="bg-white rounded-lg p-2 text-xs border border-slate-300 dark:bg-slate-800/80 dark:border-slate-600/50">
                             <span className="text-yellow-800 font-semibold dark:text-yellow-400">How to claim: </span>
                             <span className="text-slate-700 dark:text-slate-300">{item.directions}</span>
+                          </div>
+                        )}
+                        {item.rejectionReason && isCancelledOrRejected && (
+                          <div className="bg-rose-50 rounded-lg p-2 text-xs border border-rose-200 text-rose-800 dark:bg-rose-950/30 dark:border-rose-500/30 dark:text-rose-200">
+                            <span className="font-semibold">Teacher note: </span>{item.rejectionReason}
                           </div>
                         )}
                       </div>
@@ -2410,6 +2462,7 @@ function GameContent({ emulatedClassId } = {}) {
     highFiveLimit,
     allowStudentGuildSelect,
     spendCoins,
+    refundCoins,
     recordHighFive,
     claimGuildChallenge,
     getCurrentLevel,
@@ -2678,6 +2731,7 @@ function GameContent({ emulatedClassId } = {}) {
           onClaimGuildChallenge={claimGuildChallenge}
           guilds={classGuilds}
           spendCoins={spendCoins}
+          refundCoins={refundCoins}
           highFiveLimit={highFiveLimit}
           allowStudentGuildSelect={allowStudentGuildSelect}
         />
@@ -2853,7 +2907,7 @@ function GameContent({ emulatedClassId } = {}) {
         />
       )}
       {showTrophyCase && <TrophyCase achievements={gameState.unlockedAchievements} learningPaths={learningPaths} onClose={() => setShowTrophyCase(false)} />}
-      {showAvatarBuilder && <AvatarBuilder gameState={gameState} getCurrentLevel={getCurrentLevel} onBuy={buyAvatarItem} onEquip={equipAvatarItem} onClose={() => setShowAvatarBuilder(false)} onSetName={setPlayerName} classId={effectiveClassId} userId={user?.id} />}
+      {showAvatarBuilder && <AvatarBuilder gameState={gameState} getCurrentLevel={getCurrentLevel} onBuy={buyAvatarItem} onRefundCoins={refundCoins} onEquip={equipAvatarItem} onClose={() => setShowAvatarBuilder(false)} onSetName={setPlayerName} classId={effectiveClassId} userId={user?.id} />}
       {showMySubmissions && (
         <MySubmissions
           submissions={submissions}

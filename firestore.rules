@@ -42,6 +42,49 @@ service cloud.firestore {
       return isAdmin() || isClassTeacherOrCoTeacher(classId);
     }
 
+    // Assumed Data Model for /classes/{classId}/redemptions/{redemptionId}:
+    //   - rewardId: string (required, 1..128 chars, immutable)
+    //   - studentId: string|null (optional, <= 128 chars, immutable)
+    //   - studentName: string|null (optional, <= 128 chars, immutable)
+    //   - itemName: string (required, 1..200 chars, immutable)
+    //   - cost: number (required, >= 0 and <= 1000000, immutable)
+    //   - directions: string|null (optional, <= 1000 chars, immutable)
+    //   - status: string (required: 'pending' on create; 'fulfilled', 'rejected', or 'cancelled' on update)
+    //   - redeemedAt: timestamp (optional/serverTimestamp, immutable)
+    //   - cancelledAt: string|timestamp (optional, set on cancel/reject)
+    //   - cancelledBy: string (optional: 'student' or 'teacher')
+    //   - refunded: bool (optional, true when refunded)
+    //   - rejectionReason: string (optional, teacher-only)
+    //   - updatedAt: timestamp (optional/serverTimestamp)
+    function isValidRedemptionCreate() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['rewardId', 'itemName', 'cost', 'status']) &&
+             data.keys().hasOnly(['rewardId', 'studentId', 'studentName', 'itemName', 'cost', 'directions', 'status', 'redeemedAt']) &&
+             data.rewardId is string && data.rewardId.size() > 0 && data.rewardId.size() <= 128 &&
+             (!('studentId' in data) || data.studentId == null || (data.studentId is string && data.studentId.size() <= 128)) &&
+             (!('studentName' in data) || data.studentName == null || (data.studentName is string && data.studentName.size() <= 128)) &&
+             data.itemName is string && data.itemName.size() > 0 && data.itemName.size() <= 200 &&
+             data.cost is number && data.cost >= 0 && data.cost <= 1000000 &&
+             (!('directions' in data) || data.directions == null || (data.directions is string && data.directions.size() <= 1000)) &&
+             data.status == 'pending' &&
+             (!('redeemedAt' in data) || data.redeemedAt is timestamp);
+    }
+
+    function isValidStudentRedemptionCancellation() {
+      return resource.data.get('status', '') == 'pending' &&
+             resource.data.get('refunded', false) != true &&
+             request.resource.data.status == 'cancelled' &&
+             request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+               'status', 'cancelledAt', 'cancelledBy', 'refunded', 'updatedAt'
+             ]) &&
+             (!('cancelledBy' in request.resource.data) || request.resource.data.cancelledBy == 'student') &&
+             (!('refunded' in request.resource.data) || request.resource.data.refunded == true) &&
+             (!('cancelledAt' in request.resource.data) ||
+               request.resource.data.cancelledAt is timestamp ||
+               (request.resource.data.cancelledAt is string && request.resource.data.cancelledAt.size() <= 64)) &&
+             (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt is timestamp);
+    }
+
     // =========================================================
 
     // TEACHERS
@@ -110,8 +153,10 @@ service cloud.firestore {
     // REWARD REDEMPTIONS (subcollection of classes)
     match /classes/{classId}/redemptions/{redemptionId} {
       allow read: if true;
-      allow create: if true; // Students (unauthenticated) can redeem
-      allow update, delete: if isAuthenticated() && isTeacherOfClass(classId);
+      allow create: if isValidRedemptionCreate(); // Students (unauthenticated) can redeem pending rewards
+      allow update: if (isAuthenticated() && isTeacherOfClass(classId)) ||
+                       isValidStudentRedemptionCancellation();
+      allow delete: if isAuthenticated() && isTeacherOfClass(classId);
     }
 
     // GUILD HALLS (subcollection of classes)

@@ -389,6 +389,12 @@ export function getRedemptionStatusBadge(status) {
       className: 'bg-red-100 text-red-700 border border-red-500/40 dark:bg-red-500/20 dark:text-red-400'
     };
   }
+  if (status === 'rejected') {
+    return {
+      label: '✕ Rejected',
+      className: 'bg-rose-100 text-rose-700 border border-rose-500/40 dark:bg-rose-500/20 dark:text-rose-400'
+    };
+  }
   return {
     label: '⏳ Waiting for Teacher',
     className: 'bg-yellow-100 text-yellow-800 border border-yellow-500/40 dark:bg-yellow-500/20 dark:text-yellow-300'

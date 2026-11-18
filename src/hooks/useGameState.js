@@ -764,6 +764,16 @@ export function useGameState(overrideClassId) {
     return false;
   }, [gameState.coins]);
 
+  const refundCoins = useCallback((amount, exactNewBalance = null) => {
+    const refundVal = Math.max(0, Number(amount) || 0);
+    setGameState(prev => {
+      const nextCoins = (typeof exactNewBalance === 'number' && !Number.isNaN(exactNewBalance))
+        ? exactNewBalance
+        : (prev.coins || 0) + refundVal;
+      return { ...prev, coins: nextCoins };
+    });
+  }, []);
+
   const equipAvatarItem = useCallback((category, itemId) => {
       setGameState(prev => ({ ...prev, avatar: { ...prev.avatar, [category]: itemId } }));
   }, []);
@@ -862,6 +872,7 @@ export function useGameState(overrideClassId) {
     highFiveLimit, // High-five cooldown frequency limit ('daily' | 'weekly' | 'disabled')
     allowStudentGuildSelect, // Teacher toggle for student self-selection
     spendCoins, // Helper to spend coins on STEM supplies
+    refundCoins, // Helper to refund coins on cancelled/rejected reward redemptions
     recordHighFive,
     claimGuildChallenge,
     getCurrentLevel,

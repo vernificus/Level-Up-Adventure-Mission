@@ -25,6 +25,7 @@ export default function GuildPanel({
   onRecordHighFive,
   guilds = GUILDS,
   spendCoins,
+  refundCoins,
   highFiveLimit = 'daily',
   allowStudentGuildSelect = true,
   onClaimGuildChallenge,
@@ -85,6 +86,7 @@ export default function GuildPanel({
   const [myRedemptions, setMyRedemptions] = useState([]);
   const [redeemingReward, setRedeemingReward] = useState(null);
   const [redeemProcess, setRedeemProcess] = useState(false);
+  const [cancellingRedemptionId, setCancellingRedemptionId] = useState(null);
   const [storeCategoryFilter, setStoreCategoryFilter] = useState('all'); // 'all' | 'rewards' | 'stem' | 'history'
 
   const showToast = (msg) => {
@@ -351,6 +353,32 @@ export default function GuildPanel({
       alert('Error redeeming reward: ' + err.message);
     } finally {
       setRedeemProcess(false);
+    }
+  };
+
+  const handleCancelRedemption = async (redemption) => {
+    if (!classId || !redemption?.id) return;
+    if (!window.confirm(`Change your mind on "${redemption.itemName}"?\n\nYour ${redemption.cost} 🪙 coins will be refunded.`)) return;
+    setCancellingRedemptionId(redemption.id);
+    try {
+      const res = await backend.cancelOrRejectRedemption(classId, redemption.id, {
+        status: 'cancelled',
+        cancelledBy: 'student',
+      });
+      if (res?.alreadyProcessed) {
+        showToast('This reward was already updated by your teacher.');
+      } else {
+        if (refundCoins) {
+          refundCoins(redemption.cost, res?.newCoins);
+        }
+        showToast(`↩️ Cancelled "${redemption.itemName}" & refunded ${redemption.cost} coins!`);
+      }
+      if (onStateUpdate) onStateUpdate();
+      loadGuildData();
+    } catch (err) {
+      alert('Error cancelling reward request: ' + err.message);
+    } finally {
+      setCancellingRedemptionId(null);
     }
   };
 
@@ -1220,44 +1248,82 @@ export default function GuildPanel({
                           </p>
                         ) : (
                           <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                            {myRedemptions.map(r => (
+                            {myRedemptions.map(r => {
+                              const isCancelledOrRejected = r.status === 'cancelled' || r.status === 'rejected';
+                              const isFulfilled = r.status === 'fulfilled';
+                              const isPending = !isCancelledOrRejected && !isFulfilled;
+                              return (
                               <div
                                 key={r.id}
                                 className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs flex-wrap gap-2 dark:bg-slate-900 dark:border-slate-700"
                               >
-                                <div className="flex items-center gap-2.5">
-                                  <span className="text-xl">🎁</span>
-                                  <div>
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <span className="text-xl flex-shrink-0">🎁</span>
+                                  <div className="min-w-0">
                                     <p className="font-bold text-slate-900 dark:text-white">{r.itemName}</p>
                                     <p className="text-[11px] text-slate-500 dark:text-slate-400">
                                       Cost: <span className="font-semibold text-yellow-700 dark:text-yellow-400">{r.cost} 🪙</span>
                                       {r.redeemedAt?.toDate ? ` • ${new Date(r.redeemedAt.toDate()).toLocaleDateString()}` : r.redeemedAt ? ` • ${new Date(r.redeemedAt).toLocaleDateString()}` : ''}
+                                      {isCancelledOrRejected && r.refunded && (
+                                        <span className="text-emerald-700 font-semibold dark:text-emerald-400"> • Refunded</span>
+                                      )}
                                     </p>
-                                    {r.directions && (
+                                    {r.directions && isPending && (
                                       <p className="text-[11px] text-amber-700 italic mt-0.5 dark:text-amber-300">
                                         Directions: {r.directions}
+                                      </p>
+                                    )}
+                                    {r.rejectionReason && isCancelledOrRejected && (
+                                      <p className="text-[11px] text-rose-700 italic mt-0.5 dark:text-rose-300">
+                                        Teacher note: "{r.rejectionReason}"
                                       </p>
                                     )}
                                   </div>
                                 </div>
 
-                                <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase flex items-center gap-1 ${
-                                  r.status === 'fulfilled'
-                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-300'
-                                    : 'bg-amber-100 text-amber-800 border border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-300'
-                                }`}>
-                                  {r.status === 'fulfilled' ? (
-                                    <>
-                                      <CheckCircle2 className="w-3 h-3 text-emerald-700 dark:text-emerald-400" /> Fulfilled
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Clock className="w-3 h-3 text-amber-700 dark:text-amber-400" /> Pending Teacher
-                                    </>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase flex items-center gap-1 ${
+                                    isFulfilled
+                                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-300'
+                                      : isCancelledOrRejected
+                                      ? 'bg-rose-100 text-rose-800 border border-rose-500/30 dark:bg-rose-500/20 dark:text-rose-300'
+                                      : 'bg-amber-100 text-amber-800 border border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-300'
+                                  }`}>
+                                    {isFulfilled ? (
+                                      <>
+                                        <CheckCircle2 className="w-3 h-3 text-emerald-700 dark:text-emerald-400" /> Fulfilled
+                                      </>
+                                    ) : r.status === 'rejected' ? (
+                                      <>
+                                        <X className="w-3 h-3 text-rose-700 dark:text-rose-400" /> Rejected
+                                      </>
+                                    ) : r.status === 'cancelled' ? (
+                                      <>
+                                        <X className="w-3 h-3 text-rose-700 dark:text-rose-400" /> Cancelled
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Clock className="w-3 h-3 text-amber-700 dark:text-amber-400" /> Pending Teacher
+                                      </>
+                                    )}
+                                  </span>
+
+                                  {isPending && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCancelRedemption(r)}
+                                      disabled={cancellingRedemptionId === r.id}
+                                      className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 transition-colors disabled:opacity-50 min-h-[30px] dark:bg-rose-500/20 dark:hover:bg-rose-500/30 dark:text-rose-300 dark:border-rose-500/40"
+                                      title="Change your mind and refund coins"
+                                      aria-label={`Nevermind on ${r.itemName}, refund ${r.cost} coins`}
+                                    >
+                                      {cancellingRedemptionId === r.id ? 'Cancelling...' : 'Nevermind'}
+                                    </button>
                                   )}
-                                </span>
+                                </div>
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                       </div>

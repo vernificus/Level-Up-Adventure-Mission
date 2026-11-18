@@ -5371,6 +5371,9 @@ function RewardsManager({ classId }) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingReward, setEditingReward] = useState(null);
   const [form, setForm] = useState({ name: '', description: '', cost: '', directions: '' });
+  const [rejectingRedemption, setRejectingRedemption] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [processingReject, setProcessingReject] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -5448,6 +5451,28 @@ function RewardsManager({ classId }) {
 
   const pendingRedemptions = redemptions.filter(r => r.status === 'pending');
   const fulfilledRedemptions = redemptions.filter(r => r.status === 'fulfilled');
+  const cancelledRedemptions = redemptions.filter(r => r.status === 'cancelled' || r.status === 'rejected');
+
+  const handleConfirmRejectRedemption = async () => {
+    if (!rejectingRedemption) return;
+    setProcessingReject(true);
+    try {
+      const res = await backend.cancelOrRejectRedemption(classId, rejectingRedemption.id, {
+        status: 'rejected',
+        cancelledBy: 'teacher',
+        reason: rejectReason.trim(),
+      });
+      if (res?.alreadyProcessed) {
+        alert('This redemption was already processed or cancelled by the student.');
+      }
+      setRejectingRedemption(null);
+      setRejectReason('');
+    } catch (error) {
+      alert('Error rejecting redemption: ' + error.message);
+    } finally {
+      setProcessingReject(false);
+    }
+  };
 
   if (loading) return <p className="text-slate-600 text-center py-8 dark:text-slate-500">Loading rewards...</p>;
 
@@ -5462,7 +5487,7 @@ function RewardsManager({ classId }) {
           <p className="text-sm text-slate-600 mb-4 dark:text-slate-400">Students have redeemed these rewards and are waiting for fulfillment.</p>
           <div className="space-y-3">
             {pendingRedemptions.map(r => (
-              <div key={r.id} className="bg-white rounded-lg p-4 border border-slate-200 flex items-center gap-4 dark:bg-slate-800 dark:border-slate-700">
+              <div key={r.id} className="bg-white rounded-lg p-4 border border-slate-200 flex flex-wrap items-center gap-4 dark:bg-slate-800 dark:border-slate-700">
                 <div className="flex-shrink-0 w-10 h-10 bg-green-100 border-2 border-green-500 rounded-lg flex items-center justify-center text-xl dark:bg-green-500/20">
                   🎁
                 </div>
@@ -5474,12 +5499,21 @@ function RewardsManager({ classId }) {
                     {r.redeemedAt?.toDate ? new Date(r.redeemedAt.toDate()).toLocaleString() : r.redeemedAt ? new Date(r.redeemedAt).toLocaleString() : 'Just now'}
                   </p>
                 </div>
-                <button
-                  onClick={() => handleFulfill(r.id)}
-                  className="px-4 py-2 bg-green-500 text-slate-900 rounded-lg font-bold text-sm hover:bg-green-400"
-                >
-                  Mark Fulfilled
-                </button>
+                <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+                  <button
+                    onClick={() => handleFulfill(r.id)}
+                    className="px-4 py-2 bg-green-500 text-slate-900 rounded-lg font-bold text-sm hover:bg-green-400 min-h-[40px]"
+                  >
+                    Mark Fulfilled
+                  </button>
+                  <button
+                    onClick={() => { setRejectingRedemption(r); setRejectReason(''); }}
+                    className="px-3.5 py-2 bg-rose-100 text-rose-800 border border-rose-300 rounded-lg font-bold text-sm hover:bg-rose-200 transition-colors min-h-[40px] dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/40 dark:hover:bg-rose-500/30"
+                    aria-label={`Reject ${r.itemName} for ${r.studentName}`}
+                  >
+                    Reject & Refund
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -5638,6 +5672,103 @@ function RewardsManager({ classId }) {
                 </span>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Cancelled & Rejected History */}
+      {cancelledRedemptions.length > 0 && (
+        <div className="bg-white p-6 rounded-xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+          <h3 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2 dark:text-white">
+            <X className="w-5 h-5 text-rose-700 dark:text-rose-400" aria-hidden="true" /> Cancelled & Rejected Redemptions ({cancelledRedemptions.length})
+          </h3>
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {cancelledRedemptions.map(r => (
+              <div key={r.id} className="flex flex-wrap items-center gap-2 p-3 bg-slate-100 rounded-lg text-sm dark:bg-slate-700/30">
+                <span className="text-rose-700 font-bold dark:text-rose-400">✕</span>
+                <span className="text-slate-900 font-bold dark:text-white">{r.studentName}</span>
+                <span className="text-slate-600 dark:text-slate-400">— {r.itemName}</span>
+                <span className="text-[11px] font-bold uppercase px-2 py-0.5 rounded bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-300">
+                  {r.status === 'rejected' ? 'Rejected by Teacher' : 'Student Cancelled (Nevermind)'}
+                </span>
+                {r.refunded && (
+                  <span className="text-xs text-emerald-700 font-semibold dark:text-emerald-400">• {r.cost} 🪙 refunded</span>
+                )}
+                {r.rejectionReason && (
+                  <span className="text-xs text-slate-600 italic dark:text-slate-400">("{r.rejectionReason}")</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Reject Redemption Confirmation Modal */}
+      {rejectingRedemption && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm dark:bg-slate-950/80"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reject-redemption-title"
+          onClick={() => !processingReject && setRejectingRedemption(null)}
+        >
+          <div
+            className="bg-white border-2 border-rose-300 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 dark:bg-slate-800 dark:border-rose-500/60"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h4 id="reject-redemption-title" className="text-lg font-bold text-slate-900 flex items-center gap-2 dark:text-white">
+                <X className="w-5 h-5 text-rose-600 dark:text-rose-400" /> Reject Reward & Refund Coins
+              </h4>
+              <button
+                type="button"
+                disabled={processingReject}
+                onClick={() => setRejectingRedemption(null)}
+                className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-sm text-rose-900 dark:bg-rose-950/30 dark:border-rose-500/30 dark:text-rose-200">
+              <p className="font-bold">{rejectingRedemption.studentName} — {rejectingRedemption.itemName}</p>
+              <p className="text-xs mt-1">Rejecting will cancel this reward request and automatically refund <strong>{rejectingRedemption.cost} 🪙 coins</strong> back to {rejectingRedemption.studentName}.</p>
+            </div>
+
+            <div>
+              <label htmlFor="reject-redemption-reason" className="block text-xs font-bold text-slate-600 mb-1 dark:text-slate-400">
+                Optional Note to Student
+              </label>
+              <input
+                id="reject-redemption-reason"
+                type="text"
+                value={rejectReason}
+                onChange={e => setRejectReason(e.target.value)}
+                placeholder="e.g. Student changed mind, reward unavailable today"
+                maxLength={140}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-900 outline-none focus:border-rose-500 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+              <button
+                type="button"
+                disabled={processingReject}
+                onClick={() => setRejectingRedemption(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-xs min-h-[40px] dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-300"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={processingReject}
+                onClick={handleConfirmRejectRedemption}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg text-xs min-h-[40px] shadow"
+              >
+                {processingReject ? 'Refunding...' : `Reject & Refund ${rejectingRedemption.cost} 🪙`}
+              </button>
+            </div>
           </div>
         </div>
       )}

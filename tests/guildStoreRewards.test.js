@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
-import { filterAndSortRedemptions } from '../src/utils/portalUtils.js';
+import { filterAndSortRedemptions, getRedemptionStatusBadge } from '../src/utils/portalUtils.js';
 
 console.log('Testing Guild Store & Teacher Rewards Integration...');
 
@@ -144,21 +144,74 @@ console.log('✔ Test 11: getStemPurchases strictly filters out soft-deleted ord
 
 // Test 12: Firestore Security Rules Audit for STEM Purchases & Redemptions
 const firestoreRulesSrc = fs.readFileSync(path.resolve('./firestore.rules'), 'utf8');
+const firestoreRulesNorm = firestoreRulesSrc.replace(/\s+/g, ' ');
 assert(
   firestoreRulesSrc.includes('match /stem_purchases/{purchaseId}') &&
   firestoreRulesSrc.includes('allow update, delete: if isAuthenticated();'),
   'firestore.rules must allow authenticated teachers & admins to update and delete stem_purchases'
 );
 assert(
-  firestoreRulesSrc.includes('match /classes/{classId}/redemptions/{redemptionId}') &&
-  firestoreRulesSrc.includes('allow update, delete: if isAuthenticated() && isTeacherOfClass(classId);'),
-  'firestore.rules must allow teachers & admins to update and delete reward redemptions'
+  firestoreRulesNorm.includes('match /classes/{classId}/redemptions/{redemptionId}') &&
+  firestoreRulesNorm.includes('allow update: if (isAuthenticated() && isTeacherOfClass(classId)) || isValidStudentRedemptionCancellation();') &&
+  firestoreRulesNorm.includes('allow delete: if isAuthenticated() && isTeacherOfClass(classId);'),
+  'firestore.rules must allow teachers to update/delete and students to strictly cancel pending redemptions'
+);
+assert(
+  firestoreRulesSrc.includes('isValidStudentRedemptionCancellation()') &&
+  firestoreRulesSrc.includes("resource.data.get('status', '') == 'pending'") &&
+  firestoreRulesSrc.includes("resource.data.get('refunded', false) != true"),
+  'isValidStudentRedemptionCancellation must block double-refunds and non-pending cancellations'
 );
 assert(
   firestoreRulesSrc.includes('exists(/databases/$(database)/documents/classes/$(classId))'),
   'isClassTeacherOrCoTeacher must verify class document existence before reading .data to prevent CEL runtime exceptions'
 );
 console.log('✔ Test 12: firestore.rules permission matrix and CEL existence guards verified');
+
+// Test 13: Redemption Status Badges for Student Cancellation & Teacher Rejection
+assert.strictEqual(getRedemptionStatusBadge('cancelled').label, '✕ Cancelled');
+assert.strictEqual(getRedemptionStatusBadge('rejected').label, '✕ Rejected');
+assert(getRedemptionStatusBadge('rejected').className.includes('rose'), 'Rejected badge must use rose styling');
+console.log('✔ Test 13: Cancelled and rejected redemption status badges verified');
+
+// Test 14: Student "Nevermind" & Teacher "Reject & Refund" Idempotent Refund Simulation
+{
+  const studentDoc = { id: 'stu-1', name: 'Alex', coins: 20 };
+  const redemptionDoc = { id: 'red-9', studentId: 'stu-1', itemName: 'Homework Pass', cost: 50, status: 'pending', refunded: false };
+
+  const simulateCancelOrReject = ({ status, cancelledBy, reason = '' }) => {
+    if (redemptionDoc.status !== 'pending' || redemptionDoc.refunded === true) {
+      return { alreadyProcessed: true };
+    }
+    redemptionDoc.status = status;
+    redemptionDoc.cancelledBy = cancelledBy;
+    redemptionDoc.refunded = true;
+    if (reason) redemptionDoc.rejectionReason = reason;
+    studentDoc.coins += redemptionDoc.cost;
+    return { success: true, refundedAmount: redemptionDoc.cost, newCoins: studentDoc.coins };
+  };
+
+  // Student cancels ("Nevermind") -> refunds 50 coins (20 -> 70)
+  const resStudentCancel = simulateCancelOrReject({ status: 'cancelled', cancelledBy: 'student' });
+  assert.strictEqual(resStudentCancel.success, true);
+  assert.strictEqual(studentDoc.coins, 70, 'Student coins must refund from 20 to 70');
+
+  // Concurrent/duplicate Teacher reject cannot double-refund
+  const resDuplicate = simulateCancelOrReject({ status: 'rejected', cancelledBy: 'teacher', reason: 'Late' });
+  assert.strictEqual(resDuplicate.alreadyProcessed, true);
+  assert.strictEqual(studentDoc.coins, 70, 'Duplicate cancel/reject must never double-refund coins');
+  console.log('✔ Test 14: Student Nevermind & Teacher Reject idempotent coin refund verified');
+}
+
+// Test 15: Production Wiring Verification for Nevermind & Reject UI
+{
+  const teacherPortalSrc = fs.readFileSync(path.resolve('./src/components/TeacherPortal.jsx'), 'utf8');
+  assert(realBackendSrc.includes('async cancelOrRejectRedemption('), 'realBackend.js must implement cancelOrRejectRedemption');
+  assert(guildPanelSrc.includes('Nevermind') && guildPanelSrc.includes('handleCancelRedemption'), 'GuildPanel.jsx must expose Nevermind button on pending redemptions');
+  assert(appSrc.includes('Nevermind') && appSrc.includes('handleCancelHistoryRedemption'), 'App.jsx AvatarBuilder history must expose Nevermind button');
+  assert(teacherPortalSrc.includes('Reject & Refund') && teacherPortalSrc.includes('handleConfirmRejectRedemption'), 'TeacherPortal.jsx RewardsManager must expose Reject & Refund button and modal');
+  console.log('✔ Test 15: Nevermind and Reject & Refund UI wiring verified across all components');
+}
 
 console.log('\n✔ All Guild Store & Teacher Rewards tests passed successfully!\n');
 

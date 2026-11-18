@@ -2242,6 +2242,83 @@ export const realBackend = {
     }
   },
 
+  async cancelOrRejectRedemption(classId, redemptionIdOrObj, { status = 'cancelled', cancelledBy = 'student', reason = '' } = {}) {
+    try {
+      const redemptionId = typeof redemptionIdOrObj === 'string' ? redemptionIdOrObj : redemptionIdOrObj?.id;
+      if (!classId || !redemptionId) throw new Error("Missing classId or redemptionId");
+
+      const docRef = doc(db, "classes", classId, "redemptions", redemptionId);
+      const snap = await getDoc(docRef);
+      if (!snap.exists()) {
+        throw new Error("Redemption record not found");
+      }
+
+      const data = snap.data();
+      if (data.status !== 'pending' || data.refunded === true) {
+        return { alreadyProcessed: true, status: data.status };
+      }
+
+      const targetStatus = status === 'rejected' ? 'rejected' : 'cancelled';
+      const redemptionUpdates = {
+        status: targetStatus,
+        cancelledBy,
+        refunded: true,
+        cancelledAt: new Date().toISOString(),
+        updatedAt: serverTimestamp(),
+      };
+      if (reason && targetStatus === 'rejected') {
+        redemptionUpdates.rejectionReason = reason;
+      }
+
+      await updateDoc(docRef, redemptionUpdates);
+
+      // Refund coins back to the student
+      const refundAmount = Math.max(0, Number(data.cost) || 0);
+      let newCoins = null;
+      let resolvedStudentId = data.studentId || null;
+
+      if (refundAmount > 0) {
+        try {
+          let studentRef = resolvedStudentId ? doc(db, "students", resolvedStudentId) : null;
+          let studentSnap = studentRef ? await getDoc(studentRef) : null;
+
+          // Fallback name lookup within class if studentId doc wasn't matched
+          if ((!studentSnap || !studentSnap.exists()) && data.studentName) {
+            const qStudents = query(collection(db, "students"), where("classId", "==", classId));
+            const studentsSnap = await getDocs(qStudents);
+            const normName = data.studentName.trim().toLowerCase();
+            const matched = studentsSnap.docs.find(d => (d.data().name || '').trim().toLowerCase() === normName);
+            if (matched) {
+              resolvedStudentId = matched.id;
+              studentRef = doc(db, "students", matched.id);
+              studentSnap = matched;
+            }
+          }
+
+          if (studentRef && studentSnap && studentSnap.exists()) {
+            const sData = studentSnap.data();
+            const currentCoins = (sData.coins !== undefined && sData.coins !== null) ? Number(sData.coins) : 100;
+            newCoins = currentCoins + refundAmount;
+            await updateDoc(studentRef, { coins: newCoins });
+          }
+        } catch (refundErr) {
+          console.warn("Could not refund student coins automatically:", refundErr);
+        }
+      }
+
+      return {
+        success: true,
+        status: targetStatus,
+        refundedAmount: refundAmount,
+        newCoins,
+        studentId: resolvedStudentId
+      };
+    } catch (error) {
+      console.error("Error cancelling/rejecting redemption:", error);
+      throw error;
+    }
+  },
+
   // ================= ORGANIZATIONS =================
   async createOrganization(name, description = '') {
     try {

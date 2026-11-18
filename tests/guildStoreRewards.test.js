@@ -284,6 +284,8 @@ console.log('✔ Test 13: Cancelled and rejected redemption status badges verifi
   const useGameStateSrc = fs.readFileSync(path.resolve('./src/hooks/useGameState.js'), 'utf8');
 
   assert(realBackendSrc.includes('async cancelOrRefundStemPurchase('), 'realBackend.js must implement cancelOrRefundStemPurchase');
+  assert(realBackendSrc.includes('async fulfillStemPurchase('), 'realBackend.js must implement fulfillStemPurchase for ClubArenaModal');
+  assert(fs.readFileSync(path.resolve('./src/components/ClubArenaModal.jsx'), 'utf8').includes("getStemOrderStatus(p) === 'pending'"), 'ClubArenaModal.jsx must filter pendingQueue via getStemOrderStatus');
   assert(realBackendSrc.includes("action === 'request_refund'"), 'realBackend.js must support student refund requests');
   assert(guildPanelSrc.includes('handleStemOrderAction') && guildPanelSrc.includes('Request Refund'), 'GuildPanel.jsx must allow STEM cancel/refund requests and fulfilled reward refund requests');
   assert(teacherPortalSrc.includes('handleConfirmStemRefundAction') && teacherPortalSrc.includes('Issue Refund'), 'TeacherPortal.jsx must allow teachers to issue or approve refunds on STEM orders and fulfilled rewards');

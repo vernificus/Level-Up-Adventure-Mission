@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { DEFAULT_15_GUILDS, GUILD_LEVELS, BOSS_CHALLENGES } from '../data/gameData';
 import { getMostRecentMonday7am } from '../utils/gameUtils';
+import { getStemOrderStatus } from '../utils/portalUtils';
 
 // Synthesize an arcade/makerspace chime using Web Audio API (no external audio file needed)
 function playArenaChime(type = 'complete') {
@@ -171,7 +172,7 @@ export default function ClubArenaModal({
     .slice(0, 4);
 
   // Pending STEM Depot Queue (VEX Pitch passes, 3D print queue, supplies)
-  const pendingQueue = (stemPurchases || []).filter(p => p.status !== 'fulfilled');
+  const pendingQueue = (stemPurchases || []).filter(p => getStemOrderStatus(p) === 'pending');
 
   // Recent Approved Activity Ticker
   const recentApproved = [...submissions]

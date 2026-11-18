@@ -192,7 +192,7 @@ export default function TeacherPortal({
   const handleFulfillArenaPurchase = async (purchaseId) => {
     try {
       await backend.fulfillStemPurchase(purchaseId);
-      setArenaStemPurchases(prev => prev.map(p => p.id === purchaseId ? { ...p, status: 'fulfilled' } : p));
+      setArenaStemPurchases(prev => prev.map(p => p.id === purchaseId ? { ...p, fulfilled: true, status: 'fulfilled' } : p));
     } catch (e) {
       alert('Failed to mark order fulfilled: ' + e.message);
     }

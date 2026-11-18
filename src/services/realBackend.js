@@ -2994,6 +2994,7 @@ export const realBackend = {
       const ref = doc(db, "stem_purchases", purchaseId);
       await updateDoc(ref, {
         fulfilled,
+        status: fulfilled ? 'fulfilled' : 'pending',
         fulfilledAt: fulfilled ? new Date().toISOString() : null
       });
       return { success: true };
@@ -3001,6 +3002,10 @@ export const realBackend = {
       console.error("Error marking purchase fulfilled:", error);
       throw error;
     }
+  },
+
+  async fulfillStemPurchase(purchaseId) {
+    return this.markStemPurchaseFulfilled(purchaseId, true);
   },
 
   async deleteStemPurchase(purchaseId) {
